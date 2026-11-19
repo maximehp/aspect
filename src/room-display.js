@@ -5,73 +5,16 @@ import { ResidentContacts } from './resident-contacts.js';
 import { GpuContactIntegrals } from './gpu-contact.js';
 import { Equilibrium } from './equilibrium.js';
 import { instanceSweep } from './beam-exchange.js';
-const [module, visibilityModule] = await Promise.all(
-  ['./beam-sweep.wasm', './contact-visibility.wasm'].map((path) =>
+import { Scanlines, FilletTransport } from './fillet-transport.js';
+import { vertex, fragment, drawTables } from './run-display.js';
+const [module, visibilityModule, filletModule] = await Promise.all(
+  ['./beam-sweep.wasm', './contact-visibility.wasm', './fillet-kernel.wasm'].map((path) =>
     WebAssembly.compileStreaming(fetch(new URL(path, import.meta.url))),
   ),
 );
-function cameraMatrix({ position, yaw, pitch, fov }, aspect) {
-  const cy = Math.cos(yaw),
-    sy = Math.sin(yaw),
-    cp = Math.cos(pitch),
-    sp = Math.sin(pitch);
-  const vertical = 1 / Math.tan(fov / 2),
-    horizontal = vertical / aspect;
-  const near = 0.035,
-    far = 500,
-    z = (far + near) / (far - near),
-    offset = (-2 * far * near) / (far - near);
-  const [x, y, w] = position,
-    right = cy * x + sy * w,
-    up = -sy * sp * x + cp * y + cy * sp * w,
-    forward = sy * cp * x + sp * y - cy * cp * w;
-  return new Float32Array([
-    cy * horizontal,
-    -sy * sp * vertical,
-    sy * cp * z,
-    sy * cp,
-    0,
-    cp * vertical,
-    sp * z,
-    sp,
-    sy * horizontal,
-    cy * sp * vertical,
-    -cy * cp * z,
-    -cy * cp,
-    -right * horizontal,
-    -up * vertical,
-    -forward * z + offset,
-    -forward,
-  ]);
-}
-
-const vertex = `#version 300 es
-layout(location=0)in vec3 position;layout(location=1)in vec2 address;layout(location=2)in vec3 reflectance;
-layout(location=3)in vec4 supplied;layout(location=4)in float visible;
-uniform mat4 projection;uniform vec2 chartScale;out vec2 uv;flat out vec2 verticalLimits;flat out vec3 material;out vec4 value;flat out float lit;
-void main(){gl_Position=projection*vec4(position,1.);uv=address;
- float bottom=floor(address.y/chartScale.x)*chartScale.x;
- verticalLimits=vec2(bottom+chartScale.y,bottom+chartScale.x-chartScale.y);material=reflectance;value=supplied;lit=visible;}`;
-const fragment = `#version 300 es
-precision highp float;
-in vec2 uv;flat in vec2 verticalLimits;flat in vec3 material;in vec4 value;flat in float lit;
-uniform sampler2D field;uniform vec3 lamp;uniform float intensity;uniform int mode;
-out vec4 color;
-// Ordered rounding keeps sub-code gradients visible in the 8-bit output.
-// This threshold is fixed per framebuffer pixel across all scene revisions.
-float roundingThreshold(ivec2 p){
-  int x=p.x, y=p.y, m=x^y;
-  int rank=32*(m&1)+16*(y&1)+8*((m>>1)&1)+4*((y>>1)&1)+2*((m>>2)&1)+((y>>2)&1);
-  return (float(rank)+0.5)/64.;
-}
-void main(){vec4 f=uv.x<0.?value:texture(field,vec2(uv.x,clamp(uv.y,verticalLimits.x,verticalLimits.y)));
- vec3 x=material*intensity*((mode==1?vec3(0):f.rgb)+(mode==2?vec3(0):lit*f.a*lamp));
- x=x/(1.+x);
- vec3 srgb=mix(12.92*x,1.055*pow(x,vec3(1./2.4))-.055,greaterThan(x,vec3(.0031308)));
- color=vec4(floor(255.*srgb+roundingThreshold(ivec2(gl_FragCoord.xy)))/255.,1);}`;
 export class LiveRenderer {
   constructor(canvas, { contacts = 'resident' } = {}) {
-    this.gl = canvas.getContext('webgl2', { alpha: false, antialias: true, depth: false });
+    this.gl = canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false });
     const gl = this.gl;
     if (!gl) throw Error('WebGL 2 required');
     const program = gl.createProgram();
@@ -91,23 +34,46 @@ export class LiveRenderer {
     gl.useProgram(program);
     this.program = program;
     this.uniforms = {};
-    for (const name of ['projection', 'chartScale', 'lamp', 'intensity', 'mode', 'field'])
+    for (const name of [
+      'eye',
+      'firstRay',
+      'stepX',
+      'stepY',
+      'lightPos',
+      'size',
+      'lamp',
+      'intensity',
+      'mode',
+      'field',
+      'objects',
+      'coeffs',
+    ])
       this.uniforms[name] = gl.getUniformLocation(program, name);
     this.buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
-    let off = 0;
-    for (const [i, n] of [3, 2, 3, 4, 1].entries()) {
+    this.runVao = gl.createVertexArray();
+    gl.bindVertexArray(this.runVao);
+    for (const [i, n, offset] of [
+      [0, 4, 0],
+      [1, 1, 16],
+    ]) {
       gl.enableVertexAttribArray(i);
-      gl.vertexAttribPointer(i, n, gl.FLOAT, false, 52, off);
-      off += 4 * n;
+      gl.vertexAttribIPointer(i, n, gl.INT, 20, offset);
+      gl.vertexAttribDivisor(i, 1);
     }
+    gl.bindVertexArray(null);
+    this.tables = [gl.createTexture(), gl.createTexture()];
+    this.scan = new Scanlines(filletModule);
     this.texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
     for (const p of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER])
       gl.texParameteri(gl.TEXTURE_2D, p, gl.LINEAR);
     for (const p of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T])
       gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE);
-    this.math = new Equilibrium(instanceSweep(new WebAssembly.Instance(module)));
+    this.math = new Equilibrium(
+      instanceSweep(new WebAssembly.Instance(module)),
+      new FilletTransport(filletModule),
+    );
     this.view = new CpuView();
     this.pixel = new Uint8Array(4);
     try {
@@ -125,7 +91,17 @@ export class LiveRenderer {
     const t = performance.now();
     this.applyScene(scene, this.math.update(scene), t);
   }
-  prepareScene(scene) {
+  outputSize(size) {
+    const canvas = this.gl.canvas,
+      ratio = globalThis.devicePixelRatio || 1;
+    return (
+      size || [
+        Math.max(1, Math.round(canvas.clientWidth * ratio)),
+        Math.max(1, Math.round(canvas.clientHeight * ratio)),
+      ]
+    );
+  }
+  prepareScene(scene, camera, size) {
     const calculate = async () => {
       // A new pose can spend tens of milliseconds on CPU geometry before the
       // first worker wait. Let the browser commit the preceding draw first.
@@ -137,6 +113,18 @@ export class LiveRenderer {
       if (typeof Worker === 'undefined' || this.serial) return this.math.update(scene);
       try {
         this.workers ??= new BeamWorkers();
+        let scan;
+        if (camera) {
+          const dimensions = this.outputSize(size),
+            key = [...camera.position, camera.yaw, camera.pitch, camera.fov, ...dimensions].join('/');
+          this.scanWorker ??= new Worker(new URL('./scan-worker.js', import.meta.url), { type: 'module' });
+          scan = new Promise((resolve) => {
+            this.scanWorker.onmessage = ({ data }) => resolve(data.error ? null : { ...data, key });
+            this.scanWorker.onerror = () => resolve(null);
+            this.cancelScan = () => resolve(null);
+            this.scanWorker.postMessage({ scene, camera, size: dimensions });
+          });
+        }
         let preparedContacts,
           contactMs = 0;
         const result = await this.math.update(scene, this.workers, (geometry) => {
@@ -145,6 +133,8 @@ export class LiveRenderer {
           this.view.contactBackend?.prepareGeometry?.(preparedContacts);
           contactMs = performance.now() - start;
         });
+        result.preparedScan = scan ? await scan : null;
+        this.cancelScan = null;
         result.preparedContacts = preparedContacts;
         result.timings.contactMs = contactMs;
         return result;
@@ -168,6 +158,9 @@ export class LiveRenderer {
     this.viewMs = 0;
     const appearanceStart = performance.now();
     this.view.setScene(scene, result, true);
+    this.preparedScan = result.preparedScan;
+    this.scanScene = null;
+    this.cameraKey = null;
     this.view.contactBackend?.retainCharts?.(this.view.contacts);
     this.timings = { ...result.timings, appearance: performance.now() - appearanceStart };
     this.iterations = result.iterations;
@@ -195,48 +188,94 @@ export class LiveRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
     this.drawAwaitingCommit = true;
     if (intensity === 0) return;
-    const projection = cameraMatrix(camera, w / h);
-    const maskChanged = this.view.updateCameraMask(projection);
-    if (maskChanged || !this.eye || camera.position.some((x, i) => x !== this.eye[i])) {
-      const start = performance.now(),
-        vertices = this.view.drawList(camera.position, this.view.cameraMask);
-      this.viewMs = performance.now() - start;
-      const t = performance.now();
-      if (this.view.atlasChanged || this.uploadedAtlas !== this.view.atlas) {
-        const atlas = this.view.atlas;
-        if (atlas !== this.uploadedAtlas) {
-          gl.texImage2D(
-            gl.TEXTURE_2D,
-            0,
-            gl.RGBA16F,
-            atlas.width,
-            atlas.height,
-            0,
-            gl.RGBA,
-            gl.FLOAT,
-            atlas.tex,
-          );
-          this.uploadedAtlas = atlas;
-        } else {
-          gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, atlas.width, atlas.height, gl.RGBA, gl.FLOAT, atlas.tex);
-        }
-        if (this.view.contactDraws?.size) this.view.contactBackend.paint(this.view);
-        this.view.atlasChanged = false;
+    const key = [...camera.position, camera.yaw, camera.pitch, camera.fov, w, h].join('/');
+    if (this.cameraKey !== key) {
+      const start = performance.now();
+      const prepared = this.preparedScan?.key === key ? this.preparedScan : null;
+      if (!prepared && this.scanScene !== this.scene) {
+        this.scan.prepare(this.scene);
+        this.scanScene = this.scene;
       }
-      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
-      this.uploadMs += performance.now() - t;
-      this.vertexBytes = vertices.byteLength;
-      this.count = vertices.length / 13;
-      this.eye = camera.position.slice();
+      const { runs, stats, base, dx, dy } = prepared || this.scan.render(camera, w, h);
+      this.preparedScan = null;
+      const { objects, coeffs } = drawTables(this.view, camera, runs);
+      this.viewMs = performance.now() - start;
+      const upload = performance.now();
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.texture);
+      const atlas = this.view.atlas;
+      if (this.uploadedAtlas !== atlas) {
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.RGBA16F,
+          atlas.width,
+          atlas.height,
+          0,
+          gl.RGBA,
+          gl.FLOAT,
+          atlas.tex,
+        );
+        this.uploadedAtlas = atlas;
+      } else if (this.view.atlasChanged)
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, atlas.width, atlas.height, gl.RGBA, gl.FLOAT, atlas.tex);
+      if (this.view.atlasChanged && this.view.contactDraws?.size) this.view.contactBackend.paint(this.view);
+      this.view.atlasChanged = false;
+      for (const [j, data, width] of [
+        [0, objects, 26],
+        [1, coeffs, 4],
+      ]) {
+        gl.activeTexture(gl.TEXTURE0 + 8 + j);
+        gl.bindTexture(gl.TEXTURE_2D, this.tables[j]);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.RGBA32F,
+          width,
+          data.length / (4 * width),
+          0,
+          gl.RGBA,
+          gl.FLOAT,
+          data,
+        );
+      }
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.texture);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, runs, gl.DYNAMIC_DRAW);
+      this.count = runs.length / 5;
+      this.vertexBytes = runs.byteLength;
+      this.frameStats = {
+        runs: this.count,
+        grouped: stats[0],
+        individual: stats[1],
+        covered: stats[2],
+        lampTests: stats[3],
+        bytes: prepared?.bytes || this.scan.wasm.memory.buffer.byteLength,
+        scanMs: prepared?.ms,
+      };
+      this.rayFrame = [base, dx, dy];
+      this.uploadMs += performance.now() - upload;
+      this.cameraKey = key;
     }
+    gl.useProgram(this.program);
+    gl.bindVertexArray(this.runVao);
     const u = this.uniforms;
-    const { rows, height } = this.view.atlas;
-    gl.uniform2f(u.chartScale, rows / height, 0.5 / height);
-    gl.uniformMatrix4fv(u.projection, false, projection);
+    gl.uniform1i(u.objects, 8);
+    gl.uniform1i(u.coeffs, 9);
+    gl.uniform1i(u.field, 0);
+    gl.uniform2f(u.size, w, h);
+    gl.uniform3fv(u.eye, camera.position);
+    for (const [i, name] of ['firstRay', 'stepX', 'stepY'].entries())
+      gl.uniform3fv(u[name], this.rayFrame[i]);
+    gl.uniform3fv(u.lightPos, this.scene.lightPosition);
     gl.uniform3fv(u.lamp, this.scene.lampRGB);
     gl.uniform1f(u.intensity, intensity);
     gl.uniform1i(u.mode, mode === 'direct' ? 1 : mode === 'indirect' ? 2 : 0);
-    gl.drawArrays(gl.TRIANGLES, 0, this.count);
+    gl.drawArraysInstanced(gl.LINES, 0, 2, this.count);
+    gl.bindVertexArray(null);
   }
   synchronize() {
     this.gl.readPixels(0, 0, 1, 1, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.pixel);
@@ -245,9 +284,13 @@ export class LiveRenderer {
     const gl = this.gl;
     this.disposed = true;
     this.workers?.dispose();
+    this.cancelScan?.();
+    this.scanWorker?.terminate();
     this.view.contactBackend?.dispose();
     gl.deleteTexture(this.texture);
     gl.deleteBuffer(this.buffer);
+    gl.deleteVertexArray(this.runVao);
+    this.tables.forEach((t) => gl.deleteTexture(t));
     gl.deleteProgram(this.program);
   }
 }

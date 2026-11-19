@@ -88,13 +88,13 @@ SETUP = """(async (mode) => {
   window.room = new LiveRenderer(canvas, { contacts: mode });
 })"""
 
-REPLAY = """(async (extra) => {
+REPLAY = """(async (extra, slats) => {
   const times = [], gl = room.gl;
   for (let tick = 0; tick <= 120; tick++) {
     await new Promise(requestAnimationFrame);
     const start = performance.now();
-    const {scene, camera} = pose(tick / 60, extra);
-    room.applyScene(scene, await room.prepareScene(scene), start);
+    const {scene, camera} = pose(tick / 60, extra, slats);
+    room.applyScene(scene, await room.prepareScene(scene,camera,[3840,2160]), start);
     room.draw(camera, 1, [3840, 2160]);
     // Stamp this actual framebuffer, so compositor capture can identify its pose.
     gl.enable(gl.SCISSOR_TEST);
@@ -130,6 +130,7 @@ def main():
         "--port", type=int, default=9222, help="Chrome remote debugging port"
     )
     parser.add_argument("--room", default="http://127.0.0.1:8736")
+    parser.add_argument("--slats", type=int, choices=[0, 1, 2], default=0, help="Single slats in motion, or 0 for both full blinds")
     args = parser.parse_args()
     api = f"http://127.0.0.1:{args.port}/json/"
     page = urllib.parse.quote(args.room.rstrip("/") + "/motion.html", safe=":/")
@@ -161,7 +162,7 @@ def main():
                 maxHeight=256,
                 everyNthFrame=1,
             )
-            rows = browser.evaluate(REPLAY + "(" + str(args.extra) + ")")
+            rows = browser.evaluate(REPLAY + "(" + str(args.extra) + "," + str(args.slats) + ")")
             browser.call("Page.stopScreencast")
             latencies, tails, missing = [], [], []
             for pose, (start, done) in enumerate(rows[1:], 1):
@@ -177,6 +178,7 @@ def main():
                     {
                         "mode": args.mode,
                         "extra": args.extra,
+                        "slats": args.slats,
                         "matched": len(latencies),
                         "missing": missing,
                         "startToSwapMs": percentiles(latencies),

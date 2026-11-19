@@ -12,55 +12,9 @@ export const unit = (a) => {
 };
 export const point = (r, u, v) => r.center.map((x, k) => x + r.axisU[k] * u + r.axisV[k] * v);
 const scale = (v, a) => v.map((x) => x * a);
-function roundedPoint(b, signs, dirs) {
-  const normal = unit(dirs);
-  const p = normal.map((n, i) => signs[i] * (b.halfSize[i] - b.radius) + b.radius * n);
-  return { p, normal };
-}
-// Flat faces, circular edge strips and spherical corner octants. All vertices
-// lie on the analytic fillet. Chord tolerance controls only its drawing outline.
-export function localShell(b) {
-  const faces = [],
-    steps = 2;
-  for (let d = 0; d < 3; d++)
-    for (const side of [-1, 1]) {
-      const a = (d + 1) % 3,
-        c = (d + 2) % 3;
-      const samples = (axis) => {
-        const values = [];
-        for (let j = steps; j >= 0; j--) values.push([-1, -j / steps]);
-        const spans = Math.ceil((2 * (b.halfSize[axis] - b.radius)) / 0.7);
-        for (let j = 1; j < spans; j++) values.push([(2 * j) / spans - 1, 0]);
-        for (let j = 0; j <= steps; j++) values.push([1, j / steps]);
-        return values;
-      };
-      const us = samples(a),
-        vs = samples(c);
-      const vertices = us.map(([sa, u]) =>
-        vs.map(([sc, v]) => {
-          const signs = [],
-            dirs = [];
-          signs[d] = side;
-          signs[a] = sa;
-          signs[c] = sc;
-          dirs[d] = side;
-          dirs[a] = u;
-          dirs[c] = v;
-          return roundedPoint(b, signs, dirs);
-        }),
-      );
-      for (let i = 0; i + 1 < us.length; i++)
-        for (let j = 0; j + 1 < vs.length; j++) {
-          const verts = [vertices[i][j], vertices[i + 1][j], vertices[i + 1][j + 1], vertices[i][j + 1]];
-          if (side < 0) verts.reverse();
-          const p = verts[0].p,
-            n = cross(sub(verts[1].p, p), sub(verts[2].p, p));
-          faces.push({ vertices: verts, p, n });
-        }
-    }
-  return faces;
-}
-export function broadFaces(b) {
+// Tangent coordinates for six signed-normal radiance charts. The physical
+// emission sites, normals, areas and visibility come from the filleted surface.
+export function boxCharts(b) {
   const result = [];
   for (let i = 0; i < 3; i++)
     for (const sign of [1, -1]) {

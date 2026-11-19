@@ -8,7 +8,9 @@ const iu = Number(u), iv = Number(v), angle = Number(degrees), paths = Number(co
 if (!['front', 'back'].includes(side) || !Number.isFinite(angle) || !Number.isSafeInteger(paths) || paths < 2) {
   throw new Error('Expected a front/back side, a finite blind angle and at least two paths.');
 }
-const room = buildRoom({ angle: angle*Math.PI/180 });
+// The optional final JSON argument accepts the same authored room edits as play.
+const edits = process.argv[8] ? JSON.parse(process.argv[8]) : {};
+const room = buildRoom({ ...edits, angle: angle*Math.PI/180 });
 const target = room.rectangles.findIndex(r => r.id === id);
 if (target < 0) throw new Error('Unknown planar receiver: ' + id);
 // Keep the original observation areas comparable when the renderer changes.
@@ -121,5 +123,5 @@ for (let sample=0; sample<paths; sample++) {
 
 const reference = first.map((value,c) => (value+later[c])/paths);
 const standardError = reference.map((mean,c) => Math.sqrt(Math.max(0,sumSquares[c]/paths-mean*mean)/(paths-1)));
-console.log(JSON.stringify({ id, iu, iv, side, angle, paths, reference, standardError,
+console.log(JSON.stringify({ id, iu, iv, side, angle, paths, ...(process.argv[8] ? { edits } : {}), reference, standardError,
   firstReflected: scale(first,1/paths), laterReflected: scale(later,1/paths) }, null, 2));

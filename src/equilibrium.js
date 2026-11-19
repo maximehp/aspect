@@ -3,7 +3,7 @@
 import { contactReceivers } from './contact-transfer.js';
 import { compileParallel, activeParallel } from './parallel-transfer.js';
 import { boundsOf, split, VisibilityCompiler } from './visibility.js';
-import { dot, sub, cross, unit, point, broadFaces, volume, regions } from './cpu-geometry.js';
+import { dot, sub, cross, unit, point, boxCharts, volume, regions } from './cpu-geometry.js';
 function solidAngle(vertices, eye) {
   const dirs = vertices.map((p) => unit(sub(p, eye))),
     a = dirs[0];
@@ -166,7 +166,7 @@ function elements(rect, covers, lamp, edgeGaps) {
     }
   return list;
 }
-function lampFlux(mode, lit, lamp) {
+function lampFlux(mode, lit, lamp, curved, fixedDark) {
   const [u0, u1, v0, v1] = mode.bounds;
   let flux = 0,
     moment = 0;
@@ -174,7 +174,7 @@ function lampFlux(mode, lit, lamp) {
     offset = dot(lampOffset, mode.momentAxis),
     height = Math.abs(dot(lampOffset, mode.normal));
   for (const cell of lit) {
-    if (!cell.lit) continue;
+    if (!cell.lit && (!curved || fixedDark.has(cell.uv))) continue;
     const [left, right, bottom, top] = (cell.bounds ??= boundsOf(cell.uv));
     if (right <= u0 || left >= u1 || top <= v0 || bottom >= v1) continue;
     let poly = cell.uv;
@@ -184,6 +184,12 @@ function lampFlux(mode, lit, lamp) {
     if (poly.length >= 3 && top > v1) [poly] = split(poly, 0, -1, v1, 1e-12, false);
     if (poly.length < 3) continue;
     const vertices = poly.map(([u, v]) => point(mode.rect, u, v));
+    if (!cell.lit) {
+      const recovered = curved.recover(vertices, mode, lamp);
+      flux += recovered[0];
+      moment += recovered[1];
+      continue;
+    }
     const omega = solidAngle(vertices, lamp);
     flux += omega;
     moment += offset * omega;
@@ -219,7 +225,8 @@ function sameShape(a, b) {
   return sameVector(a.axisU, b.axisU) && sameVector(a.axisV, b.axisV);
 }
 export class Equilibrium {
-  constructor(sweep) {
+  constructor(sweep, curved) {
+    this.curved = curved;
     this.sweep = sweep;
     this.visibility = new VisibilityCompiler();
     this.flux = new WeakMap();
@@ -259,7 +266,7 @@ export class Equilibrium {
         }
     }
     const proxy = boxes.map((b) => {
-      if (!this.boxFaces.has(b)) this.boxFaces.set(b, broadFaces(b));
+      if (!this.boxFaces.has(b)) this.boxFaces.set(b, boxCharts(b));
       return this.boxFaces.get(b);
     });
     const sheets = [...this.sheets, ...proxy.flat()],
@@ -284,7 +291,28 @@ export class Equilibrium {
     const near = activeParallel(this.parallel, boxes);
     const prepared = performance.now(),
       exchangeStart = prepared;
-    const transfer = this.sweep(modes, near, pool);
+    let surface;
+    if (this.curved) {
+      if (
+        !this.surface ||
+        !!pool !== !!this.surface.packet ||
+        modes.length !== this.surfaceModes.length ||
+        modes.some((m, i) => m !== this.surfaceModes[i])
+      ) {
+        this.surface = this.curved.compute(
+          { ...scene, rectangles: this.sheets, roundedBoxes: boxes },
+          modes,
+          groups,
+          proxy,
+          pool,
+        );
+        this.surfaceModes = modes;
+        for (let i = 0; i < modes.length; i++)
+          if (this.surface.areas[i] > 0) modes[i].area = this.surface.areas[i];
+      }
+      surface = this.surface;
+    }
+    const transfer = this.sweep(modes, near, pool, surface);
     // The angular aperture depends only on geometry. Its GPU integration can
     // overlap both the global sweep and the construction of the lamp input.
     if (geometryReady && transfer.then) geometryReady({ boxes, modes, groups, contacts });
@@ -297,6 +325,7 @@ export class Equilibrium {
       const moving = volumes.slice(this.sheets.length);
       const regionsBySheet = new Map();
       for (const r of sheets) {
+        if (surface && r.owner) continue;
         if (r.owner && dot(cross(r.axisU, r.axisV), sub(lamp, r.center)) <= 0) {
           regionsBySheet.set(r, []);
           continue;
@@ -327,10 +356,22 @@ export class Equilibrium {
     const visible = performance.now(),
       direct = new Float32Array(6 * modes.length),
       directSlope = new Float32Array(direct.length);
+    const fixedDark = new Map();
     for (let j = 0; j < modes.length; j++) {
       const r = modes[j],
         side = Number(dot(sub(lamp, r.center), r.normal) < 0);
       const cells = lampRegions.get(r.rect);
+      if (surface && r.owner.axes) {
+        for (let c = 0; c < 3; c++) {
+          const f = (colors[j][c] * scene.lampRGB[c]) / r.area;
+          direct[6 * j + c] = surface.flux[2 * j] * f;
+          directSlope[6 * j + c] = Math.max(
+            -direct[6 * j + c],
+            Math.min(direct[6 * j + c], 3 * surface.flux[2 * j + 1] * f),
+          );
+        }
+        continue;
+      }
       let cache = this.flux.get(cells);
       if (!cache) {
         cache = new WeakMap();
@@ -338,7 +379,17 @@ export class Equilibrium {
       }
       let flux = cache.get(r);
       if (flux === undefined) {
-        flux = lampFlux(r, cells, lamp);
+        if (surface && !fixedDark.has(r.rect))
+          fixedDark.set(
+            r.rect,
+            new Set(
+              this.fixedLamp
+                .get(r.rect)
+                .filter((c) => !c.lit)
+                .map((c) => c.uv),
+            ),
+          );
+        flux = lampFlux(r, cells, lamp, this.curved, fixedDark.get(r.rect));
         cache.set(r, flux);
       }
       for (let c = 0; c < 3; c++) {
@@ -375,6 +426,7 @@ export class Equilibrium {
         near,
         outgoing,
         proxy,
+        curvedSites: surface?.sites,
         covers,
         lampRegions,
         lampVolumes,

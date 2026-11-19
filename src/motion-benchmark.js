@@ -9,12 +9,14 @@ const axes = [
 // Replay game time one tick at a time, even if the machine misses a deadline.
 // The camera travels with a shadow-casting body. A separate moving solid
 // passes the bench while both sets of slats rotate independently.
-export function motionPose(t, extraBodies = 0) {
+export function motionPose(t, extraBodies = 0, slatStudy = 0) {
   const x = 0.9 + 0.65 * Math.sin(0.85 * t),
     z = 0.7 + 0.65 * Math.cos(1.15 * t);
   const scene = buildRoom({
     angle: 0.38 + 0.52 * Math.sin(2.1 * t),
-    secondBlind: true,
+    secondBlind: slatStudy!==1,
+    slats: slatStudy?1:9,
+    ...(slatStudy?{radius:.022+.018*Math.sin(2*t),secondRadius:.021+.012*Math.cos(t)}:{}),
     secondAngle: -0.25 + 0.44 * Math.sin(1.4 * t),
   });
   scene.roundedBoxes.push(

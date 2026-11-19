@@ -21,10 +21,17 @@
     <h2>Room controls</h2>
     <label for="lamp">Lamp intensity <output id="lamp-value" for="lamp">100%</output></label>
     <input type="range" id="lamp" min="0" max="160" value="100">
-    <label for="angle">Blind angle <output id="angle-value" for="angle">24°</output></label>
+    <label for="slats">Window geometry</label>
+    <select id="slats"><option value="1">Single slat</option><option value="9">Full blind</option></select>
+    <label class="check"><input type="checkbox" id="animate"> Animate slats</label>
+    <label for="radius">Fillet radius <output id="radius-value">28 mm</output></label>
+    <input type="range" id="radius" min="1" max="45" value="28">
+    <label for="angle">Slat angle <output id="angle-value" for="angle">24°</output></label>
     <input type="range" id="angle" min="-85" max="85" value="24">
-    <label class="check"><input type="checkbox" id="second"> Second blind</label>
+    <label class="check"><input type="checkbox" id="second"> Second independently movable slat or blind</label>
     <div id="second-controls" hidden>
+      <label for="radius2">Second fillet radius <output id="radius2-value">18 mm</output></label>
+      <input type="range" id="radius2" min="1" max="45" value="18">
       <label for="angle2">Second angle <output id="angle2-value" for="angle2">−17°</output></label>
       <input type="range" id="angle2" min="-85" max="85" value="-17">
     </div>

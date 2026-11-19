@@ -22,13 +22,17 @@ function requestView() {
   schedule();
 }
 
-function requestScene() {
+function requestScene(time = performance.now()) {
   if (!renderer) return;
   const requestedAt = performance.now();
+  const t=time/1000, play=element('animate').checked;
   const next = buildRoom({
-    angle: Number(element('angle').value)*radians,
+    slats:Number(element('slats').value),
+    radius:Number(element('radius').value)/1000,
+    secondRadius:Number(element('radius2').value)/1000,
+    angle: (Number(element('angle').value)+(play?20*Math.sin(t*1.7):0))*radians,
     secondBlind: element('second').checked,
-    secondAngle: Number(element('angle2').value)*radians,
+    secondAngle: (Number(element('angle2').value)+(play?24*Math.sin(t*1.1+.8):0))*radians,
     layout: element('layout').value,
     floor: element('floor').value,
   });
@@ -48,7 +52,9 @@ function beginScene() {
   const job = { scene: queuedScene, requested: queuedAt, started: performance.now() };
   pending = job;
   queuedScene = null;
-  target.prepareScene(job.scene).then(result => {
+  const resolution=element('resolution').value;
+  const size=resolution==='2160'?[3840,2160]:resolution==='1080'?[1920,1080]:null;
+  target.prepareScene(job.scene,camera,size).then(result => {
     if (target !== renderer) return;
     pending = null;
     ready = { ...job, result };
@@ -131,6 +137,7 @@ function render(time) {
     }
     element('dimensions').textContent = renderer.gl.drawingBufferWidth + ' × ' + renderer.gl.drawingBufferHeight;
     beginScene();
+    if(element('animate').checked && !pending && !ready) requestScene(performance.now());
     if (keys.size) schedule();
   } catch (error) {
     report(error);
@@ -143,9 +150,14 @@ function report(error) {
   console.error(error);
 }
 
-for (const id of ['lamp','angle','angle2','second','layout','floor','lighting','resolution','measure']) {
+for (const id of ['lamp','angle','angle2','second','slats','radius','radius2','animate','layout','floor','lighting','resolution','measure']) {
   element(id).addEventListener('input', () => {
-    if (['angle','angle2','second','layout','floor'].includes(id)) requestScene();
+    if(id==='slats') for(const radius of ['radius','radius2']){
+      element(radius).max=element('slats').value==='1'?'45':'12';
+      element(radius).value=element('slats').value==='1'?'28':'8';
+    }
+    for(const radius of ['radius','radius2'])element(radius+'-value').textContent=element(radius).value+' mm';
+    if (['angle','angle2','second','slats','radius','radius2','animate','layout','floor'].includes(id)) requestScene();
     else requestView();
     element('lamp-value').textContent = element('lamp').value + '%';
     element('angle-value').textContent = element('angle').value + '°';

@@ -19,7 +19,15 @@ run.addEventListener('click', async () => {
   stages.replaceChildren();
   const integrator = document.querySelector('#integrator');
   const bodies = document.querySelector('#extra-bodies');
+  const windowControl = document.querySelector('#window'),
+    study = Number(windowControl.value);
+  windowControl.disabled = true;
   const count = Number(bodies.value);
+  let grouped = 0,
+    covered = 0,
+    runs = 0,
+    lampTests = 0,
+    arena = 0;
   bodies.disabled = true;
   integrator.disabled = true;
   let renderer, backend;
@@ -44,9 +52,9 @@ run.addEventListener('click', async () => {
     }
     async function renderTick(tick, profile = false) {
       const start = performance.now();
-      const { scene, camera } = motionPose(tick / 60, count);
+      const { scene, camera } = motionPose(tick / 60, count, study);
       const authored = performance.now();
-      const solution = await renderer.prepareScene(scene);
+      const solution = await renderer.prepareScene(scene, camera, resolution);
       const solved = performance.now();
       renderer.applyScene(scene, solution, start);
       const ready = performance.now();
@@ -55,6 +63,17 @@ run.addEventListener('click', async () => {
       renderer.synchronize();
       const finished = performance.now();
       if (profile) {
+        grouped += renderer.frameStats.grouped;
+        covered += renderer.frameStats.covered;
+        runs += renderer.frameStats.runs;
+        lampTests += renderer.frameStats.lampTests;
+        arena = Math.max(
+          arena,
+          renderer.frameStats.bytes +
+            renderer.math.curved.wasm.memory.buffer.byteLength +
+            renderer.stats.workerBytes +
+            renderer.stats.bytes,
+        );
         const t = solution.timings,
           charts = renderer.view.chartMs;
         record('Scene, basis and view setup', authored - start + t.basis + ready - solved);
@@ -64,6 +83,7 @@ run.addEventListener('click', async () => {
         record('View geometry', renderer.viewMs - charts);
         record('Draw submission and upload', submitted - ready - renderer.viewMs);
         record('Wait for finished 4K pixels', finished - submitted);
+        record('Concurrent CPU scanline visibility', renderer.frameStats.scanMs || 0);
         record('Within exchange · longest angular worker', t.workerMs);
         record('Within exchange · sparse operator assembly', t.assemblyMs);
         record('Within exchange · lamp visibility', t.visibility);
@@ -85,6 +105,11 @@ run.addEventListener('click', async () => {
     }
     const elapsed = performance.now() - startWarm;
     times.sort((a, b) => a - b);
+    report('Moving window geometry', windowControl.selectedOptions[0].textContent);
+    report('Covered pixels classified in runs', ((100 * grouped) / covered).toFixed(2) + '%');
+    report('Exact lamp segment tests for frame visibility', Math.round(lampTests / ticks).toLocaleString());
+    report('Peak counted transport, field and scan buffers', (arena / 1048576).toFixed(2) + ' MiB');
+    report('Horizontal runs per frame', Math.round(runs / ticks).toLocaleString());
     report('Additional moving solids', String(count));
     report('Contact integrator', integrator.selectedOptions[0].textContent);
     report('Fully lit frames per second', ((ticks * 1000) / elapsed).toFixed(1));
@@ -147,6 +172,7 @@ run.addEventListener('click', async () => {
     progress.textContent = error.message;
   } finally {
     renderer?.dispose();
+    windowControl.disabled = false;
     bodies.disabled = false;
     integrator.disabled = false;
     run.disabled = false;

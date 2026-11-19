@@ -84,7 +84,7 @@ export class BeamWorkspace {
       this.capacity *= 2;
     }
   }
-  integrate(packet, fixed, first, end, buildStatic, stride = 1) {
+  integrate(packet, fixed, first, end, buildStatic, stride = 1, staticOnly = false) {
     const started = performance.now();
     this.start(packet);
     const np = packet.length / 120,
@@ -111,7 +111,7 @@ export class BeamWorkspace {
       return this.bytes.slice(this.links, this.links + 24 * used);
     };
     const stationary = buildStatic ? run(fixed, 0) : null;
-    const change = run(np, 1);
+    const change = staticOnly ? null : run(np, 1);
     return {
       stationary,
       change,
@@ -238,7 +238,7 @@ export function instanceSweep(instance) {
     base,
     lastModes,
     lastTransfer;
-  return (modes, near, pool) => {
+  return (modes, near, pool, surface) => {
     if (lastTransfer && lastModes.length === modes.length && modes.every((m, i) => m === lastModes[i])) {
       return { ...lastTransfer, workerMs: 0, assemblyMs: 0 };
     }
@@ -271,6 +271,17 @@ export function instanceSweep(instance) {
       result.workerMs = Math.max(...parts.map((p) => p.kernelMs));
       result.workerBytes = pool ? parts.reduce((s, p) => s + p.workingBytes, 0) : 0;
       return result;
+    }
+    if (surface?.packet && pool)
+      return pool.integrate(packet, fixed.length, changed, surface.packet).then(finish);
+    if (surface) {
+      const started = performance.now();
+      const stationary = changed
+        ? core.integrate(packet, fixed.length, 0, directionCount, true, 1, true).stationary
+        : null;
+      return finish([
+        { stationary, change: surface.change, kernelMs: performance.now() - started, workingBytes: 0 },
+      ]);
     }
     if (pool) return pool.integrate(packet, fixed.length, changed).then(finish);
     return finish([core.integrate(packet, fixed.length, 0, directionCount, changed)]);

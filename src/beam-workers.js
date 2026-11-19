@@ -14,7 +14,7 @@ export class BeamWorkers {
       throw error;
     }
   }
-  integrate(packet, fixed, changed) {
+  integrate(packet, fixed, changed, surface) {
     return Promise.all(
       this.workers.map(
         (worker, i) =>
@@ -34,6 +34,7 @@ export class BeamWorkers {
               packet,
               fixed,
               changed,
+              surface,
               first: i,
               end: directionCount,
               stride: this.workers.length,
