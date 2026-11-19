@@ -277,6 +277,7 @@ export class CpuView {
         row += rows;
       }
     }
+    this.contactDraws = this.contactBackend?.beginChart ? new Map() : null;
     this.pendingCharts = charts;
     this.chartMs = 0;
     this.atlasChanged = false;
@@ -334,7 +335,7 @@ export class CpuView {
   // Reuse the last drawn receivers as a visibility hint while the transport
   // workers run. A newly visible chart still compiles against this exact pose.
   prepareContactGeometry(geometry) {
-    if (!this.contacts?.size || this.contactBackend) return;
+    if (!this.contacts?.size || (this.contactBackend && !this.contactBackend.beginChart)) return;
     const prepared = new Map();
     for (const [grid, contact] of this.contacts) {
       if (this.pendingCharts.has(grid) || !geometry.contacts.includes(contact.feature)) continue;
@@ -351,6 +352,7 @@ export class CpuView {
           rows,
           this.filters.get(grid),
           contact.stationary,
+          this.contactBackend,
         ),
       );
     }
@@ -438,7 +440,8 @@ export class CpuView {
         );
       }
       this.contacts.set(grid, contact);
-      drawContact(contact, filter, solution, tex, chartBase);
+      if (contact.resident) this.contactDraws.set(grid, { contact, filter });
+      else drawContact(contact, filter, solution, tex, chartBase);
     }
     this.chartMs += performance.now() - start;
     this.pendingCharts.delete(grid);

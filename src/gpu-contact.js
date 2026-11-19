@@ -2,16 +2,12 @@
 // source polygon to an azimuth sector and integrates both elevation bands.
 import { dot, point, sub } from './cpu-geometry.js';
 
-const vertexLimit = 16,
-  width = 256;
-const vertex = `#version 300 es
-precision highp float;
-precision highp int;
-layout(location = 0) in ivec2 range;
+export const contactVertexLimit = 16,
+  contactTextureWidth = 256;
+export const contactKernel = `
 uniform highp sampler2D positions;
 uniform vec3 lower[8], upper[8], elevation[8];
-out vec4 integral;
-const int limit = ${vertexLimit};
+const int limit = ${contactVertexLimit};
 void cut(in vec4 a[limit], int n, vec3 axis, out vec4 b[limit], out int count) {
   count = 0;
   if (n == 0)
@@ -57,36 +53,64 @@ vec2 integratePart(in vec4 b[limit], int n) {
   float w = abs(sum + edge(prev, first)) / 6.283185307179586;
   return w > 1e-10 ? vec2(w, w * moment / float(n)) : vec2(0);
 }
-void main() {
-  gl_Position = vec4(0, 0, 0, 1);
-  gl_PointSize = 1.;
-  integral = vec4(0);
+vec4 sectorIntegral(int k, ivec2 range) {
   vec4 a[limit], b[limit];
-  int k = gl_VertexID, n, m;
+  int n, m;
   vec3 lo = lower[k], hi = upper[k];
   float maxLo = -1e30, maxHi = -1e30;
   for (int i = 0; i < range.y; i++) {
     int t = range.x + i;
-    vec4 q = texelFetch(positions, ivec2(t % ${width}, t / ${width}), 0);
+    vec4 q = texelFetch(positions, ivec2(t % ${contactTextureWidth}, t / ${contactTextureWidth}), 0);
     a[i] = q;
     maxLo = max(maxLo, dot(q.xyz, lo));
     maxHi = max(maxHi, dot(q.xyz, hi));
   }
   if (min(maxLo, maxHi) < 0.)
-    return;
+    return vec4(0);
   cut(a, range.y, lo, b, n);
   if (n < 3)
-    return;
+    return vec4(0);
   cut(b, n, hi, a, m);
   if (m < 3)
-    return;
+    return vec4(0);
   cut(a, m, -elevation[k], b, n);
-  integral.xy = integratePart(b, n);
+  vec2 low = integratePart(b, n);
   cut(a, m, elevation[k], b, n);
-  integral.zw = integratePart(b, n);
+  return vec4(low, integratePart(b, n));
+}`;
+const vertex = `#version 300 es
+precision highp float;
+precision highp int;
+layout(location = 0) in ivec2 range;
+out vec4 integral;
+${contactKernel}
+void main() {
+  gl_Position = vec4(0, 0, 0, 1);
+  gl_PointSize = 1.;
+  integral = sectorIntegral(gl_VertexID, range);
 }`;
 const fragment = `#version 300 es
 precision highp float;out vec4 color;void main(){color=vec4(0);}`;
+
+export function setContactPlanes(gl, program) {
+  const lower = [],
+    upper = [],
+    elevation = [];
+  for (let k = 0; k < 8; k++) {
+    const mid = (k * Math.PI) / 4,
+      a = mid - Math.PI / 8,
+      b = mid + Math.PI / 8;
+    lower.push(-Math.sin(a), Math.cos(a), 0);
+    upper.push(Math.sin(b), -Math.cos(b), 0);
+    elevation.push(-Math.cos(mid), -Math.sin(mid), 1);
+  }
+  for (const [name, data] of [
+    ['lower', lower],
+    ['upper', upper],
+    ['elevation', elevation],
+  ])
+    gl.uniform3fv(gl.getUniformLocation(program, name + '[0]'), data);
+}
 
 export class GpuContactIntegrals {
   constructor(renderer) {
@@ -120,23 +144,7 @@ export class GpuContactIntegrals {
     }
     gl.useProgram(program);
     gl.uniform1i(gl.getUniformLocation(program, 'positions'), 1);
-    const lower = [],
-      upper = [],
-      elevation = [];
-    for (let k = 0; k < 8; k++) {
-      const mid = (k * Math.PI) / 4,
-        a = mid - Math.PI / 8,
-        b = mid + Math.PI / 8;
-      lower.push(-Math.sin(a), Math.cos(a), 0);
-      upper.push(Math.sin(b), -Math.cos(b), 0);
-      elevation.push(-Math.cos(mid), -Math.sin(mid), 1);
-    }
-    for (const [name, data] of [
-      ['lower', lower],
-      ['upper', upper],
-      ['elevation', elevation],
-    ])
-      gl.uniform3fv(gl.getUniformLocation(program, name + '[0]'), data);
+    setContactPlanes(gl, program);
     this.vao = gl.createVertexArray();
     this.ranges = gl.createBuffer();
     this.output = gl.createBuffer();
@@ -158,7 +166,7 @@ export class GpuContactIntegrals {
   }
   enqueue(mode, side, eye, polygon, feature, emit) {
     // A convex polygon gains at most one vertex per clipping plane.
-    if (polygon.uv.length + 3 > vertexLimit) {
+    if (polygon.uv.length + 3 > contactVertexLimit) {
       this.stats.fallback++;
       return false;
     }
@@ -174,12 +182,16 @@ export class GpuContactIntegrals {
       while (begin < jobs.length) {
         let end = begin,
           count = 0;
-        while (end < jobs.length && count + jobs[end].polygon.uv.length <= width * this.maxHeight)
+        while (
+          end < jobs.length &&
+          count + jobs[end].polygon.uv.length <= contactTextureWidth * this.maxHeight
+        )
           count += jobs[end++].polygon.uv.length;
         const start = performance.now(),
           n = end - begin,
-          h = Math.ceil(count / width);
-        if (!this.packed || this.packed.length < h * width * 4) this.packed = new Float32Array(h * width * 4);
+          h = Math.ceil(count / contactTextureWidth);
+        if (!this.packed || this.packed.length < h * contactTextureWidth * 4)
+          this.packed = new Float32Array(h * contactTextureWidth * 4);
         if (!this.indices || this.indices.length < n * 2) {
           this.indices = new Int32Array(n * 2);
           this.values = new Float32Array(n * 32);
@@ -207,9 +219,9 @@ export class GpuContactIntegrals {
         gl.activeTexture(gl.TEXTURE1);
         if (!this.textureHeight || this.textureHeight < h) {
           this.textureHeight = h;
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, h, 0, gl.RGBA, gl.FLOAT, null);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, contactTextureWidth, h, 0, gl.RGBA, gl.FLOAT, null);
         }
-        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, h, gl.RGBA, gl.FLOAT, this.packed);
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, contactTextureWidth, h, gl.RGBA, gl.FLOAT, this.packed);
         gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, this.feedback);
         gl.bindBuffer(gl.TRANSFORM_FEEDBACK_BUFFER, this.output);
         if (!this.outputBytes || this.outputBytes < n * 128) {

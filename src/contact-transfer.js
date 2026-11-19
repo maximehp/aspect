@@ -87,7 +87,7 @@ function projectedArea(poly, p, n) {
   }
   return count < 3 ? 0 : Math.abs(sum) / (2 * Math.PI);
 }
-const azimuthCount = 8,
+export const azimuthCount = 8,
   sectorCount = 2 * azimuthCount,
   areaSteps = 6;
 const halfSector = Math.PI / azimuthCount;
@@ -212,6 +212,8 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
       }
     }
   }
+  const batch = backend?.beginChart?.(feature, width, rows);
+  const readback = backend && !backend.beginChart;
   function stencil(site, emit) {
     const p = site.p;
     if (!site.samples) {
@@ -245,10 +247,15 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
       if (cuts.length) {
         const visible = partitionReceiver(cuts, lit);
         if (visible.length !== lit.length || visible.some((c, i) => !c.lit || c.uv !== lit[i].uv)) {
-          if (!backend) integrate(m, side, p, visible, emit);
+          if (!batch && !readback) integrate(m, side, p, visible, emit);
           else
             for (const poly of visible) {
-              if (poly.lit && !backend.enqueue(m, side, p, poly, feature, emit))
+              if (
+                poly.lit &&
+                !(batch
+                  ? batch.enqueue(m, side, site, poly)
+                  : backend.enqueue(m, side, p, poly, feature, emit))
+              )
                 integrate(m, side, p, [poly], emit);
             }
           continue;
@@ -300,7 +307,7 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
       slopeOpen[i] = Math.max(-cellOpen[i], Math.min(cellOpen[i], slopeOpen[i]));
     }
   }
-  if (!backend) limitOpen();
+  if (!batch && !readback) limitOpen();
   const { terms, weights, linearWeights, indices } = filter;
   const sites = [],
     sides = [],
@@ -308,7 +315,8 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
     localSlope = [],
     ends = [],
     gains = [],
-    strength = [];
+    strength = [],
+    openings = [];
   function finishSite(site, fade, open, local) {
     for (const [side, [w, m]] of local) {
       sides.push(side);
@@ -318,6 +326,10 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
     sites.push(site);
     strength.push(fade);
     ends.push(sides.length);
+    if (batch) {
+      openings.push(...open);
+      return;
+    }
     for (let d = 0; d < sectorCount; d++) {
       let mass = 0;
       for (let t = site * terms; t < (site + 1) * terms; t++) {
@@ -342,16 +354,17 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
       pair[1] += m;
       local.set(side, pair);
     });
-    if (backend) deferred.push([site, fade, open, local]);
+    if (readback) deferred.push([site, fade, open, local]);
     else finishSite(site, fade, open, local);
   }
-  if (backend) {
+  if (readback) {
     backend.flush();
     limitOpen();
     for (const args of deferred) finishSite(...args);
   }
   return {
     feature,
+    resident: batch?.finish(cellOpen, slopeOpen, sites, openings),
     stationary,
     domain,
     moving,

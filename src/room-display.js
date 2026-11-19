@@ -110,6 +110,12 @@ export class LiveRenderer {
   }
   prepareScene(scene) {
     const calculate = async () => {
+      // A new pose can spend tens of milliseconds on CPU geometry before the
+      // first worker wait. Let the browser commit the preceding draw first.
+      if (this.drawAwaitingCommit) {
+        this.drawAwaitingCommit = false;
+        if (globalThis.scheduler?.yield) await globalThis.scheduler.yield();
+      }
       if (this.disposed) throw Error('Renderer disposed.');
       if (typeof Worker === 'undefined' || this.serial) return this.math.update(scene);
       try {
@@ -168,6 +174,7 @@ export class LiveRenderer {
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    this.drawAwaitingCommit = true;
     if (intensity === 0) return;
     const projection = cameraMatrix(camera, w / h);
     const maskChanged = this.view.updateCameraMask(projection);
@@ -194,6 +201,7 @@ export class LiveRenderer {
         } else {
           gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, atlas.width, atlas.height, gl.RGBA, gl.FLOAT, atlas.tex);
         }
+        if (this.view.contactDraws?.size) this.view.contactBackend.paint(this.view);
         this.view.atlasChanged = false;
       }
       gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);

@@ -37,7 +37,10 @@ run.addEventListener('click', async () => {
     await nextFrame();
     const started = performance.now();
     renderer = new LiveRenderer(document.querySelector('#room'));
-    if (integrator.value === 'gpu') {
+    if (integrator.value === 'resident') {
+      const { ResidentContacts } = await import('./resident-contacts.js');
+      backend = renderer.view.contactBackend = new ResidentContacts(renderer);
+    } else if (integrator.value === 'gpu') {
       const { GpuContactIntegrals } = await import('./gpu-contact.js');
       backend = renderer.view.contactBackend = new GpuContactIntegrals(renderer);
     }
@@ -96,6 +99,7 @@ run.addEventListener('click', async () => {
     report('Median frame work', ms((times[ticks / 2 - 1] + times[ticks / 2]) / 2));
     report('95th percentile frame work', ms(times[Math.ceil(ticks * 0.95) - 1]));
     report('Worst frame work', ms(times.at(-1)));
+    report('Frames within 1 ms of work', times.filter((t) => t <= 1).length + ' / ' + ticks);
     report('Frames over 16.7 ms of work', times.filter((t) => t > deadline).length + ' / ' + ticks);
     report('First pose', ms(cold));
     // Means add to the complete mean. The nested exchange timings overlap.
@@ -107,10 +111,22 @@ run.addEventListener('click', async () => {
         'GPU integrals per moving frame',
         Math.round((16 * (s.polygons - initialStats.polygons)) / ticks).toLocaleString(),
       );
-      report('Packing per frame', ms((s.packMs - initialStats.packMs) / ticks));
-      report('GPU submission through readback', ms((s.dispatchReadMs - initialStats.dispatchReadMs) / ticks));
-      report('Result reduction per frame', ms((s.reduceMs - initialStats.reduceMs) / ticks));
-      report('Oversized polygons integrated on CPU', String(s.fallback - initialStats.fallback));
+      if (backend.beginChart) {
+        report(
+          'Contact uploads per moving frame',
+          ((s.uploadBytes - initialStats.uploadBytes) / ticks / 1024).toFixed(0) + ' KiB',
+        );
+        report('Peak contact texture and buffer payload', (s.peakBytes / 1048576).toFixed(2) + ' MiB');
+        report('Oversized charts using CPU fallback', String(s.fallbackCharts - initialStats.fallbackCharts));
+      } else {
+        report('Packing per frame', ms((s.packMs - initialStats.packMs) / ticks));
+        report(
+          'GPU submission through readback',
+          ms((s.dispatchReadMs - initialStats.dispatchReadMs) / ticks),
+        );
+        report('Result reduction per frame', ms((s.reduceMs - initialStats.reduceMs) / ticks));
+      }
+      report('Changed polygons using CPU fallback', String(s.fallback - initialStats.fallback));
     }
     // A real-time game clock also advances while rendering. Draw the newest
     // due tick and count the intermediate poses the player never sees.
