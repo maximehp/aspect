@@ -1,0 +1,44 @@
+* { box-sizing:border-box }
+:root { font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:#ede8dd; background:#1b1d1b; font-size:15px; --muted:#bbbcb2; --line:#43453f; --accent:#e7ae83 }
+body { max-width:1800px; margin:auto; padding:0 clamp(16px,3.5vw,68px) 32px }
+header { height:72px; display:flex; align-items:center; gap:18px; border-bottom:1px solid var(--line) }
+header strong { font-size:.95rem; letter-spacing:.01em }
+header span, .navigation span, small { color:var(--muted); font-size:.86rem }
+header span { padding-left:18px; border-left:1px solid var(--line) }
+main { display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:clamp(18px,3vw,48px); padding-top:30px }
+.stage { min-width:0 }
+.stage-head,.navigation,label,dl div { display:flex; align-items:center; justify-content:space-between; gap:.5rem }
+.stage-head { margin:0 0 16px }
+#pending { margin-left:auto; color:var(--muted); font-size:.85rem }
+h1 { margin:0; font:normal clamp(36px,4.8vw,74px)/1.05 'Instrument Serif',Georgia,serif; letter-spacing:-.055em }
+#dimensions,output,dd { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.81rem; font-variant-numeric:tabular-nums }
+#dimensions { color:var(--muted); align-self:flex-end; padding-bottom:5px }
+.frame { aspect-ratio:16/9; background:#30322e; border:1px solid #4a4c44; overflow:hidden }
+canvas { display:block; width:100%; height:100%; cursor:grab; touch-action:none }
+canvas:active { cursor:grabbing }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px }
+canvas:focus-visible { outline-offset:-3px }
+.navigation { margin-top:12px }
+button,select { font:inherit; color:inherit; background:#252823; border:1px solid #54574d; border-radius:4px; padding:7px 11px }
+button { cursor:pointer; font-size:.85rem }
+button:hover,select:hover { border-color:var(--accent) }
+aside { border-left:1px solid var(--line); padding-left:24px }
+h2 { font-size:1rem; font-weight:600; margin:8px 0 20px }
+h2:not(:first-child) { margin-top:24px; padding-top:20px; border-top:1px solid var(--line) }
+label { font-size:.9rem }
+label output { color:var(--accent) }
+input[type=range] { width:100%; margin:10px 0 18px; accent-color:var(--accent); cursor:pointer }
+.check { justify-content:flex-start; gap:8px; margin:0 0 16px; cursor:pointer }
+input[type=checkbox] { accent-color:var(--accent); margin:0; width:16px; height:16px }
+select { width:100%; margin-top:7px; font-size:.88rem }
+select + label { margin-top:14px }
+dl { margin:15px 0 }
+dl div { padding:4px 0 }
+dt { color:var(--muted); font-size:.85rem }
+dd { margin:0 }
+small { display:block; line-height:1.45; font-size:.77rem }
+.touch-controls { display:none; gap:8px; margin-top:12px }
+.touch-controls button { touch-action:none; min-width:44px; min-height:44px }
+#problem { color:#ffc2a7 }
+@media (max-width:890px) { main { grid-template-columns:1fr } aside { border-left:0; padding-left:0; max-width:480px } }
+@media (pointer:coarse) { .touch-controls { display:flex } }

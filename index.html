@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Room study · 3D vector engine</title>
+<link rel="stylesheet" href="./room.css">
+</head>
+<body>
+<header><strong>3D vector engine</strong><span>Diffuse global illumination</span></header>
+<main>
+  <section class="stage">
+    <div class="stage-head"><h1>Room study</h1><output id="dimensions" aria-label="Frame resolution"></output></div>
+    <div class="frame"><canvas id="room" tabindex="0" aria-label="Walkable studio. Drag to look and use W A S D to move."></canvas></div>
+    <p id="problem" role="alert" hidden></p>
+    <div class="navigation"><span>Drag to look · WASD to walk</span><button id="reset-camera" type="button">Reset view</button></div>
+    <div class="touch-controls" aria-label="Walk"><button data-move="KeyA" aria-label="Step left">←</button><button data-move="KeyW" aria-label="Step forward">↑</button><button data-move="KeyS" aria-label="Step back">↓</button><button data-move="KeyD" aria-label="Step right">→</button></div>
+  </section>
+  <aside>
+    <h2>Room controls</h2>
+    <label for="lamp">Lamp intensity <output id="lamp-value" for="lamp">100%</output></label>
+    <input type="range" id="lamp" min="0" max="160" value="100">
+    <label for="angle">Blind angle <output id="angle-value" for="angle">24°</output></label>
+    <input type="range" id="angle" min="-85" max="85" value="24">
+    <label class="check"><input type="checkbox" id="second"> Second blind</label>
+    <div id="second-controls" hidden>
+      <label for="angle2">Second angle <output id="angle2-value" for="angle2">−17°</output></label>
+      <input type="range" id="angle2" min="-85" max="85" value="-17">
+    </div>
+    <label for="layout">Arrangement</label>
+    <select id="layout"><option value="studio">Studio</option><option value="alternate">Rearranged studio</option></select>
+    <label for="floor">Floor material</label>
+    <select id="floor"><option value="limestone">Limestone</option><option value="red">Red tile</option><option value="blue">Cobalt tile</option></select>
+    <h2>Rendering</h2>
+    <label for="lighting">Lighting</label>
+    <select id="lighting"><option value="total">Direct + reflected</option><option value="direct">Direct only</option><option value="indirect">Reflected only</option></select>
+    <label for="resolution">Output</label>
+    <select id="resolution"><option value="native">Fit viewport</option><option value="1080">1920 × 1080</option><option value="2160">3840 × 2160</option></select>
+    <dl><div><dt>Scene revisions shown</dt><dd id="builds">—</dd></div><div><dt>Reflection samples</dt><dd id="samples">—</dd></div><div><dt>Scene update</dt><dd id="update-time">—</dd></div><div><dt>Finished frame</dt><dd id="frame-time">—</dd></div><div><dt>Last edit to frame</dt><dd id="edit-time">—</dd></div></dl>
+    <label class="check"><input type="checkbox" id="measure"> Time GPU completion</label>
+    <small>GPU timing includes synchronous readback. Edit time starts at the input event and excludes display refresh.</small>
+  </aside>
+</main>
+<script type="module" src="./src/app.js"></script>
+</body></html>
