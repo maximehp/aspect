@@ -83,8 +83,7 @@ export function broadFaces(b) {
 }
 // The support of a rounded box is the maximum over the eight spherical
 // corners. Support planes bound the perspective silhouette in angular space.
-export function volume(shape, eye) {
-  if (!shape.axes) return shadowVolume(shape, eye);
+function roundedProjection(shape, eye) {
   const rel = sub(shape.center, eye),
     core = shape.halfSize.map((h) => h - shape.radius);
   const closest = rel.slice();
@@ -97,6 +96,54 @@ export function volume(shape, eye) {
   const z = unit(closest),
     x = unit(cross(z, Math.abs(z[0]) < 0.8 ? [1, 0, 0] : [0, 1, 0])),
     y = cross(z, x);
+  return { rel, core, distance, z, x, y };
+}
+
+// Four of the full silhouette's uniformly spaced tangent directions are ±x
+// and ±y in this frame. Bounds on transverse position and positive depth
+// enclose all four slopes. Rejecting a receiver outside this wider cone
+// avoids constructing the remaining support planes at that integration site.
+export function shadowBounds(shape, eye) {
+  const basis = roundedProjection(shape, eye);
+  if (!basis) return null;
+  const { rel, core, distance, x, y, z } = basis;
+  const extent = (axis) =>
+    shape.radius + core.reduce((a, h, i) => a + h * Math.abs(dot(axis, shape.axes[i])), 0);
+  const near = distance - shape.radius,
+    far = dot(z, rel) + extent(z);
+  const planes = [z];
+  for (const axis of [x, y]) {
+    const c = dot(rel, axis),
+      r = extent(axis),
+      lo = c - r,
+      hi = c + r;
+    const left = lo / (lo < 0 ? near : far),
+      right = hi / (hi > 0 ? near : far);
+    planes.push(
+      axis.map((v, k) => v - left * z[k]),
+      axis.map((v, k) => right * z[k] - v),
+    );
+  }
+  const tolerance = planes.map((n) => 1e-9 * (1 + Math.hypot(...n)));
+  return { basis, planes, near, eye, tolerance };
+}
+export function canShadow(rect, bounds) {
+  if (!bounds) return false;
+  const delta = sub(rect.center, bounds.eye);
+  for (let i = 0; i < bounds.planes.length; i++) {
+    const n = bounds.planes[i],
+      a = dot(n, delta),
+      b = Math.abs(dot(n, rect.axisU)) + Math.abs(dot(n, rect.axisV)),
+      h = i ? 0 : bounds.near;
+    if (a + b < h - (bounds.tolerance[i] + 1e-9 * (Math.abs(a) + b + h))) return false;
+  }
+  return true;
+}
+export function volume(shape, eye, projection) {
+  if (!shape.axes) return shadowVolume(shape, eye);
+  const basis = projection || roundedProjection(shape, eye);
+  if (!basis) return null;
+  const { rel, core, distance, z, x, y } = basis;
   const planes = [{ normal: z, origin: eye.map((v, k) => v + (distance - shape.radius) * z[k]) }];
   const corners = Array.from({ length: 8 }, (_, i) =>
     rel.map((v, k) => v + shape.axes.reduce((s, ax, j) => s + ((i >> j) & 1 ? 1 : -1) * ax[k] * core[j], 0)),
@@ -123,13 +170,30 @@ export function volume(shape, eye) {
   }
   return planes;
 }
-export function regions(rect, blockers, initial) {
+export function regions(rect, blockers, initial, previous) {
   if (initial && !initial.some((c) => c.lit)) return initial;
   const footprints = [];
+  const pairs = previous?.pairs;
   for (const [shape, planes] of blockers) {
-    if (shape === rect || shape === rect.owner) continue;
-    const poly = projectedFootprint(rect, planes);
+    if (!planes || shape === rect || shape === rect.owner) continue;
+    let poly = pairs?.get(planes);
+    if (poly === undefined) {
+      poly = projectedFootprint(rect, planes);
+      pairs?.set(planes, poly);
+    }
     if (poly) footprints.push(poly);
   }
-  return initial && !footprints.length ? initial : partitionReceiver(footprints, initial);
+  if (initial && !footprints.length) return initial;
+  // The original operand order matters at coincident boundaries. A receiver
+  // reuses its partition only when the ordered nonempty footprints agree.
+  if (
+    previous?.cells &&
+    previous.initial === initial &&
+    previous.footprints.length === footprints.length &&
+    footprints.every((poly, i) => poly === previous.footprints[i])
+  )
+    return previous.cells;
+  const cells = partitionReceiver(footprints, initial);
+  if (previous) Object.assign(previous, { initial, footprints, cells });
+  return cells;
 }

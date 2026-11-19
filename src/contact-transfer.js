@@ -1,7 +1,8 @@
 // The last diffuse transfer near a sheet that touches a receiver. Integrate
 // the cosine-weighted solid angle of visible polygons; their radiance comes
 // from the same equilibrium as the surrounding surface.
-import { cross, dot, point, regions, sub, unit, volume } from './cpu-geometry.js';
+import { canShadow, cross, dot, point, regions, shadowBounds, sub, unit, volume } from './cpu-geometry.js';
+import { projectedFootprint, partitionReceiver } from './visibility.js';
 import { chartPoint } from './irradiance-layout.js';
 
 const corners = [
@@ -121,7 +122,7 @@ function clip(poly, p, axis) {
   }
   return out;
 }
-export function compileContact(grid, feature, solution, width, rows, filter) {
+export function compileContact(grid, feature, solution, width, rows, filter, stationary = [], backend) {
   const { receiver, contacts, supports, sheets, u, v } = feature;
   const planes = Array.from({ length: azimuthCount }, (_, i) => {
     const angle = (2 * Math.PI * (i - 0.5)) / azimuthCount;
@@ -145,43 +146,79 @@ export function compileContact(grid, feature, solution, width, rows, filter) {
   const domain = feature.domain;
   const blockers = sheets.filter((r) => r !== receiver && overlaps(domain, bounds(vertices(r))));
   const moving = contactMoving(domain, solution.boxes);
-  const blockShapes = [...blockers, ...moving];
+  let nextSite = 0;
   function influence(p) {
     const proximity = Math.min(...contacts.map((c) => distanceToEdge(p, c.foot) / c.height));
     const t = Math.max(0, Math.min(1, (3 - proximity) / 2));
     return t * t * (3 - 2 * t);
   }
-  function stencil(p) {
-    if (!influence(p)) return [];
-    const shadows = blockShapes.map((s) => [s, volume(s, p)]);
-    const list = [];
-    for (const { m, j } of contactModes) {
-      const d = sub(p, m.center),
-        plane = dot(d, m.normal);
-      if (Math.abs(plane) < 1e-8) continue;
-      const side = 2 * j + Number(plane < 0);
-      // regions excludes the source plane through the mode's owner.
-      const silhouette = regions(m, shadows);
-      for (const polygon of silhouette) {
-        if (!polygon.lit) continue;
-        const ps = polygon.uv.map(([u, v]) => point(m, u, v));
-        for (let k = 0; k < azimuthCount; k++) {
-          let poly = clip(ps, p, planes[k]);
-          if (poly.length < 3) continue;
-          poly = clip(poly, p, farPlanes[k]);
-          if (poly.length < 3) continue;
-          for (let band = 0; band < 2; band++) {
-            const part = clip(poly, p, band ? elevationPlanes[k] : lowerPlanes[k]);
-            if (part.length < 3) continue;
-            const w = projectedArea(part, p, grid.n);
-            if (w <= 1e-10) continue;
-            const centroid = part.reduce((s, q) => s + dot(sub(q, m.center), m.momentAxis), 0) / part.length;
-            list.push([side, w, w * centroid, k + band * azimuthCount]);
-          }
+  // The visible stationary portions and their angular integrals depend only on
+  // the receiver site and the fixed sheets. A solid can only subtract from
+  // those portions. Apply its shadow after the fixed blockers, in scene order.
+  function integrate(m, side, p, silhouette, emit) {
+    for (const polygon of silhouette) {
+      if (!polygon.lit) continue;
+      const ps = polygon.uv.map(([u, v]) => point(m, u, v));
+      for (let k = 0; k < azimuthCount; k++) {
+        let poly = clip(ps, p, planes[k]);
+        if (poly.length < 3) continue;
+        poly = clip(poly, p, farPlanes[k]);
+        if (poly.length < 3) continue;
+        for (let band = 0; band < 2; band++) {
+          const part = clip(poly, p, band ? elevationPlanes[k] : lowerPlanes[k]);
+          if (part.length < 3) continue;
+          const w = projectedArea(part, p, grid.n);
+          if (w <= 1e-10) continue;
+          const centroid = part.reduce((s, q) => s + dot(sub(q, m.center), m.momentAxis), 0) / part.length;
+          emit(side, w, w * centroid, k + band * azimuthCount);
         }
       }
     }
-    return list;
+  }
+  function stencil(p, emit) {
+    const site = nextSite++;
+    let stored = stationary[site];
+    if (!stored) {
+      const samples = [],
+        integrals = [];
+      const shadows = blockers.map((s) => [s, volume(s, p)]);
+      for (const { m, j } of contactModes) {
+        const plane = dot(sub(p, m.center), m.normal);
+        if (Math.abs(plane) < 1e-8) continue;
+        const side = 2 * j + Number(plane < 0);
+        const lit = regions(m, shadows).filter((poly) => poly.lit);
+        if (!lit.length) continue;
+        const start = integrals.length;
+        integrate(m, side, p, lit, (_, w, moment, bin) => integrals.push(w, moment, bin));
+        samples.push({ m, side, lit, start, end: integrals.length });
+      }
+      stored = stationary[site] = { samples, integrals: Float64Array.from(integrals) };
+    }
+    const { samples, integrals } = stored;
+    if (!samples.length) return;
+    const shadows = moving.map((shape) => ({ shape, bounds: shadowBounds(shape, p) }));
+    for (const { m, side, lit, start, end } of samples) {
+      const cuts = [];
+      for (const shadow of shadows) {
+        if (!canShadow(m, shadow.bounds)) continue;
+        shadow.planes ??= volume(shadow.shape, p, shadow.bounds.basis);
+        const polygon = projectedFootprint(m, shadow.planes);
+        if (polygon) cuts.push(polygon);
+      }
+      if (cuts.length) {
+        const visible = partitionReceiver(cuts, lit);
+        if (visible.length !== lit.length || visible.some((c, i) => !c.lit || c.uv !== lit[i].uv)) {
+          if (!backend) integrate(m, side, p, visible, emit);
+          else
+            for (const poly of visible) {
+              if (poly.lit && !backend.enqueue(m, side, p, poly, feature, emit))
+                integrate(m, side, p, [poly], emit);
+            }
+          continue;
+        }
+      }
+      for (let i = start; i < end; i += 3) emit(side, integrals[i], integrals[i + 1], integrals[i + 2]);
+    }
   }
   // The amount of background visible in each angular bin is averaged over
   // each transport element. Compare this with the opening at the display site.
@@ -198,18 +235,22 @@ export function compileContact(grid, feature, solution, width, rows, filter) {
     for (let y = 0; y < areaSteps; y++)
       for (let x = 0; x < areaSteps; x++) {
         const p = point(m, (2 * x + 1) / areaSteps - 1, (2 * y + 1) / areaSteps - 1);
+        if (!influence(p)) continue;
         const pos = dot(sub(p, m.center), m.momentAxis);
-        for (const [, w, , d] of stencil(p)) {
+        stencil(p, (_, w, moment, d) => {
           const i = j * sectorCount + d;
           cellOpen[i] -= w / (areaSteps * areaSteps);
           slopeOpen[i] -= (3 * pos * w) / (areaSteps * areaSteps);
-        }
+        });
       }
   }
-  for (let i = 0; i < cellOpen.length; i++) {
-    cellOpen[i] = Math.max(0, cellOpen[i]);
-    slopeOpen[i] = Math.max(-cellOpen[i], Math.min(cellOpen[i], slopeOpen[i]));
+  function limitOpen() {
+    for (let i = 0; i < cellOpen.length; i++) {
+      cellOpen[i] = Math.max(0, cellOpen[i]);
+      slopeOpen[i] = Math.max(-cellOpen[i], Math.min(cellOpen[i], slopeOpen[i]));
+    }
   }
+  if (!backend) limitOpen();
   const { terms, weights, linearWeights, indices } = filter;
   const sites = [],
     sides = [],
@@ -218,6 +259,26 @@ export function compileContact(grid, feature, solution, width, rows, filter) {
     ends = [],
     gains = [],
     strength = [];
+  function finishSite(site, fade, open, local) {
+    for (const [side, [w, m]] of local) {
+      sides.push(side);
+      localMean.push(w);
+      localSlope.push(m);
+    }
+    sites.push(site);
+    strength.push(fade);
+    ends.push(sides.length);
+    for (let d = 0; d < sectorCount; d++) {
+      let mass = 0;
+      for (let t = site * terms; t < (site + 1) * terms; t++) {
+        const k = indices[t] * sectorCount + d;
+        mass += weights[t] * cellOpen[k] + linearWeights[t] * slopeOpen[k];
+      }
+      // A bin smaller than one cell quadrature contribution is unresolved.
+      gains.push(Math.max(0, open[d]) / Math.max(1 / (sectorCount * areaSteps * areaSteps), mass));
+    }
+  }
+  const deferred = [];
   for (let j = 0; j < rows; j++)
     for (let i = 0; i < width; i++) {
       const p = chartPoint(grid, i / (width - 1), j / (rows - 1)),
@@ -226,33 +287,24 @@ export function compileContact(grid, feature, solution, width, rows, filter) {
       const site = j * width + i,
         open = empty.slice(),
         local = new Map();
-      for (const [side, w, m, d] of stencil(p)) {
+      stencil(p, (side, w, m, d) => {
         open[d] -= w;
         const pair = local.get(side) || [0, 0];
         pair[0] += w;
         pair[1] += m;
         local.set(side, pair);
-      }
-      for (const [side, [w, m]] of local) {
-        sides.push(side);
-        localMean.push(w);
-        localSlope.push(m);
-      }
-      sites.push(site);
-      strength.push(fade);
-      ends.push(sides.length);
-      for (let d = 0; d < sectorCount; d++) {
-        let mass = 0;
-        for (let t = site * terms; t < (site + 1) * terms; t++) {
-          const k = indices[t] * sectorCount + d;
-          mass += weights[t] * cellOpen[k] + linearWeights[t] * slopeOpen[k];
-        }
-        // A bin smaller than one cell quadrature contribution is unresolved.
-        gains.push(Math.max(0, open[d]) / Math.max(1 / (sectorCount * areaSteps * areaSteps), mass));
-      }
+      });
+      if (backend) deferred.push([site, fade, open, local]);
+      else finishSite(site, fade, open, local);
     }
+  if (backend) {
+    backend.flush();
+    limitOpen();
+    for (const args of deferred) finishSite(...args);
+  }
   return {
     feature,
+    stationary,
     domain,
     moving,
     sites: Uint32Array.from(sites),

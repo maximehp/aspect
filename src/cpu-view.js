@@ -187,119 +187,96 @@ export class CpuView {
     this.shells = new WeakMap();
     this.vertices = new Float32Array(0);
   }
-  setScene(scene, solution) {
+  // Use the same float projection as WebGL. A conservative world-space box
+  // may keep extra objects at a frustum edge. Include float transform roundoff.
+  updateCameraMask(projection) {
+    const planes = [];
+    for (const row of [0, 1]) {
+      for (const sign of [-1, 1]) {
+        const plane = [];
+        let scale = 0;
+        for (let k = 0; k < 4; k++) {
+          const w = projection[4 * k + 3],
+            v = projection[4 * k + row];
+          plane.push(w + sign * v);
+          scale += Math.abs(w) + Math.abs(v);
+        }
+        plane.push(2e-6 * scale);
+        planes.push(plane);
+      }
+    }
+    let changed = false;
+    for (let i = 0; i < this.bounds.length; i++) {
+      const { center, half, magnitude } = this.bounds[i];
+      const visible = planes.every(
+        ([x, y, z, w, tolerance]) =>
+          x * center[0] +
+            y * center[1] +
+            z * center[2] +
+            w +
+            Math.abs(x) * half[0] +
+            Math.abs(y) * half[1] +
+            Math.abs(z) * half[2] >=
+          -tolerance * magnitude,
+      );
+      if (this.cameraMask[i] !== +visible) changed = true;
+      this.cameraMask[i] = +visible;
+    }
+    return changed;
+  }
+  setScene(scene, solution, visibleOnly = false) {
     this.scene = scene;
     this.solution = solution;
     this.shapes = [...scene.rectangles, ...scene.roundedBoxes];
+    this.cameraMask = new Uint8Array(this.shapes.length);
+    this.bounds = this.shapes.map((s) => {
+      const center = s.center;
+      const half = s.bounds
+        ? center.map((x, k) => Math.max(x - s.bounds.min[k], s.bounds.max[k] - x))
+        : s.axisU.map((u, k) => Math.abs(u) + Math.abs(s.axisV[k]));
+      return { center, half, magnitude: Math.max(1, ...center.map((x, k) => Math.abs(x) + half[k])) };
+    });
     const sheets = planarCharts(scene.rectangles, this.cache, solution.contacts).slots;
     const charts = new Map();
     this.faces = sheets;
-    const modeSources = (r, s) => {
+    const modeSources = (this.modeSources = (r, s) => {
       const { offset, nu, nv } = solution.groups.get(r);
+      const covers = (solution.covers.get(r) || []).filter((h) => h.side === s);
       return solution.modes.slice(offset, offset + nu * nv).map((m, i) => ({
         side: s,
         r: m,
-        covers: (solution.covers.get(r) || []).filter((h) => h.side === s),
+        covers,
         slope: solution.sidedSlopes.subarray(6 * (offset + i) + 3 * s, 6 * (offset + i) + 3 * s + 3),
         rgb: solution.incident.subarray(3 * (2 * (offset + i) + s), 3 * (2 * (offset + i) + s) + 3),
       }));
-    };
+    });
     for (let i = 0; i < sheets.length; i++)
       for (let side = 0; side < 2; side++) {
         const g = sheets[i][side];
         if (!charts.has(g)) charts.set(g, []);
-        charts.get(g).push(...modeSources(scene.rectangles[i], side));
+        charts.get(g).push({ rect: scene.rectangles[i], side });
       }
     const width = 48,
       rows = 24,
-      height = charts.size * rows,
+      height = Math.max(1, charts.size) * rows,
       rgb = [0, 0, 0];
     if (this.prevCharts !== sheets || !this.lamp || scene.lightPosition.some((x, i) => x !== this.lamp[i])) {
       this.prevCharts = sheets;
       this.lamp = scene.lightPosition.slice();
-      this.filters = [];
+      this.filters = new Map();
       this.contacts = new Map();
-      const tex = new Float32Array(width * height * 4);
-      this.atlas = { tex, width, height, rows };
+      this.atlas = { tex: new Float32Array(width * height * 4), width, height, rows };
       let row = 0;
-      for (const [g, sources] of charts) {
+      for (const g of charts.keys()) {
         g.displayRow = row;
-        this.filters.push(chartFilter(g, sources, width, rows, tex, row, scene.lightPosition));
         row += rows;
       }
     }
-    let chart = 0,
-      base = 0;
-    const { tex } = this.atlas;
-    for (const [grid, sources] of charts) {
-      const {
-        side,
-        r: { rect },
-      } = sources[0];
-      const blocks = solution.near.filter((b) => b.receiver === rect && b.side === side);
-      const local =
-        blocks.length === 1 && sources.every((s) => s.r.rect === rect)
-          ? nearField(blocks[0], grid, width, rows, solution)
-          : null;
-      if (local)
-        for (let j = 0; j < sources.length; j++) {
-          sources[j].rgb = local.other.subarray(3 * j, 3 * j + 3);
-          sources[j].slope = local.otherSlope.subarray(3 * j, 3 * j + 3);
-        }
-      const filter = this.filters[chart++],
-        { weights, linearWeights, indices, terms } = filter;
-      const chartBase = base;
-      let k = 0;
-      for (let i = 0; i < width * rows; i++, base += 4) {
-        let r = 0,
-          g = 0,
-          b = 0;
-        for (let j = 0; j < terms; j++) {
-          const source = sources[indices ? indices[k] : j];
-          const m = linearWeights[k],
-            w = weights[k++];
-          r += source.rgb[0] * w + source.slope[0] * m;
-          g += source.rgb[1] * w + source.slope[1] * m;
-          b += source.rgb[2] * w + source.slope[2] * m;
-        }
-        if (local) {
-          const open = local.open[i];
-          // In the cavity the opening varies on the gap scale. At the exposed
-          // side of the edge use the continuous background across the sheet.
-          const mix = local.blend[i];
-          r = open * (r + mix * (local.background[3 * i] - r));
-          g = open * (g + mix * (local.background[3 * i + 1] - g));
-          b = open * (b + mix * (local.background[3 * i + 2] - b));
-          for (let j = 0; j < local.count; j++) {
-            const w = local.weights[i * local.count + j],
-              m = local.gradients[i * local.count + j];
-            r += w * local.emitted[3 * j] + m * local.slopes[3 * j];
-            g += w * local.emitted[3 * j + 1] + m * local.slopes[3 * j + 1];
-            b += w * local.emitted[3 * j + 2] + m * local.slopes[3 * j + 2];
-          }
-        }
-        tex[base] = r;
-        tex[base + 1] = g;
-        tex[base + 2] = b;
-      }
-      const feature =
-        !local && indices && solution.contacts.find((f) => f.receiver === rect && f.side === side);
-      if (feature) {
-        let contact = this.contacts.get(grid);
-        const moving = contact && contactMoving(contact.domain, solution.boxes);
-        if (
-          !contact ||
-          contact.feature !== feature ||
-          moving.length !== contact.moving.length ||
-          moving.some((b, i) => b !== contact.moving[i])
-        ) {
-          contact = compileContact(grid, feature, solution, width, rows, filter);
-          this.contacts.set(grid, contact);
-        }
-        drawContact(contact, filter, solution, tex, chartBase);
-      }
-    }
-    this.solidFaces = scene.roundedBoxes.map((b, i) => {
+    this.pendingCharts = charts;
+    this.atlasChanged = false;
+    if (!visibleOnly) for (const grid of charts.keys()) this.prepareChart(grid);
+    this.solidFaces = new Array(scene.roundedBoxes.length);
+    this.prepareSolid = (b, i) => {
       let faces = this.shells.get(b);
       if (!faces) {
         faces = shell(b);
@@ -337,15 +314,107 @@ export class CpuView {
         };
         return face;
       });
-    });
+    };
     this.shadows = scene.rectangles.map((r) => solution.lampRegions.get(r));
   }
-  drawList(eye) {
+  // The equilibrium includes the entire scene. Only reconstruct a surface-side
+  // texture when a drawable polygon first refers to it in this revision.
+  prepareChart(grid) {
+    const sheets = this.pendingCharts.get(grid);
+    if (!sheets) return;
+    const sources = sheets.flatMap(({ rect, side }) => this.modeSources(rect, side));
+    const { tex, width, rows } = this.atlas;
+    const solution = this.solution;
+    let filter = this.filters.get(grid);
+    if (!filter) {
+      filter = chartFilter(grid, sources, width, rows, tex, grid.displayRow, this.scene.lightPosition);
+      this.filters.set(grid, filter);
+    }
+    const {
+      side,
+      r: { rect },
+    } = sources[0];
+    const blocks = solution.near.filter((b) => b.receiver === rect && b.side === side);
+    const local =
+      blocks.length === 1 && sources.every((s) => s.r.rect === rect)
+        ? nearField(blocks[0], grid, width, rows, solution)
+        : null;
+    if (local)
+      for (let j = 0; j < sources.length; j++) {
+        sources[j].rgb = local.other.subarray(3 * j, 3 * j + 3);
+        sources[j].slope = local.otherSlope.subarray(3 * j, 3 * j + 3);
+      }
+    const { weights, linearWeights, indices, terms } = filter;
+    const chartBase = grid.displayRow * width * 4;
+    let base = chartBase;
+    let k = 0;
+    for (let i = 0; i < width * rows; i++, base += 4) {
+      let r = 0,
+        g = 0,
+        b = 0;
+      for (let j = 0; j < terms; j++) {
+        const source = sources[indices ? indices[k] : j];
+        const m = linearWeights[k],
+          w = weights[k++];
+        r += source.rgb[0] * w + source.slope[0] * m;
+        g += source.rgb[1] * w + source.slope[1] * m;
+        b += source.rgb[2] * w + source.slope[2] * m;
+      }
+      if (local) {
+        const open = local.open[i];
+        // In the cavity the opening varies on the gap scale. At the exposed
+        // side of the edge use the continuous background across the sheet.
+        const mix = local.blend[i];
+        r = open * (r + mix * (local.background[3 * i] - r));
+        g = open * (g + mix * (local.background[3 * i + 1] - g));
+        b = open * (b + mix * (local.background[3 * i + 2] - b));
+        for (let j = 0; j < local.count; j++) {
+          const w = local.weights[i * local.count + j],
+            m = local.gradients[i * local.count + j];
+          r += w * local.emitted[3 * j] + m * local.slopes[3 * j];
+          g += w * local.emitted[3 * j + 1] + m * local.slopes[3 * j + 1];
+          b += w * local.emitted[3 * j + 2] + m * local.slopes[3 * j + 2];
+        }
+      }
+      tex[base] = r;
+      tex[base + 1] = g;
+      tex[base + 2] = b;
+    }
+    const feature =
+      !local && indices && solution.contacts.find((f) => f.receiver === rect && f.side === side);
+    if (feature) {
+      let contact = this.contacts.get(grid);
+      const moving = contact && contactMoving(contact.domain, solution.boxes);
+      if (
+        !contact ||
+        contact.feature !== feature ||
+        moving.length !== contact.moving.length ||
+        moving.some((b, i) => b !== contact.moving[i])
+      ) {
+        contact = compileContact(
+          grid,
+          feature,
+          solution,
+          width,
+          rows,
+          filter,
+          contact?.feature === feature ? contact.stationary : undefined,
+          this.contactBackend,
+        );
+        this.contacts.set(grid, contact);
+      }
+      drawContact(contact, filter, solution, tex, chartBase);
+    }
+    this.pendingCharts.delete(grid);
+    this.atlasChanged = true;
+  }
+  drawList(eye, mask) {
     const order = painter(this.shapes, eye);
     const volumes = order ? null : this.shapes.map((s) => [s, volume(s, eye)]);
     let data = this.vertices,
       length = 0;
-    function fan(poly, vertex) {
+    const { scene, atlas } = this;
+    function fan(poly, color, lit, grid) {
       if (poly.length < 3) return;
       const end = length + 39 * (poly.length - 2);
       if (end > data.length) {
@@ -353,18 +422,41 @@ export class CpuView {
         next.set(data.subarray(0, length));
         data = next;
       }
-      const a = vertex(poly[0]);
-      let b = vertex(poly[1]);
-      for (let i = 2; i < poly.length; i++) {
-        const c = vertex(poly[i]);
-        data.set(a, length);
-        data.set(b, length + 13);
-        data.set(c, length + 26);
-        length += 39;
-        b = c;
+      function write(p) {
+        data[length] = p[0];
+        data[length + 1] = p[1];
+        data[length + 2] = p[2];
+        if (grid) {
+          data[length + 3] =
+            (0.5 + (atlas.width - 1) * chartCoordinate(grid, 0, dot(grid.du, p) + grid.du[3])) / atlas.width;
+          data[length + 4] =
+            (grid.displayRow +
+              0.5 +
+              (atlas.rows - 1) * chartCoordinate(grid, 1, dot(grid.dv, p) + grid.dv[3])) /
+            atlas.height;
+          data.fill(0, length + 8, length + 12);
+        } else {
+          data[length + 3] = -1;
+          data[length + 4] = 0;
+          for (let k = 0; k < 4; k++) data[length + 8 + k] = p[3 + k];
+        }
+        data[length + 5] = color[0];
+        data[length + 6] = color[1];
+        data[length + 7] = color[2];
+        data[length + 12] = lit;
+        length += 13;
+      }
+      const first = length;
+      write(poly[0]);
+      write(poly[1]);
+      write(poly[2]);
+      for (let i = 3; i < poly.length; i++) {
+        data.copyWithin(length, first, first + 13);
+        data.copyWithin(length + 13, length - 13, length);
+        length += 26;
+        write(poly[i]);
       }
     }
-    const { scene, atlas } = this;
     const sheet = (r, i) => {
       const side = Number(dot(sub(eye, r.center), cross(r.axisU, r.axisV)) < 0),
         g = this.faces[i][side];
@@ -372,38 +464,26 @@ export class CpuView {
       for (const v of visible)
         for (const s of this.shadows[i]) {
           const uv = v ? intersect(v.uv, s.uv) : s.uv;
+          if (uv.length < 3) continue;
+          this.prepareChart(g);
           const poly = uv.map(([u, v]) => point(r, u, v));
-          for (const cell of g.coords ? chartPolygons(poly, [g]) : [poly])
-            fan(cell, (p) => {
-              return [
-                ...p,
-                (0.5 + (atlas.width - 1) * chartCoordinate(g, 0, dot(g.du, p) + g.du[3])) / atlas.width,
-                (g.displayRow + 0.5 + (atlas.rows - 1) * chartCoordinate(g, 1, dot(g.dv, p) + g.dv[3])) /
-                  atlas.height,
-                ...r.color,
-                0,
-                0,
-                0,
-                0,
-                +s.lit,
-              ];
-            });
+          for (const cell of g.coords ? chartPolygons(poly, [g]) : [poly]) fan(cell, r.color, +s.lit, g);
         }
     };
     const solid = (b, i) => {
       const blocks = volumes ? relevant(b, volumes) : null;
-      for (const f of this.solidFaces[i]) {
+      for (const f of (this.solidFaces[i] ??= this.prepareSolid(b, i))) {
         if (dot(sub(eye, f.p), f.n) <= 0) continue;
         const parts = f.regions || f.prepare();
         for (let j = 0; j < 2; j++) {
           const polys = parts[j],
             lit = 1 - j;
-          for (const poly of blocks ? trim(polys, blocks, false)[0] : polys)
-            fan(poly, (p) => [p[0], p[1], p[2], -1, 0, ...b.color, ...p.slice(3), lit]);
+          for (const poly of blocks ? trim(polys, blocks, false)[0] : polys) fan(poly, b.color, lit);
         }
       }
     };
     for (const i of order || this.shapes.keys()) {
+      if (mask && !mask[i]) continue;
       if (i < scene.rectangles.length) sheet(this.shapes[i], i);
       else solid(this.shapes[i], i - scene.rectangles.length);
     }

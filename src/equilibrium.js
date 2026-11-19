@@ -67,7 +67,8 @@ export function cavityWeight(p, h) {
 }
 function elements(rect, covers, lamp, edgeGaps) {
   const lampDelta = sub(lamp, rect.center);
-  const axes = [rect.axisU, rect.axisV], normal = unit(cross(...axes));
+  const axes = [rect.axisU, rect.axisV],
+    normal = unit(cross(...axes));
   const distance = Math.abs(dot(lampDelta, normal));
   const duals = [cross(rect.axisV, normal), cross(normal, rect.axisU)];
   const area = dot(rect.axisU, duals[0]);
@@ -251,6 +252,8 @@ export class Equilibrium {
       this.parallel = null;
       this.contacts = null;
       this.shadowState = null;
+      this.lampVolumes = new WeakMap();
+      this.receiverVisibility = new WeakMap();
       this.lamp = lamp.slice();
       this.fixedLamp = new Map(
         this.visibility.update(scene.rectangles, lamp).surfaces.map((s) => [s.rect, s.cells]),
@@ -294,18 +297,28 @@ export class Equilibrium {
     const transfer = this.sweep(modes, near, pool);
     const visibilityStart = performance.now();
     if (!this.shadowState) {
-      const volumes = [...this.sheets, ...boxes].map((s) => [s, volume(s, lamp)]),
-        moving = volumes.slice(this.sheets.length);
-      const regionsBySheet = new Map(
-        sheets.map((r) => [
-          r,
-          r.owner && dot(cross(r.axisU, r.axisV), sub(lamp, r.center)) <= 0
-            ? []
-            : this.fixedLamp.has(r)
-              ? regions(r, moving, this.fixedLamp.get(r))
-              : regions(r, volumes),
-        ]),
-      );
+      const volumes = [...this.sheets, ...boxes].map((shape) => {
+        if (!this.lampVolumes.has(shape)) this.lampVolumes.set(shape, volume(shape, lamp));
+        return [shape, this.lampVolumes.get(shape)];
+      });
+      const moving = volumes.slice(this.sheets.length);
+      const regionsBySheet = new Map();
+      for (const r of sheets) {
+        if (r.owner && dot(cross(r.axisU, r.axisV), sub(lamp, r.center)) <= 0) {
+          regionsBySheet.set(r, []);
+          continue;
+        }
+        const fixed = this.fixedLamp.get(r);
+        let previous = this.receiverVisibility.get(r);
+        // Moving faces often live for only one edit. Retain pair results once
+        // a receiver actually survives into a second geometry revision.
+        if (previous === undefined) this.receiverVisibility.set(r, null);
+        else if (!previous) {
+          previous = { pairs: new WeakMap() };
+          this.receiverVisibility.set(r, previous);
+        }
+        regionsBySheet.set(r, regions(r, fixed ? moving : volumes, fixed, previous));
+      }
       this.shadowState = { volumes, regionsBySheet };
     }
     const { volumes: lampVolumes, regionsBySheet } = this.shadowState,

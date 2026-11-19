@@ -41,11 +41,13 @@ function cameraMatrix({ position, yaw, pitch, fov }, aspect) {
 const vertex = `#version 300 es
 layout(location=0)in vec3 position;layout(location=1)in vec2 address;layout(location=2)in vec3 reflectance;
 layout(location=3)in vec4 supplied;layout(location=4)in float visible;
-uniform mat4 projection;out vec2 uv;flat out vec3 material;out vec4 value;flat out float lit;
-void main(){gl_Position=projection*vec4(position,1.);uv=address;material=reflectance;value=supplied;lit=visible;}`;
+uniform mat4 projection;uniform vec2 chartScale;out vec2 uv;flat out vec2 verticalLimits;flat out vec3 material;out vec4 value;flat out float lit;
+void main(){gl_Position=projection*vec4(position,1.);uv=address;
+ float bottom=floor(address.y/chartScale.x)*chartScale.x;
+ verticalLimits=vec2(bottom+chartScale.y,bottom+chartScale.x-chartScale.y);material=reflectance;value=supplied;lit=visible;}`;
 const fragment = `#version 300 es
 precision highp float;
-in vec2 uv;flat in vec3 material;in vec4 value;flat in float lit;
+in vec2 uv;flat in vec2 verticalLimits;flat in vec3 material;in vec4 value;flat in float lit;
 uniform sampler2D field;uniform vec3 lamp;uniform float intensity;uniform int mode;
 out vec4 color;
 // Ordered rounding keeps sub-code gradients visible in the 8-bit output.
@@ -55,7 +57,7 @@ float roundingThreshold(ivec2 p){
   int rank=32*(m&1)+16*(y&1)+8*((m>>1)&1)+4*((y>>1)&1)+2*((m>>2)&1)+((y>>2)&1);
   return (float(rank)+0.5)/64.;
 }
-void main(){vec4 f=uv.x<0.?value:texture(field,uv);
+void main(){vec4 f=uv.x<0.?value:texture(field,vec2(uv.x,clamp(uv.y,verticalLimits.x,verticalLimits.y)));
  vec3 x=material*intensity*((mode==1?vec3(0):f.rgb)+(mode==2?vec3(0):lit*f.a*lamp));
  x=x/(1.+x);
  vec3 srgb=mix(12.92*x,1.055*pow(x,vec3(1./2.4))-.055,greaterThan(x,vec3(.0031308)));
@@ -82,7 +84,7 @@ export class LiveRenderer {
     gl.useProgram(program);
     this.program = program;
     this.uniforms = {};
-    for (const name of ['projection', 'lamp', 'intensity', 'mode', 'field'])
+    for (const name of ['projection', 'chartScale', 'lamp', 'intensity', 'mode', 'field'])
       this.uniforms[name] = gl.getUniformLocation(program, name);
     this.buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
@@ -128,19 +130,16 @@ export class LiveRenderer {
     return result;
   }
   applyScene(scene, result, t) {
-    const gl = this.gl;
     this.scene = scene;
     this.eye = null;
     this.viewMs = 0;
     const appearanceStart = performance.now();
-    this.view.setScene(scene, result);
+    this.view.setScene(scene, result, true);
     this.timings = { ...result.timings, appearance: performance.now() - appearanceStart };
     this.iterations = result.iterations;
     this.cpuMs = performance.now() - t;
-    const u = performance.now();
-    const { width, height, tex } = this.view.atlas;
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height, 0, gl.RGBA, gl.FLOAT, tex);
-    this.uploadMs = performance.now() - u;
+    this.uploadMs = 0;
+    const { tex } = this.view.atlas;
     this.stats = {
       bytes: result.bytes + tex.byteLength,
       workerBytes: result.workerBytes,
@@ -161,11 +160,33 @@ export class LiveRenderer {
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
     if (intensity === 0) return;
-    if (!this.eye || camera.position.some((x, i) => x !== this.eye[i])) {
+    const projection = cameraMatrix(camera, w / h);
+    const maskChanged = this.view.updateCameraMask(projection);
+    if (maskChanged || !this.eye || camera.position.some((x, i) => x !== this.eye[i])) {
       const start = performance.now(),
-        vertices = this.view.drawList(camera.position);
+        vertices = this.view.drawList(camera.position, this.view.cameraMask);
       this.viewMs = performance.now() - start;
       const t = performance.now();
+      if (this.view.atlasChanged || this.uploadedAtlas !== this.view.atlas) {
+        const atlas = this.view.atlas;
+        if (atlas !== this.uploadedAtlas) {
+          gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA16F,
+            atlas.width,
+            atlas.height,
+            0,
+            gl.RGBA,
+            gl.FLOAT,
+            atlas.tex,
+          );
+          this.uploadedAtlas = atlas;
+        } else {
+          gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, atlas.width, atlas.height, gl.RGBA, gl.FLOAT, atlas.tex);
+        }
+        this.view.atlasChanged = false;
+      }
       gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
       this.uploadMs += performance.now() - t;
       this.vertexBytes = vertices.byteLength;
@@ -173,7 +194,9 @@ export class LiveRenderer {
       this.eye = camera.position.slice();
     }
     const u = this.uniforms;
-    gl.uniformMatrix4fv(u.projection, false, cameraMatrix(camera, w / h));
+    const { rows, height } = this.view.atlas;
+    gl.uniform2f(u.chartScale, rows / height, 0.5 / height);
+    gl.uniformMatrix4fv(u.projection, false, projection);
     gl.uniform3fv(u.lamp, this.scene.lampRGB);
     gl.uniform1f(u.intensity, intensity);
     gl.uniform1i(u.mode, mode === 'direct' ? 1 : mode === 'indirect' ? 2 : 0);

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Continuous motion · Aspect</title>
+<link rel="stylesheet" href="./room.css">
+</head>
+<body>
+<header><strong>Aspect</strong><span>Continuous motion benchmark</span></header>
+<main>
+  <section class="stage">
+    <div class="stage-head"><h1>Moving room at 4K</h1><a href="./">Return to the room</a></div>
+    <div class="frame"><canvas id="room" aria-label="Walking camera, moving player body, blinds and block"></canvas></div>
+  </section>
+  <aside>
+    <p>Replay 120 consecutive game ticks with a walking camera, a shadow-casting player body, two rotating blinds and a block moving alongside the bench.</p>
+    <label for="integrator">Changing contact integrals</label>
+    <select id="integrator"><option value="cpu">CPU</option><option value="gpu">GPU experiment</option></select>
+    <button id="run">Run 120 frames at 4K</button>
+    <p id="progress" role="status"></p>
+    <dl id="results"></dl>
+    <small>Each pose gets a complete lighting update and a 3840 × 2160 draw through GPU readback. The sustained rate includes browser scheduling. A second pass follows a 60 Hz game clock and counts skipped poses. First-pose timing starts after module load.</small>
+  </aside>
+</main>
+<script type="module" src="./src/motion-run.js"></script>
+</body></html>

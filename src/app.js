@@ -93,12 +93,10 @@ function render(time) {
     walk(Math.min((time - previousTime) / 1000, 0.05));
     previousTime = time;
     const changed = Boolean(completed);
-    let preparationMs = 0;
     if (completed) {
       ready = null;
       scene = completed.scene;
       renderer.applyScene(scene, completed.result, started);
-      preparationMs = performance.now() - started;
       builds++;
       element('problem').hidden = true;
     }
@@ -107,6 +105,7 @@ function render(time) {
     const mode = element('lighting').value;
     const intensity = Number(element('lamp').value) / 100;
     renderer.draw(camera, intensity, size, mode);
+    const preparationMs = changed ? performance.now() - started : 0;
     if (element('measure').checked) {
       renderer.synchronize();
       const finished = performance.now();
@@ -127,7 +126,7 @@ function render(time) {
       element('phases').textContent = [
         ['Surface basis', t.basis], ['Lamp visibility', t.visibility], ['Lamp input', t.lamp],
         ['Longest CPU sweep', t.workerMs], ['Operator assembly', t.assemblyMs],
-        ['Equilibrium', t.solve], ['Appearance', t.appearance], ['Draw list', renderer.viewMs || 0],
+        ['Equilibrium', t.solve], ['Appearance setup', t.appearance], ['Visible fields and draw list', renderer.viewMs || 0],
       ].map(([label, ms]) => label + ' ' + ms.toFixed(1) + ' ms').join(' · ');
     }
     element('dimensions').textContent = renderer.gl.drawingBufferWidth + ' × ' + renderer.gl.drawingBufferHeight;
@@ -147,11 +146,11 @@ function report(error) {
 for (const id of ['lamp','angle','angle2','second','layout','floor','lighting','resolution','measure']) {
   element(id).addEventListener('input', () => {
     if (['angle','angle2','second','layout','floor'].includes(id)) requestScene();
+    else requestView();
     element('lamp-value').textContent = element('lamp').value + '%';
     element('angle-value').textContent = element('angle').value + '°';
     element('angle2-value').textContent = element('angle2').value + '°';
     element('second-controls').hidden = !element('second').checked;
-    requestView();
   });
 }
 

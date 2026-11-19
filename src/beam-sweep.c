@@ -153,7 +153,8 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
   Edge *edges = (Edge *)(q + count);
   int *hits = (int *)(edges + 2 * count), *active = hits + count;
   Edge *starts = (Edge *)(active + count);
-  Edge *cuts = starts + count;
+  int *column = (int *)(starts + count);
+  Edge *cuts = (Edge *)(column + count);
   if (!count)
     return;
   for (int d = firstDir; d < endDir; d++) {
@@ -256,15 +257,22 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
         x0 = x1;
         int nc = 1;
         cuts[0] = (Edge){y0, 0};
-        if (refined)
-          for (int k = 0; k < na; k++) {
-            int i = active[k];
-            if (q[i].right <= clipLeft || q[i].left >= clipRight || q[i].hi - q[i].lo >= step)
-              continue;
+        // All sub-strip heights share these conservative horizontal candidates.
+        // Keep their original order so equal-depth ties use the same rule.
+        int candidates = 0, hasSolid = 0;
+        for (int k = 0; k < na; k++) {
+          int i = active[k];
+          if (q[i].right <= clipLeft || q[i].left >= clipRight)
+            continue;
+          column[candidates++] = i;
+          hasSolid |= p[i].solid;
+          if (refined && q[i].hi - q[i].lo < step)
             for (int j = p[i].start; j < p[i].start + p[i].count; j++)
               if (ys[j] > y0 && ys[j] < y1)
                 cuts[nc++] = (Edge){ys[j], 0};
-          }
+        }
+        if (candidates < 2 || (correction && !hasSolid))
+          continue;
         if (nc > 1)
           sort(cuts, 1, nc - 1);
         cuts[nc++] = (Edge){y1, 0};
@@ -274,9 +282,9 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
             continue;
           const float y = (low + high) * .5f, dy = high - low;
           int ne = 0;
-          for (int k = 0; k < na; k++) {
-            int i = active[k];
-            if (y < q[i].lo || y >= q[i].hi || q[i].right <= clipLeft || q[i].left >= clipRight)
+          for (int k = 0; k < candidates; k++) {
+            int i = column[k];
+            if (y < q[i].lo || y >= q[i].hi)
               continue;
             float L = 1e20f, R = -1e20f;
             int start = p[i].start, end = start + p[i].count;
@@ -296,36 +304,40 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
           }
           if (!ne)
             continue;
+          float left = clipLeft, right = clipRight;
           if (correction) {
-            float left = 1e20f, right = -1e20f;
-            for (int i = 0; i < ne; i++) {
-              int id = edges[i].encoded;
-              int j = id > 0 ? id - 1 : -id - 1;
-              if (p[j].solid) {
-                left = min(left, edges[i].x);
-                right = max(right, edges[i].x);
-              }
+            left = 1e20f;
+            right = -1e20f;
+            for (int i = 0; i < ne; i += 2) {
+              if (!p[edges[i].encoded - 1].solid)
+                continue;
+              left = min(left, edges[i].x);
+              right = max(right, edges[i + 1].x);
             }
             if (left >= right)
               continue;
-            // Skip fixed segments outside the projected footprint of every edited body.
-            int out = 0;
-            for (int i = 0; i < ne; i += 2) {
-              if (edges[i + 1].x <= left || edges[i].x >= right)
-                continue;
-              Edge a = edges[i], b = edges[i + 1];
-              a.x = max(a.x, left);
-              b.x = min(b.x, right);
-              edges[out++] = a;
-              edges[out++] = b;
-            }
-            ne = out;
           }
-          sort(edges, 0, ne - 1);
-          int nh = 0, moving = 0;
-          float prev = edges[0].x;
-          for (int e = 0; e < ne; e++) {
-            float x = edges[e].x;
+          // Intervals already covering the left boundary start active.
+          // Only interior crossings need sorting, including when every
+          // projected surface spans the entire column.
+          int nh = 0, moving = 0, interior = 0;
+          for (int i = 0; i < ne; i += 2) {
+            Edge a = edges[i], b = edges[i + 1];
+            if (b.x <= left || a.x >= right)
+              continue;
+            if (a.x <= left) {
+              hits[nh++] = a.encoded - 1;
+              moving += p[a.encoded - 1].solid;
+            } else
+              edges[interior++] = a;
+            if (b.x < right)
+              edges[interior++] = b;
+          }
+          if (interior > 1)
+            sort(edges, 0, interior - 1);
+          float prev = left;
+          for (int e = 0; e <= interior; e++) {
+            float x = e == interior ? right : edges[e].x;
             if (x > prev && nh > 1 && (!correction || moving)) {
               float mid = (prev + x) * .5f;
               for (int i = 1; i < nh; i++) {
@@ -354,6 +366,8 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
                 previous = id;
               }
             }
+            if (e == interior)
+              break;
             int s = edges[e].encoded;
             if (s > 0) {
               hits[nh++] = s - 1;
