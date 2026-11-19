@@ -33,11 +33,15 @@ Select **3840 × 2160** and enable **Time GPU completion**. **Scene update** mea
 
 For an independent estimate of indirect radiance, run `node scripts/probe-light.mjs` for the bench underside or `node scripts/probe-light.mjs floor 2 2 back 24 262144` for a floor region. The arguments are surface id, two zero-based area indices, side, blind angle in degrees and path count. The probe reports linear RGB and standard errors using the mathematical fillet. It runs independently of the renderer.
 
-The checked-in WebAssembly module runs on the CPU. Rebuild it with Zig from the repository root.
+The checked-in WebAssembly modules run on the CPU. The moving contact visibility pass compiles each chart’s fixed apertures and receiver positions once. It clips the current solid silhouettes in reusable memory and writes visible polygon coordinates directly in the GPU’s input format. The GPU evaluates their angular integrals. [Visibility kernel](src/contact-visibility.c)
+
+Rebuild the modules with Zig from the repository root.
 
 ```sh
 zig cc -target wasm32-freestanding -O3 -c src/beam-sweep.c -o /tmp/room-beam.o
 zig wasm-ld --strip-debug --no-entry --export=sweep --export=mergeLinks --export=openOperator --export=installExact --export=prepareRows --export=solveLinks --export=__heap_base --export-memory /tmp/room-beam.o -o src/beam-sweep.wasm
+zig cc -target wasm32-freestanding -O3 -c src/contact-visibility.c -o /tmp/aspect-visibility.o
+zig wasm-ld --strip-debug --no-entry --export=coneBytes --export=contactPackets --export=__heap_base --export-memory /tmp/aspect-visibility.o -o src/contact-visibility.wasm
 ```
 
 ## Two-tuft fur study

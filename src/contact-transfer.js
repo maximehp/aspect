@@ -234,7 +234,7 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
   const domain = feature.domain;
   const blockers = sheets.filter((r) => r !== receiver && overlaps(domain, bounds(vertices(r))));
   const moving = contactMoving(domain, solution.boxes);
-  prepareBundles(stationary, moving);
+  if (!backend?.visibility) prepareBundles(stationary, moving);
   const allMoving = moving.map((_, i) => i);
 
   function influence(p) {
@@ -356,6 +356,10 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
         if (fade) stationary.push({ p, texel: j * width + i, fade });
       }
   }
+  if (backend?.visibility) {
+    for (const site of stationary) if (!site.samples) prepareSite(site);
+    prepareBundles(stationary, moving);
+  }
   if (readback) {
     const cold = stationary.filter((site) => !site.samples);
     for (const site of cold) prepareSite(site);
@@ -372,16 +376,17 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
     }
   }
   if (batch) {
+    const packets = backend.visibility?.packets(stationary, moving, feature.size);
     const sites = [],
       strength = [];
     for (const site of stationary) {
-      stencil(site);
+      if (!packets) stencil(site);
       if (site.texel !== undefined) {
         sites.push(site.texel);
         strength.push(site.fade);
       }
     }
-    return { feature, stationary, domain, moving, sites, strength, resident: batch.finish() };
+    return { feature, stationary, domain, moving, sites, strength, resident: batch.finish(packets) };
   }
   const cellOpen = new Float64Array(size * sectorCount),
     slopeOpen = new Float64Array(cellOpen.length);

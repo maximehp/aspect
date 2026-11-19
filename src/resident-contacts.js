@@ -302,11 +302,12 @@ export class ResidentContacts {
           sample.coefficientRow,
         );
       },
-      finish() {
+      finish(packets) {
         if (cache.build) {
           cache.batch = sealBatch(cache.build);
           delete cache.build;
         }
+        if (packets) return { ...packets, cache, targets };
         return {
           cache,
           cachedJobs: Float32Array.from(cachedJobs),
@@ -415,6 +416,7 @@ export class ResidentContacts {
     this.sizeAllocation(t, 0);
   }
   retainCharts(charts) {
+    this.visibility?.retain(charts);
     for (const [grid, t] of this.tables)
       if (!charts.has(grid)) {
         this.releaseTable(t);
@@ -532,6 +534,7 @@ export class ResidentContacts {
     gl.useProgram(this.renderer.program);
   }
   dispose() {
+    this.visibility = null;
     const gl = this.gl;
     for (const t of this.tables.values()) this.releaseTable(t);
     this.tables.clear();

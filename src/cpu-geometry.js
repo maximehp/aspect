@@ -138,7 +138,7 @@ export function canShadow(rect, bounds) {
 // The angular stencil and a solid's corner offsets are independent of the
 // eye. Only their perspective tangents change when another receiver uses it.
 export const shadowAzimuthCount = 24;
-const fixedAzimuths = Array.from({ length: shadowAzimuthCount }, (_, i) => {
+export const shadowAzimuths = Array.from({ length: shadowAzimuthCount }, (_, i) => {
   const a = (2 * Math.PI * i) / shadowAzimuthCount;
   return [Math.cos(a), Math.sin(a)];
 });
@@ -195,7 +195,7 @@ export function volume(shape, eye, projection) {
     }
     planes.push({ normal: z.map((q, k) => q * h - v[k]), origin: eye });
   }
-  for (const [c, s] of fixedAzimuths) addPlane(c, s);
+  for (const [c, s] of shadowAzimuths) addPlane(c, s);
   for (let i = 0; i < 8; i++)
     for (let j = 0; j < 3; j++)
       if (!(i & (1 << j))) {

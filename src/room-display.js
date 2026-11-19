@@ -1,10 +1,15 @@
 import { BeamWorkers } from './beam-workers.js';
 import { CpuView } from './cpu-view.js';
+import { ContactVisibility } from './contact-visibility.js';
 import { ResidentContacts } from './resident-contacts.js';
 import { GpuContactIntegrals } from './gpu-contact.js';
 import { Equilibrium } from './equilibrium.js';
 import { instanceSweep } from './beam-exchange.js';
-const module = await WebAssembly.compileStreaming(fetch(new URL('./beam-sweep.wasm', import.meta.url)));
+const [module, visibilityModule] = await Promise.all(
+  ['./beam-sweep.wasm', './contact-visibility.wasm'].map((path) =>
+    WebAssembly.compileStreaming(fetch(new URL(path, import.meta.url))),
+  ),
+);
 function cameraMatrix({ position, yaw, pitch, fov }, aspect) {
   const cy = Math.cos(yaw),
     sy = Math.sin(yaw),
@@ -106,8 +111,10 @@ export class LiveRenderer {
     this.view = new CpuView();
     this.pixel = new Uint8Array(4);
     try {
-      if (contacts === 'resident') this.view.contactBackend = new ResidentContacts(this);
-      else if (contacts === 'gpu') this.view.contactBackend = new GpuContactIntegrals(this);
+      if (contacts === 'resident') {
+        this.view.contactBackend = new ResidentContacts(this);
+        this.view.contactBackend.visibility = new ContactVisibility(visibilityModule);
+      } else if (contacts === 'gpu') this.view.contactBackend = new GpuContactIntegrals(this);
       else if (contacts !== 'cpu') throw Error('Unknown contact integrator: ' + contacts);
     } catch (error) {
       this.dispose();

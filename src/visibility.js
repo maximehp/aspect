@@ -264,4 +264,4 @@ export class VisibilityCompiler {
 }
 
 // CPU projections used by camera visibility and diffuse transfer.
-export { shadowVolume, projectedFootprint, partitionReceiver, split };
+export { square, shadowVolume, projectedFootprint, partitionReceiver, split };
