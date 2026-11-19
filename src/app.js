@@ -9,7 +9,7 @@ const freshCamera = () => ({ ...START_CAMERA, position: [...START_CAMERA.positio
 let camera = freshCamera();
 let renderer, scene, queuedScene;
 const frameFences = [];
-let editStarted = 0;
+let queuedAt = 0, pending = null, ready = null;
 let request = 0, builds = 0;
 const keys = new Set();
 let previousTime = 0;
@@ -32,14 +32,35 @@ function requestScene() {
     layout: element('layout').value,
     floor: element('floor').value,
   });
-  const last = queuedScene || scene;
+  const last = queuedScene || ready?.scene || pending?.scene || scene;
   const sameObjects = (a,b) => a.length === b.length && a.every((object,i) => object === b[i]);
   if (last && sameObjects(next.rectangles,last.rectangles) && sameObjects(next.roundedBoxes,last.roundedBoxes) &&
       sameObjects(next.lightPosition,last.lightPosition) && sameObjects(next.lampRGB,last.lampRGB)) return;
   queuedScene = next;
-  editStarted = requestedAt;
+  queuedAt = requestedAt;
   canvas.setAttribute('aria-busy','true');
-  schedule();
+  beginScene();
+}
+
+function beginScene() {
+  if (!queuedScene || pending || ready || !renderer) return;
+  const target = renderer;
+  const job = { scene: queuedScene, requested: queuedAt, started: performance.now() };
+  pending = job;
+  queuedScene = null;
+  target.prepareScene(job.scene).then(result => {
+    if (target !== renderer) return;
+    pending = null;
+    ready = { ...job, result };
+    cancelAnimationFrame(request);
+    render(performance.now());
+  }).catch(error => {
+    if (target !== renderer) return;
+    pending = null;
+    canvas.setAttribute('aria-busy', String(Boolean(queuedScene)));
+    report(error);
+    beginScene();
+  });
 }
 
 function walk(dt) {
@@ -67,18 +88,19 @@ function render(time) {
       if (completion === gl.WAIT_FAILED && !gl.isContextLost()) throw new Error('GPU frame fence failed.');
     }
     if (frameFences.length >= 2) { schedule(); return; }
-    const started = performance.now();
+    if (!ready && !scene) return;
+    const completed = ready, started = completed?.started ?? performance.now();
     walk(Math.min((time - previousTime) / 1000, 0.05));
     previousTime = time;
-    const changed = Boolean(queuedScene);
-    let uploadMs = 0;
-    if (changed) {
-      scene = queuedScene;
-      queuedScene = null;
-      const beforeUpload = performance.now();
-      renderer.setScene(scene);
-      uploadMs = performance.now() - beforeUpload;
+    const changed = Boolean(completed);
+    let preparationMs = 0;
+    if (completed) {
+      ready = null;
+      scene = completed.scene;
+      renderer.applyScene(scene, completed.result, started);
+      preparationMs = performance.now() - started;
       builds++;
+      element('problem').hidden = true;
     }
     const resolution = element('resolution').value;
     const size = resolution === '2160' ? [3840, 2160] : resolution === '1080' ? [1920, 1080] : null;
@@ -89,18 +111,27 @@ function render(time) {
       renderer.synchronize();
       const finished = performance.now();
       element('frame-time').textContent = (finished - started).toFixed(2) + ' ms';
-      if (changed) element('edit-time').textContent = (finished - editStarted).toFixed(1) + ' ms';
+      if (changed) element('edit-time').textContent = (finished - completed.requested).toFixed(1) + ' ms';
     } else {
       element('frame-time').textContent = '—';
       element('edit-time').textContent = '—';
       frameFences.push(gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0));
       gl.flush();
     }
-    canvas.setAttribute('aria-busy','false');
+    canvas.setAttribute('aria-busy',String(Boolean(queuedScene || pending)));
     element('builds').textContent = builds;
     element('samples').textContent = renderer.iterations;
-    element('update-time').textContent = uploadMs.toFixed(2) + ' ms';
+    element('update-time').textContent = preparationMs.toFixed(2) + ' ms';
+    if (changed) {
+      const t = renderer.timings;
+      element('phases').textContent = [
+        ['Surface basis', t.basis], ['Lamp visibility', t.visibility], ['Lamp input', t.lamp],
+        ['Longest CPU sweep', t.workerMs], ['Operator assembly', t.assemblyMs],
+        ['Equilibrium', t.solve], ['Appearance', t.appearance], ['Draw list', renderer.viewMs || 0],
+      ].map(([label, ms]) => label + ' ' + ms.toFixed(1) + ' ms').join(' · ');
+    }
     element('dimensions').textContent = renderer.gl.drawingBufferWidth + ' × ' + renderer.gl.drawingBufferHeight;
+    beginScene();
     if (keys.size) schedule();
   } catch (error) {
     report(error);
@@ -164,7 +195,9 @@ canvas.addEventListener('webglcontextlost', event => {
   event.preventDefault();
   cancelAnimationFrame(request);
   request = 0;
+  renderer?.dispose();
   renderer = null;
+  pending = ready = null;
   frameFences.length = 0;
   scene = queuedScene = null;
   element('problem').textContent = 'Graphics context lost. Waiting for the browser to restore it.';

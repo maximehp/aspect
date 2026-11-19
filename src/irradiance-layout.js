@@ -31,7 +31,10 @@ function commonEdge(a, b, epsilon) {
       const length = Math.hypot(...e),
         direction = mul(e, 1 / length),
         offset = add(q, p, -1);
-      if (Math.hypot(...cross(direction, unit(f))) > 1e-10 || Math.hypot(...cross(offset, direction)) > epsilon)
+      if (
+        Math.hypot(...cross(direction, unit(f))) > 1e-10 ||
+        Math.hypot(...cross(offset, direction)) > epsilon
+      )
         continue;
       const inward = cross(a.n, direction);
       if (dot(add(a.rect.center, p, -1), inward) * dot(add(b.rect.center, p, -1), inward) >= 0) continue;
@@ -112,7 +115,11 @@ function placeContacts(g, sheets) {
   for (const { rect, n, corners } of sheets) {
     if (Math.abs(dot(n, g.n)) < 1e-8 && Math.min(g.w, g.h) === 2) {
       const heights = corners.map((p) => dot(add(p, g.origin, -1), g.n));
-      if (Math.min(...heights) < 1e-6 && Math.max(...heights) > 1e-5 && heights.some((h) => Math.abs(h) < 1e-6)) {
+      if (
+        Math.min(...heights) < 1e-6 &&
+        Math.max(...heights) > 1e-5 &&
+        heights.some((h) => Math.abs(h) < 1e-6)
+      ) {
         const projected = ranges.map((axis) => corners.map((p) => dot(axis, p) + axis[3]));
         for (let d = 0; d < 2; d++) {
           const a = projected[d],
@@ -140,7 +147,10 @@ function placeContacts(g, sheets) {
       const values = corners.map((p) => dot(axis, p) + axis[3]);
       return [Math.min(...values), Math.max(...values)];
     });
-    if (bounds.some(([lo, hi]) => lo < -0.00001 || hi > 1.00001) || bounds.every(([lo, hi]) => hi - lo > 0.99))
+    if (
+      bounds.some(([lo, hi]) => lo < -0.00001 || hi > 1.00001) ||
+      bounds.every(([lo, hi]) => hi - lo > 0.99)
+    )
       continue;
     candidates.push({ bounds, gap });
   }
@@ -334,7 +344,16 @@ export function fieldLayout(scene, cache = {}) {
       descriptors.set(g.dv, k + 8);
       descriptors.set([...g.n, faces.length === 6 ? 1 : 0], k + 12);
     }
-  return { width, height, points, normals, descriptors, count, objectCount: slots.length, planarFaces: planar.slots };
+  return {
+    width,
+    height,
+    points,
+    normals,
+    descriptors,
+    count,
+    objectCount: slots.length,
+    planarFaces: planar.slots,
+  };
 }
 
 export const chartMappingGLSL = `
@@ -376,3 +395,70 @@ vec3 indirectAt(int id,vec3 p,vec3 n){
    +v.z*v.z*fieldFace(row+4+int(v.z<0.),p);
 }
 `;
+
+// Bidirectional map between physical sheet coordinates and a texture lattice.
+// Both the sample generator and the presentation vertices use the same knots.
+export function chartCoordinate(g, d, t) {
+  const knots = g.coords?.[d];
+  if (!knots) return t;
+  let i = 0;
+  while (i + 2 < knots.length && t > knots[i + 1]) i++;
+  return (i + (t - knots[i]) / (knots[i + 1] - knots[i])) / (knots.length - 1);
+}
+export function chartPoint(g, u, v) {
+  const local = [u, v];
+  if (g.coords)
+    for (let d = 0; d < 2; d++) {
+      const knots = g.coords[d],
+        s = local[d] * (knots.length - 1),
+        i = Math.min(knots.length - 2, Math.floor(s));
+      local[d] = knots[i] + (s - i) * (knots[i + 1] - knots[i]);
+    }
+  return g.origin.map((a, i) => a + g.u[i] * local[0] + g.v[i] * local[1]);
+}
+// Inside each chart interval the world-to-texture coordinate map is affine.
+// Split only the presentation polygons where a change of slope requires it.
+// These triangles neither define scene geometry nor discretize the light.
+export function chartPolygons(polygon, faces) {
+  let cells = [polygon];
+  for (const face of faces) {
+    if (!face.coords) continue;
+    for (const [d, knots] of face.coords.entries()) {
+      const axis = d === 0 ? face.du : face.dv;
+      for (let i = 1; i + 1 < knots.length; i++) {
+        const knot = knots[i];
+        if (Math.abs(2 * knot - knots[i - 1] - knots[i + 1]) < 1e-10) continue;
+        const next = [];
+        for (const cell of cells) {
+          const value = (p) => axis[0] * p[0] + axis[1] * p[1] + axis[2] * p[2] + axis[3] - knot;
+          const distances = cell.map(value);
+          if (Math.min(...distances) > -1e-10 || Math.max(...distances) < 1e-10) {
+            next.push(cell);
+            continue;
+          }
+          const low = [],
+            high = [];
+          for (let k = 0; k < cell.length; k++) {
+            const j = (k + 1) % cell.length,
+              a = cell[k],
+              b = cell[j],
+              x = distances[k],
+              y = distances[j];
+            if (x <= 0) low.push(a);
+            if (x >= 0) high.push(a);
+            if ((x < 0 && y > 0) || (x > 0 && y < 0)) {
+              const t = x / (x - y),
+                point = a.map((v, m) => v + t * (b[m] - v));
+              low.push(point);
+              high.push(point);
+            }
+          }
+          if (low.length >= 3) next.push(low);
+          if (high.length >= 3) next.push(high);
+        }
+        cells = next;
+      }
+    }
+  }
+  return cells;
+}

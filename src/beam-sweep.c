@@ -46,29 +46,112 @@ static void sort(Edge *a, int lo, int hi) {
     }
   }
 }
-static void exchange(Poly *p, Project *q, int a, int b, float area, int n, float *K, float *mom,
-                     int fixed, float x, float y) {
-  Poly *A = p + a, *B = p + b;
-  if (A->owner == B->owner)
+// One record per observed unordered pair of surface sides. Store measures in
+// projected square metres. Dividing by the receiving area gives each direction.
+typedef struct {
+  int a, b;
+  float area, firstA, firstB, mixed;
+} Link;
+typedef struct {
+  int used, capacity, failed;
+  Link *links;
+  int *slots;
+} Operator;
+static unsigned hashPair(int a, int b) {
+  unsigned h = (unsigned)a * 0x9e3779b1u + (unsigned)b * 0x85ebca77u;
+  h = (h ^ (h >> 16)) * 0x7feb352du;
+  return h ^ (h >> 15);
+}
+void openOperator(Operator *op, Link *links, int *slots, int capacity, int used) {
+  *op = (Operator){used, capacity, 0, links, slots};
+  for (int i = 0; i < capacity * 2; i++)
+    slots[i] = 0;
+  for (int i = 0; i < used; i++) {
+    Link l = links[i];
+    unsigned index = hashPair(l.a, l.b) & (capacity * 2 - 1);
+    while (slots[index])
+      index = (index + 1) & (capacity * 2 - 1);
+    slots[index] = i + 1;
+  }
+}
+static Link *findLink(Operator *op, int a, int b) {
+  unsigned mask = 2 * op->capacity - 1, index = hashPair(a, b) & mask;
+  while (op->slots[index]) {
+    Link *e = op->links + op->slots[index] - 1;
+    if (e->a == a && e->b == b)
+      return e;
+    index = (index + 1) & mask;
+  }
+  if (op->used == op->capacity) {
+    op->failed = 1;
+    return 0;
+  }
+  Link *l = op->links + op->used;
+  *l = (Link){a, b, 0, 0, 0, 0};
+  op->slots[index] = ++op->used;
+  return l;
+}
+static float coordinate(Project q, float x, float y) {
+  return max(-1, min(1, q.mx * x + q.my * y + q.mc));
+}
+static void exchange(Poly *p, Project *q, int a, int b, float area, Operator *op, float x, float y,
+                     float dx, float dy) {
+  if (p[a].owner == p[b].owner)
     return;
   int sa = q[a].cosine < 0, sb = q[b].cosine > 0;
-  if ((A->solid && sa) || (B->solid && sb))
+  if ((p[a].solid && sa) || (p[b].solid && sb))
     return;
-  int i = 2 * A->mode + sa, j = 2 * B->mode + sb;
-  K[i * n + j] += area / A->area;
-  K[j * n + i] += area / B->area;
-  // First moment of the same projected footprint along the short face axis.
-  if (A->solid)
-    mom[(a - fixed) * n + j] +=
-        area / A->area * max(-1, min(1, q[a].mx * x + q[a].my * y + q[a].mc));
-  if (B->solid)
-    mom[(b - fixed) * n + i] +=
-        area / B->area * max(-1, min(1, q[b].mx * x + q[b].my * y + q[b].mc));
+  int i = 2 * a + sa, j = 2 * b + sb;
+  float u = coordinate(q[a], x, y), v = coordinate(q[b], x, y);
+  if (i > j) {
+    int t = i;
+    i = j;
+    j = t;
+    float f = u;
+    u = v;
+    v = f;
+  }
+  Link *l = findLink(op, i, j);
+  if (!l)
+    return;
+  // The product of two affine functions also has a within-footprint covariance.
+  float mixed = u * v + (q[a].mx * q[b].mx * dx * dx + q[a].my * q[b].my * dy * dy) / 12.f;
+  mixed = max(-1 + __builtin_fabsf(u + v), min(1 - __builtin_fabsf(u - v), mixed));
+  l->area += area;
+  l->firstA += area * u;
+  l->firstB += area * v;
+  l->mixed += area * mixed;
+}
+void mergeLinks(Operator *op, const Link *src, int count) {
+  for (int k = 0; k < count; k++) {
+    Link e = src[k], *l = findLink(op, e.a, e.b);
+    if (!l)
+      return;
+    l->area += e.area;
+    l->firstA += e.firstA;
+    l->firstB += e.firstB;
+    l->mixed += e.mixed;
+  }
+}
+// Certified parallel sheet pairs supply exact area; their moments come from
+// integrating the same kernel on subintervals of the two basis coordinates.
+int installExact(Operator *op, int a, int b, float area, float firstA, float firstB, float mixed) {
+  if (a > b) {
+    int t = a;
+    a = b;
+    b = t;
+    float f = firstA;
+    firstA = firstB;
+    firstB = f;
+  }
+  Link *l = findLink(op, a, b);
+  if (l)
+    *l = (Link){a, b, area, firstA, firstB, mixed};
+  return l ? l - op->links : -1;
 }
 __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, int nv, V *frame,
-                                                  int dirs, int bins, int n, float *K,
-                                                  int correction, char *scratch, float *mom,
-                                                  int fixed) {
+                                                  int dirs, int bins, Operator *op, int correction,
+                                                  char *scratch, int firstDir, int endDir) {
   float *xs = (float *)scratch, *ys = xs + nv;
   Project *q = (Project *)(ys + nv);
   Segment *segments = (Segment *)(q + count);
@@ -77,7 +160,7 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
   Edge *starts = (Edge *)(active + count);
   if (!count)
     return;
-  for (int d = 0; d < dirs; d++) {
+  for (int d = firstDir; d < endDir; d++) {
     V u = frame[3 * d], v = frame[3 * d + 1], w = frame[3 * d + 2];
     for (int i = 0; i < nv; i++) {
       xs[i] = dot(verts[i], u);
@@ -94,7 +177,7 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
       }
       float g = dot(f.n, w);
       q[i] = (Project){lo, hi, -dot(f.n, u) / g, -dot(f.n, v) / g, dot(f.n, f.center) / g, g};
-      if (f.solid) {
+      {
         float dw = dot(f.axis, w);
         q[i].mx = dot(f.axis, u) + dw * q[i].a;
         q[i].my = dot(f.axis, v) + dw * q[i].b;
@@ -121,14 +204,17 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
       continue;
     int first = (int)__builtin_floorf((bottom - staticLo) / step),
         end = (int)__builtin_ceilf((top - staticLo) / step);
+    int nstart = count;
     for (int i = 0; i < count; i++)
       starts[i] = (Edge){q[i].lo, i};
-    sort(starts, 0, count - 1);
+    if (!nstart)
+      continue;
+    sort(starts, 0, nstart - 1);
     int begin = 0, na = 0;
     for (int row = first; row < end; row++) {
       float y0 = staticLo + row * step, y1 = y0 + step;
       int ne = 0, ns = 0;
-      while (begin < count && starts[begin].x < y1)
+      while (begin < nstart && starts[begin].x < y1)
         active[na++] = starts[begin++].encoded;
       int kept = 0;
       for (int k = 0; k < na; k++) {
@@ -221,10 +307,10 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
               int id = b.polygon;
               float area = (x - prev) * (high - low) * (2.f / dirs);
               if (previous >= 0 && (!correction || p[id].solid || p[previous].solid))
-                exchange(p, q, previous, id, area, n, K, mom, fixed, mid, y);
+                exchange(p, q, previous, id, area, op, mid, y, x - prev, high - low);
               if (correction && !p[id].solid) {
                 if (stationary >= 0 && stationary != previous)
-                  exchange(p, q, stationary, id, -area, n, K, mom, fixed, mid, y);
+                  exchange(p, q, stationary, id, -area, op, mid, y, x - prev, high - low);
                 stationary = id;
               }
               previous = id;
@@ -249,101 +335,100 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
   }
 }
 
-// Compact positive entries by row in place. The fixed-point update stops when
-// every incident RGB coefficient changes by at most tolerance in lamp units.
-int equilibrium(Poly *p, int n, float *K, float *direct, double *incoming, double *emitted,
-                int *index, int *counts, double *bounds, float *mom, int fixed, float *slopes) {
-  double maxRow = 0, residual = 0;
-  for (int i = 0; i < n; i++) {
-    float *row = K + i * n;
-    double sum = 0;
-    int count = 0;
-    for (int j = 0; j < n; j++)
-      if (row[j] > 0) {
-        sum += row[j];
-        index[count++] = j;
-      } else
-        row[j] = 0;
-    if (sum > maxRow)
-      maxRow = sum;
-    double norm = sum > 1 ? 1 / sum : 1;
-    if (!(i % 2) && i / 2 >= fixed && norm < 1) {
-      float *m = mom + (i / 2 - fixed) * n;
-      for (int j = 0; j < n; j++)
-        m[j] *= norm;
-    }
-    if (count <= n / 2) {
-      int *columns = (int *)(row + n - count);
-      for (int j = 0; j < count; j++)
-        row[j] = row[index[j]] * norm;
-      for (int j = 0; j < count; j++)
-        columns[j] = index[j];
-      counts[i] = count;
-    } else {
-      for (int j = 0; j < n; j++)
-        row[j] *= norm;
-      counts[i] = -1;
-    }
-    for (int c = 0; c < 3; c++) {
-      incoming[3 * i + c] = 0;
-      emitted[3 * i + c] = direct[3 * i + c];
+// Convert the accumulated reciprocal measures to contiguous rows for iteration.
+// Protected analytic couplings keep their mass; clamp only unresolved exchange.
+typedef struct {
+  int source;
+  float mean, sourceMoment, receiverMoment, mixed;
+} Weight;
+static void put(Weight *rows, int *next, int i, int j, float area, float u, float v, float uv,
+                float norm) {
+  rows[next[i]++] = (Weight){j, area * norm, v * norm, u * norm, uv * norm};
+}
+void prepareRows(Poly *p, int n, Operator *op, int *offset, int *next, Weight *rows, int *exact,
+                 float *mass, float *raw, double *bounds) {
+  for (int i = 0; i <= n; i++)
+    offset[i] = 0;
+  for (int k = 0; k < op->used; k++) {
+    Link l = op->links[k];
+    if (l.area <= 0)
+      continue;
+    offset[l.a + 1]++;
+    offset[l.b + 1]++;
+    if (!exact[k]) {
+      raw[l.a] += l.area / p[l.a / 2].area;
+      raw[l.b] += l.area / p[l.b / 2].area;
     }
   }
+  double maxRow = 0;
+  for (int i = 0; i < n; i++) {
+    offset[i + 1] += offset[i];
+    next[i] = offset[i];
+    maxRow = max(maxRow, raw[i] + mass[i]);
+    raw[i] = raw[i] > 0 ? min(1, max(0, 1 - mass[i]) / raw[i]) : 1;
+  }
+  for (int k = 0; k < op->used; k++) {
+    Link l = op->links[k];
+    if (l.area <= 0)
+      continue;
+    float a = (exact[k] ? 1 : raw[l.a]) / p[l.a / 2].area,
+          b = (exact[k] ? 1 : raw[l.b]) / p[l.b / 2].area;
+    // Maintain nonnegative exchange for the four endpoint basis functions,
+    // including tiny links left by subtracting a blocked stationary footprint.
+    l.firstA = max(-l.area, min(l.area, l.firstA));
+    l.firstB = max(-l.area, min(l.area, l.firstB));
+    l.mixed = max(-l.area + __builtin_fabsf(l.firstA + l.firstB),
+                  min(l.area - __builtin_fabsf(l.firstA - l.firstB), l.mixed));
+    put(rows, next, l.a, l.b, l.area, l.firstA, l.firstB, l.mixed, a);
+    put(rows, next, l.b, l.a, l.area, l.firstB, l.firstA, l.mixed, b);
+  }
+  bounds[1] = maxRow;
+}
+int solveLinks(Poly *p, int n, int *offset, Weight *rows, float *direct, float *directSlope,
+               double *in, double *out, double *slope, double *outSlope, double *bounds) {
+  for (int k = 0; k < n * 3; k++) {
+    in[k] = slope[k] = 0;
+    out[k] = direct[k];
+    outSlope[k] = directSlope[k];
+  }
+  double omega = 1.25, previousChange = 1e30;
   for (int it = 1; it <= 512; it++) {
-    residual = 0;
+    double change = 0;
     for (int i = 0; i < n; i++) {
-      double r = 0, g = 0, b = 0;
-      float *weights = K + i * n;
-      int count = counts[i];
-      if (count >= 0) {
-        int *columns = (int *)(weights + n - count);
-        for (int k = 0; k < count; k++) {
-          double w = weights[k];
-          double *a = emitted + 3 * columns[k];
-          r += w * a[0];
-          g += w * a[1];
-          b += w * a[2];
-        }
-      } else {
-        for (int k = 0; k < n; k++) {
-          double w = weights[k];
-          double *a = emitted + 3 * k;
-          r += w * a[0];
-          g += w * a[1];
-          b += w * a[2];
+      double means[3] = {0}, moments[3] = {0};
+      for (int k = offset[i]; k < offset[i + 1]; k++) {
+        Weight w = rows[k];
+        int j = 3 * w.source;
+        for (int c = 0; c < 3; c++) {
+          means[c] += w.mean * out[j + c] + w.sourceMoment * outSlope[j + c];
+          moments[c] += w.receiverMoment * out[j + c] + w.mixed * outSlope[j + c];
         }
       }
-      double *a = incoming + 3 * i;
-      double dr = __builtin_fabs(a[0] - r), dg = __builtin_fabs(a[1] - g),
-             db = __builtin_fabs(a[2] - b);
-      if (dr > residual)
-        residual = dr;
-      if (dg > residual)
-        residual = dg;
-      if (db > residual)
-        residual = db;
-      a[0] = r;
-      a[1] = g;
-      a[2] = b;
-      V rho = p[i / 2].color;
-      double *out = emitted + 3 * i, *h = incoming + 3 * i;
-      float *d = direct + 3 * i;
-      out[0] = d[0] + rho.x * h[0];
-      out[1] = d[1] + rho.y * h[1];
-      out[2] = d[2] + rho.z * h[2];
+      V color = p[i / 2].color;
+      float rho[3] = {color.x, color.y, color.z};
+      for (int c = 0; c < 3; c++) {
+        int k = 3 * i + c;
+        double a = means[c] > 0 ? means[c] : 0, b = max(-a, min(a, 3 * moments[c]));
+        double da = __builtin_fabs(in[k] - a), db = __builtin_fabs(slope[k] - b);
+        if (da > change)
+          change = da;
+        if (db > change)
+          change = db;
+        a = in[k] + omega * (a - in[k]);
+        if (a < 0)
+          a = 0;
+        b = max(-a, min(a, slope[k] + omega * (b - slope[k])));
+        in[k] = a;
+        slope[k] = b;
+        out[k] = direct[k] + rho[c] * a;
+        outSlope[k] = directSlope[k] + rho[c] * b;
+      }
     }
-    if (residual <= 1e-7) {
-      for (int i = fixed; i < n / 2; i++)
-        for (int c = 0; c < 3; c++) {
-          double sum = 0;
-          float *m = mom + (i - fixed) * n;
-          for (int j = 0; j < n; j++)
-            sum += m[j] * emitted[j * 3 + c];
-          float limit = incoming[6 * i + c];
-          slopes[3 * i + c] = max(-limit, min(limit, 3 * sum));
-        }
-      bounds[0] = residual;
-      bounds[1] = maxRow;
+    if (it > 3 && change > 1.05 * previousChange)
+      omega = 1;
+    previousChange = change;
+    if (change <= 1e-7) {
+      bounds[0] = change;
       return it;
     }
   }

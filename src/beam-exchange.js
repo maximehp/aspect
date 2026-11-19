@@ -1,126 +1,266 @@
 import { cross, unit, point } from './cpu-geometry.js';
-const dirs = 96,
-  bins = 192;
-const frames = [];
-for (let i = 0; i < dirs; i++) {
-  const z = (i + 0.5) / dirs,
+
+export const directionCount = 96;
+const stripCount = 192,
+  frames = [];
+const corners = [
+  [-1, -1],
+  [1, -1],
+  [1, 1],
+  [-1, 1],
+];
+for (let i = 0; i < directionCount; i++) {
+  const z = (i + 0.5) / directionCount,
     angle = i * 2.399963229728653,
     r = Math.sqrt(1 - z * z);
   const w = [r * Math.cos(angle), r * Math.sin(angle), z],
     u = unit(cross(w, [0, 0, 1]));
   frames.push(...u, ...cross(w, u), ...w);
 }
-export async function createSweep(binary) {
-  const { instance } = await WebAssembly.instantiate(binary);
-  const { memory, sweep, equilibrium, __heap_base } = instance.exports;
-  let staticModes = [],
-    base;
-  return (modes) => {
-    const n = 2 * modes.length,
-      np = modes.length,
-      nv = 4 * np;
-    let cursor = Number(__heap_base);
-    const reserve = (bytes) => {
-      const p = cursor;
-      cursor += bytes;
-      return p;
-    };
-    const fixed = modes.filter((r) => !r.owner.axes);
-    const records = reserve(np * 72),
-      vertices = reserve(12 * nv),
-      axes = reserve(frames.length * 4);
-    const weights = reserve(4 * n * n),
-      source = reserve(12 * n),
-      moments = reserve((np - fixed.length) * n * 4),
-      slopes = reserve(np * 12),
-      scratch = reserve(8 * nv + 88 * np);
-    cursor = Math.ceil(cursor / 8) * 8;
-    const incident = reserve(24 * n),
-      emitted = reserve(24 * n),
-      bounds = reserve(16);
-    if (cursor > memory.buffer.byteLength)
-      memory.grow(Math.ceil((cursor - memory.buffer.byteLength) / 65536));
-    const F = new Float32Array(memory.buffer),
-      I = new Int32Array(memory.buffer);
-    F.set(frames, axes / 4);
-    F.fill(0, source / 4, scratch / 4);
-    const owners = new Map();
-    let face = records / 4,
-      vert = 0;
-    for (const [j, r] of modes.entries()) {
-      if (!owners.has(r.owner)) owners.set(r.owner, owners.size);
-      const uv = [
-        [-1, -1],
-        [1, -1],
-        [1, 1],
-        [-1, 1],
-      ];
-      I.set([vert, uv.length, j, owners.get(r.owner), +!!r.owner.axes], face);
-      F.set([r.area, ...r.normal, ...r.center, ...r.color, ...r.momentAxis], face + 5);
-      for (const [u, v] of uv) {
-        F.set(point(r, u, v), vertices / 4 + 3 * vert);
-        vert++;
-      }
-      face += 18;
+function pack(modes) {
+  const count = modes.length,
+    packet = new Uint8Array(count * 120),
+    ids = new Int32Array(packet.buffer),
+    values = new Float32Array(packet.buffer),
+    owners = new Map();
+  for (let j = 0; j < count; j++) {
+    const r = modes[j],
+      offset = j * 18;
+    if (!owners.has(r.owner)) owners.set(r.owner, owners.size);
+    ids.set([4 * j, 4, j, owners.get(r.owner), Number(!!r.owner.axes)], offset);
+    values.set([r.area, ...r.normal, ...r.center, ...r.color, ...r.momentAxis], offset + 5);
+    let dst = 18 * count + j * 12;
+    for (const [u, v] of corners) {
+      values.set(point(r, u, v), dst);
+      dst += 3;
     }
-    const K = new Float32Array(memory.buffer, weights, n * n),
-      G = new Float32Array(memory.buffer, source, 3 * n);
-
-    if (
-      !base ||
-      base.length !== K.length ||
-      fixed.length !== staticModes.length ||
-      fixed.some((r, i) => r !== staticModes[i])
-    ) {
-      K.fill(0);
-      sweep(
-        records,
-        fixed.length,
-        vertices,
-        fixed.length * 4,
-        axes,
-        dirs,
-        bins,
-        n,
-        weights,
-        0,
-        scratch,
-        moments,
-        fixed.length,
+  }
+  return packet;
+}
+// Rewindable linear-memory arena. Only observed side pairs get link records.
+export class BeamWorkspace {
+  constructor(exports) {
+    this.wasm = exports;
+    this.capacity = 1024;
+  }
+  reserve(bytes) {
+    this.cursor = Math.ceil(this.cursor / 8) * 8;
+    const p = this.cursor;
+    this.cursor += bytes;
+    return p;
+  }
+  grow() {
+    const memory = this.wasm.memory;
+    if (this.cursor > memory.buffer.byteLength)
+      memory.grow(Math.ceil((this.cursor - memory.buffer.byteLength) / 65536));
+    this.bytes = new Uint8Array(memory.buffer);
+    this.ints = new Int32Array(memory.buffer);
+    this.floats = new Float32Array(memory.buffer);
+  }
+  start(packet) {
+    const np = packet.length / 120;
+    this.cursor = Number(this.wasm.__heap_base);
+    this.records = this.reserve(packet.length);
+    this.vertices = this.records + 72 * np;
+    this.axes = this.reserve(frames.length * 4);
+    this.op = this.reserve(20);
+    this.scratch = this.reserve(np * 120);
+    this.grow();
+    this.bytes.set(packet, this.records);
+    this.floats.set(frames, this.axes / 4);
+  }
+  table(fn, base) {
+    const mark = this.cursor;
+    while (true) {
+      this.cursor = mark;
+      this.links = this.reserve(24 * this.capacity);
+      const slots = this.reserve(8 * this.capacity);
+      this.grow();
+      if (base) this.bytes.set(base, this.links);
+      this.wasm.openOperator(this.op, this.links, slots, this.capacity, base ? base.length / 24 : 0);
+      fn();
+      if (!this.ints[this.op / 4 + 2]) return this.ints[this.op / 4];
+      this.capacity *= 2;
+    }
+  }
+  integrate(packet, fixed, first, end, buildStatic) {
+    const started = performance.now();
+    this.start(packet);
+    const np = packet.length / 120,
+      mark = this.cursor;
+    const run = (count, correction) => {
+      this.cursor = mark;
+      const used = this.table(() =>
+        this.wasm.sweep(
+          this.records,
+          count,
+          this.vertices,
+          4 * count,
+          this.axes,
+          directionCount,
+          stripCount,
+          this.op,
+          correction,
+          this.scratch,
+          first,
+          end,
+        ),
       );
-      base = K.slice();
-      staticModes = fixed;
-    } else K.set(base);
-    sweep(records, np, vertices, nv, axes, dirs, bins, n, weights, 1, scratch, moments, fixed.length);
+      return this.bytes.slice(this.links, this.links + 24 * used);
+    };
+    const stationary = buildStatic ? run(fixed, 0) : null;
+    const change = run(np, 1);
     return {
-      K,
-      direct: G,
-      bytes: memory.buffer.byteLength + base.byteLength,
-      solve() {
-        const iterations = equilibrium(
-          records,
+      stationary,
+      change,
+      kernelMs: performance.now() - started,
+      workingBytes: this.wasm.memory.buffer.byteLength,
+    };
+  }
+  merge(packet, parts, base) {
+    this.start(packet);
+    // Incoming partials can be copied in turn into the same scratch space.
+    const inputs = parts.filter(Boolean),
+      size = Math.max(0, ...inputs.map((p) => p.length)),
+      temp = this.reserve(size);
+    this.grow();
+    return this.table(() => {
+      for (const p of inputs) {
+        this.bytes.set(p, temp);
+        this.wasm.mergeLinks(this.op, temp, p.length / 24);
+      }
+    }, base);
+  }
+  assemble(modes, near, packet, base, parts) {
+    const n = 2 * modes.length;
+    this.start(packet);
+    const temp = this.reserve(Math.max(0, ...parts.map((p) => p.length)));
+    let exact, mass;
+    const used = this.table(() => {
+      exact = this.reserve(4 * this.capacity);
+      mass = this.reserve(4 * n);
+      this.grow();
+      this.ints.fill(0, exact / 4, exact / 4 + this.capacity);
+      this.floats.fill(0, mass / 4, mass / 4 + n);
+      for (const part of parts) {
+        this.bytes.set(part, temp);
+        this.wasm.mergeLinks(this.op, temp, part.length / 24);
+      }
+      for (const b of near) {
+        if (b.offset > b.otherOffset) continue;
+        for (let y = 0; y < b.size; y++)
+          for (let x = 0; x < b.count; x++) {
+            const a = b.offset + y,
+              j = b.otherOffset + x,
+              i = 2 * a + b.side,
+              k = 2 * j + b.otherSide,
+              t = y * b.count + x;
+            const area = modes[a].area * b.mean[t],
+              idx = this.wasm.installExact(this.op, i, k, area, b.m1[t], b.m2[t], b.m12[t]);
+            if (idx >= 0) {
+              this.ints[exact / 4 + idx] = 1;
+              this.floats[mass / 4 + i] += b.mean[t];
+              this.floats[mass / 4 + k] += area / modes[j].area;
+            }
+          }
+      }
+    }, base);
+    const offset = this.reserve(4 * (n + 1)),
+      next = this.reserve(4 * n),
+      rows = this.reserve(used * 40),
+      direct = this.reserve(12 * n),
+      directSlope = this.reserve(12 * n),
+      incoming = this.reserve(24 * n),
+      outgoing = this.reserve(24 * n),
+      slope = this.reserve(24 * n),
+      outSlope = this.reserve(24 * n),
+      bounds = this.reserve(16),
+      raw = this.reserve(4 * n);
+    this.grow();
+    this.floats.fill(0, raw / 4, raw / 4 + n);
+    this.wasm.prepareRows(this.records, n, this.op, offset, next, rows, exact, mass, raw, bounds);
+    return {
+      links: used,
+      bytes: this.wasm.memory.buffer.byteLength + base.byteLength,
+      solve: (lamp, gradient, colors) => {
+        if (colors)
+          for (let i = 0; i < modes.length; i++) this.floats.set(colors[i], this.records / 4 + i * 18 + 12);
+        this.floats.set(lamp, direct / 4);
+        this.floats.set(gradient, directSlope / 4);
+        const iterations = this.wasm.solveLinks(
+          this.records,
           n,
-          weights,
-          source,
-          incident,
-          emitted,
-          scratch,
-          scratch + 4 * n,
+          offset,
+          rows,
+          direct,
+          directSlope,
+          incoming,
+          outgoing,
+          slope,
+          outSlope,
           bounds,
-          moments,
-          fixed.length,
-          slopes,
         );
         if (!iterations) throw Error('Diffuse equilibrium failed to converge.');
-        const [residual, maxRow] = new Float64Array(memory.buffer, bounds, 2);
+        const memory = this.wasm.memory.buffer;
+        const [residual, maxRow] = new Float64Array(memory, bounds, 2);
         return {
-          slopes: new Float32Array(memory.buffer, slopes, np * 3).slice(),
           iterations,
           residual,
           maxRow,
-          incident: new Float64Array(memory.buffer, incident, 3 * n).slice(),
+          sidedSlopes: Float32Array.from(new Float64Array(memory, slope, 3 * n)),
+          outSlope: Float32Array.from(new Float64Array(memory, outSlope, 3 * n)),
+          incident: new Float64Array(memory, incoming, 3 * n).slice(),
         };
       },
     };
+  }
+}
+
+export async function createSweep(binary) {
+  const { instance } = await WebAssembly.instantiate(binary);
+  return instanceSweep(instance);
+}
+export function instanceSweep(instance) {
+  const core = new BeamWorkspace(instance.exports);
+  let previous = [],
+    base,
+    lastModes,
+    lastTransfer;
+  return (modes, near, pool) => {
+    if (lastTransfer && lastModes.length === modes.length && modes.every((m, i) => m === lastModes[i])) {
+      return { ...lastTransfer, workerMs: 0, assemblyMs: 0 };
+    }
+    lastTransfer = null;
+    const fixed = modes.filter((r) => !r.owner.axes),
+      packet = pack(modes);
+    const changed = !base || previous.length !== fixed.length || fixed.some((r, i) => r !== previous[i]);
+
+    const snapshot = base;
+    function finish(parts) {
+      const start = performance.now();
+      if (changed) {
+        const used = core.merge(
+          packet,
+          parts.map((p) => p.stationary),
+        );
+        base = core.bytes.slice(core.links, core.links + used * 24);
+        previous = fixed;
+      }
+      const result = core.assemble(
+        modes,
+        near,
+        packet,
+        changed ? base : snapshot,
+        parts.map((p) => p.change),
+      );
+      lastModes = modes;
+      lastTransfer = result;
+      result.assemblyMs = performance.now() - start;
+      result.workerMs = Math.max(...parts.map((p) => p.kernelMs));
+      result.workerBytes = pool ? parts.reduce((s, p) => s + p.workingBytes, 0) : 0;
+      return result;
+    }
+    if (pool) return pool.integrate(packet, fixed.length, changed).then(finish);
+    return finish([core.integrate(packet, fixed.length, 0, directionCount, changed)]);
   };
 }

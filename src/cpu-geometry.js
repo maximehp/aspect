@@ -124,6 +124,7 @@ export function volume(shape, eye) {
   return planes;
 }
 export function regions(rect, blockers, initial) {
+  if (initial && !initial.some((c) => c.lit)) return initial;
   const footprints = [];
   for (const [shape, planes] of blockers) {
     if (shape === rect || shape === rect.owner) continue;

@@ -1,6 +1,6 @@
 // Diffuse power transfer by reciprocal projected area. The unknowns are mean
 // incident RGB on each side. Lamp flux integrates over actual lit polygons.
-import { compileParallel, applyParallel } from './parallel-transfer.js';
+import { compileParallel, activeParallel } from './parallel-transfer.js';
 import { split, VisibilityCompiler } from './visibility.js';
 import { dot, sub, cross, unit, point, broadFaces, volume, regions } from './cpu-geometry.js';
 function solidAngle(vertices, eye) {
@@ -111,8 +111,34 @@ function elements(rect, covers, lamp, edgeGaps) {
         nv,
         bounds: [u0, u1, v0, v1],
       };
-      const short = Math.hypot(...r.axisU) < Math.hypot(...r.axisV) ? r.axisU : r.axisV;
-      r.momentAxis = short.map((x) => x / dot(short, short));
+      const axes = [r.axisU, r.axisV],
+        lengths = axes.map((a) => Math.hypot(...a));
+      let axis = lengths[0] < lengths[1] ? 0 : 1;
+      if (!rect.owner) {
+        // Prefer the axis along which the lamp term changes most across this mode.
+        const delta = sub(lamp, r.center);
+        const scores = axes.map((a) => Math.abs(dot(delta, a)) / Math.max(1e-12, dot(delta, delta)));
+        const coords = [(u0 + u1) / 2, (v0 + v1) / 2],
+          half = [Math.hypot(...rect.axisU), Math.hypot(...rect.axisV)];
+        function edge(bounds, gap) {
+          const d = bounds.map(([lo, hi], k) => Math.min(coords[k] - lo, hi - coords[k]) * half[k]);
+          const k = d[0] < d[1] ? 0 : 1,
+            z = d[k] / gap;
+          scores[k] = Math.max(scores[k], lengths[k] / (gap * Math.pow(1 + z * z, 1.5)));
+        }
+        for (const h of covers) edge(h.bounds, h.gap);
+        for (const gap of edgeGaps)
+          edge(
+            [
+              [-1, 1],
+              [-1, 1],
+            ],
+            gap,
+          );
+        axis = scores[0] > scores[1] ? 0 : 1;
+      }
+      const direction = axes[axis];
+      r.momentAxis = direction.map((x) => x / dot(direction, direction));
       r.normal = unit(cross(r.axisU, r.axisV));
       r.area = 4 * Math.hypot(...cross(r.axisU, r.axisV));
       list.push(r);
@@ -121,7 +147,11 @@ function elements(rect, covers, lamp, edgeGaps) {
 }
 function lampFlux(mode, lit, lamp) {
   const [u0, u1, v0, v1] = mode.bounds;
-  let flux = 0;
+  let flux = 0,
+    moment = 0;
+  const lampOffset = sub(lamp, mode.center),
+    offset = dot(lampOffset, mode.momentAxis),
+    height = Math.abs(dot(lampOffset, mode.normal));
   for (const cell of lit) {
     if (!cell.lit) continue;
     if (!cell.bounds) {
@@ -141,13 +171,41 @@ function lampFlux(mode, lit, lamp) {
       [poly] = split(poly, a, b, c, 1e-12);
       if (poly.length < 3) break;
     }
-    if (poly.length >= 3)
-      flux += solidAngle(
-        poly.map(([u, v]) => point(mode.rect, u, v)),
-        lamp,
-      );
+    if (poly.length < 3) continue;
+    const vertices = poly.map(([u, v]) => point(mode.rect, u, v));
+    const omega = solidAngle(vertices, lamp);
+    flux += omega;
+    moment += offset * omega;
+    // Integrate the first moment of h/r³ by the boundary integral of 1/r.
+    for (let i = 0; i < vertices.length; i++) {
+      const a = vertices[i],
+        b = vertices[(i + 1) % vertices.length],
+        edge = sub(b, a),
+        length = Math.hypot(...edge);
+      if (!length || !height) continue;
+      const radii = Math.hypot(...sub(a, lamp)) + Math.hypot(...sub(b, lamp));
+      moment -=
+        ((height * dot(cross(edge, mode.normal), mode.momentAxis)) / length) *
+        Math.log1p((2 * length) / (radii - length));
+    }
   }
-  return flux / mode.area;
+  return [flux / mode.area, Math.max(-flux, Math.min(flux, 3 * moment)) / mode.area];
+}
+function sameVector(a, b) {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+function sameShape(a, b) {
+  if (a === b) return true;
+  if (!a || a.id !== b.id || !sameVector(a.center, b.center)) return false;
+  if (a.axes || b.axes)
+    return (
+      a.axes &&
+      b.axes &&
+      a.radius === b.radius &&
+      sameVector(a.halfSize, b.halfSize) &&
+      a.axes.every((v, i) => sameVector(v, b.axes[i]))
+    );
+  return sameVector(a.axisU, b.axisU) && sameVector(a.axisV, b.axisV);
 }
 export class Equilibrium {
   constructor(sweep) {
@@ -157,15 +215,21 @@ export class Equilibrium {
     this.elements = new WeakMap();
     this.boxFaces = new WeakMap();
   }
-  update(scene) {
-    const shapes = [...scene.rectangles, ...scene.roundedBoxes],
-      lamp = scene.lightPosition;
+  update(scene, pool) {
+    const start = performance.now();
+    const lamp = scene.lightPosition;
     const staticChanged =
       !this.sheets ||
       this.sheets.length !== scene.rectangles.length ||
-      scene.rectangles.some((r, i) => this.sheets[i] !== r);
+      scene.rectangles.some((r, i) => !sameShape(this.sheets[i], r));
+    const boxes = scene.roundedBoxes.map((b, i) => (sameShape(this.boxes?.[i], b) ? this.boxes[i] : b));
+    const boxesChanged =
+      !this.boxes || this.boxes.length !== boxes.length || boxes.some((b, i) => b !== this.boxes[i]);
+    this.boxes = boxes;
+    if (boxesChanged) this.shadowState = null;
     if (staticChanged || !this.lamp || lamp.some((x, i) => x !== this.lamp[i])) {
       this.parallel = null;
+      this.shadowState = null;
       this.lamp = lamp.slice();
       this.fixedLamp = new Map(
         this.visibility.update(scene.rectangles, lamp).surfaces.map((s) => [s.rect, s.cells]),
@@ -180,11 +244,11 @@ export class Equilibrium {
           this.edges.get(h.sheet).push(h.gap);
         }
     }
-    const proxy = scene.roundedBoxes.map((b) => {
+    const proxy = boxes.map((b) => {
       if (!this.boxFaces.has(b)) this.boxFaces.set(b, broadFaces(b));
       return this.boxFaces.get(b);
     });
-    const sheets = [...scene.rectangles, ...proxy.flat()],
+    const sheets = [...this.sheets, ...proxy.flat()],
       modes = [],
       groups = new Map();
     for (const rect of sheets) {
@@ -197,17 +261,43 @@ export class Equilibrium {
       groups.set(rect, { offset: modes.length, nu: group[0].nu, nv: group[0].nv });
       modes.push(...group);
     }
-    const lampVolumes = shapes.map((s) => [s, volume(s, lamp)]);
-    const moving = lampVolumes.slice(scene.rectangles.length);
-    const lampRegions = new Map(
-      sheets.map((r) => [
-        r,
-        this.fixedLamp.has(r) ? regions(r, moving, this.fixedLamp.get(r)) : regions(r, lampVolumes),
-      ]),
-    );
-    const { direct, K, solve, bytes } = this.sweep(modes);
-    this.parallel ??= compileParallel(scene.rectangles, groups, modes, this.covers);
-    const near = applyParallel(this.parallel, scene.roundedBoxes, K, modes.length * 2);
+    const original = new Map(this.sheets.map((r, i) => [r, scene.rectangles[i]]));
+    boxes.forEach((b, i) => original.set(b, scene.roundedBoxes[i]));
+    const colors = modes.map((m) => (original.get(m.owner) || m).color);
+    this.parallel ??= compileParallel(this.sheets, groups, modes, this.covers);
+    const near = activeParallel(this.parallel, boxes);
+    const prepared = performance.now(),
+      exchangeStart = prepared;
+    const transfer = this.sweep(modes, near, pool);
+    const visibilityStart = performance.now();
+    if (!this.shadowState) {
+      const volumes = [...this.sheets, ...boxes].map((s) => [s, volume(s, lamp)]),
+        moving = volumes.slice(this.sheets.length);
+      const regionsBySheet = new Map(
+        sheets.map((r) => [
+          r,
+          r.owner && dot(cross(r.axisU, r.axisV), sub(lamp, r.center)) <= 0
+            ? []
+            : this.fixedLamp.has(r)
+              ? regions(r, moving, this.fixedLamp.get(r))
+              : regions(r, volumes),
+        ]),
+      );
+      this.shadowState = { volumes, regionsBySheet };
+    }
+    const { volumes: lampVolumes, regionsBySheet } = this.shadowState,
+      lampRegions = new Map(regionsBySheet),
+      covers = new Map(this.covers);
+    for (const r of this.sheets) {
+      const authored = original.get(r);
+      if (r === authored) continue;
+      lampRegions.set(authored, regionsBySheet.get(r));
+      covers.set(authored, covers.get(r));
+      groups.set(authored, groups.get(r));
+    }
+    const visible = performance.now(),
+      direct = new Float32Array(6 * modes.length),
+      directSlope = new Float32Array(direct.length);
     for (let j = 0; j < modes.length; j++) {
       const r = modes[j],
         side = Number(dot(sub(lamp, r.center), r.normal) < 0);
@@ -222,24 +312,47 @@ export class Equilibrium {
         flux = lampFlux(r, cells, lamp);
         cache.set(r, flux);
       }
-      for (let c = 0; c < 3; c++) direct[(2 * j + side) * 3 + c] = flux * r.color[c] * scene.lampRGB[c];
+      for (let c = 0; c < 3; c++) {
+        const i = (2 * j + side) * 3 + c,
+          f = colors[j][c] * scene.lampRGB[c];
+        direct[i] = flux[0] * f;
+        directSlope[i] = flux[1] * f;
+      }
     }
-    const result = solve();
-    const outgoing = Float32Array.from(
-      direct,
-      (d, k) => d + result.incident[k] * modes[Math.floor(k / 6)].color[k % 3],
-    );
-    return {
-      modes,
-      groups,
-      near,
-      outgoing,
-      proxy,
-      covers: this.covers,
-      lampRegions,
-      lampVolumes,
-      ...result,
-      bytes: bytes + result.incident.byteLength + result.slopes.byteLength,
-    };
+    const lit = performance.now();
+    function finish({ solve, bytes, links, workerBytes, workerMs, assemblyMs }) {
+      const solveStart = performance.now(),
+        result = solve(direct, directSlope, colors);
+      const outgoing = Float32Array.from(
+        direct,
+        (d, k) => d + result.incident[k] * colors[Math.floor(k / 6)][k % 3],
+      );
+      return {
+        timings: {
+          workerMs,
+          assemblyMs,
+          basis: prepared - start,
+          visibility: visible - visibilityStart,
+          exchange: pool ? solveStart - exchangeStart : visibilityStart - exchangeStart,
+          lamp: lit - visible,
+          solve: performance.now() - solveStart,
+        },
+        modes,
+        links,
+        workerBytes,
+        boxes,
+        groups,
+        near,
+        outgoing,
+        proxy,
+        covers,
+        lampRegions,
+        lampVolumes,
+        ...result,
+        bytes:
+          bytes + result.incident.byteLength + result.sidedSlopes.byteLength + result.outSlope.byteLength,
+      };
+    }
+    return transfer.then ? transfer.then(finish) : finish(transfer);
   }
 }

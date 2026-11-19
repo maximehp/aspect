@@ -131,13 +131,34 @@ function footprintEdges(polygon) {
   });
 }
 
+const polygonBounds = new WeakMap();
+function boundsOf(uv) {
+  let box = polygonBounds.get(uv);
+  if (!box) {
+    let left = Infinity, right = -Infinity, bottom = Infinity, top = -Infinity;
+    for (const [u, v] of uv) {
+      left = Math.min(left, u);
+      right = Math.max(right, u);
+      bottom = Math.min(bottom, v);
+      top = Math.max(top, v);
+    }
+    box = [left, right, bottom, top];
+    polygonBounds.set(uv, box);
+  }
+  return box;
+}
 function partitionReceiver(footprints, initial) {
   let lit = initial ? initial.filter(c => c.lit).map(c => c.uv) : [square];
   const dark = initial ? initial.filter(c => !c.lit).map(c => c.uv) : [];
   for (const polygon of footprints.values()) {
     if (!lit.length) break;
-    const edges = footprintEdges(polygon), next = [];
+    const edges = footprintEdges(polygon), next = [], mask = boundsOf(polygon);
     for (const original of lit) {
+      const b = boundsOf(original);
+      if (mask[0] >= b[1] || mask[1] <= b[0] || mask[2] >= b[3] || mask[3] <= b[2]) {
+        next.push(original);
+        continue;
+      }
       const uncovered = [];
       let intersection = original;
       for (const edge of edges) {

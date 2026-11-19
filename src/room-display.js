@@ -1,9 +1,8 @@
+import { BeamWorkers } from './beam-workers.js';
 import { CpuView } from './cpu-view.js';
 import { Equilibrium } from './equilibrium.js';
-import { createSweep } from './beam-exchange.js';
-const sweep = await createSweep(
-  await (await fetch(new URL('./beam-sweep.wasm', import.meta.url))).arrayBuffer(),
-);
+import { instanceSweep } from './beam-exchange.js';
+const module = await WebAssembly.compileStreaming(fetch(new URL('./beam-sweep.wasm', import.meta.url)));
 function cameraMatrix({ position, yaw, pitch, fov }, aspect) {
   const cy = Math.cos(yaw),
     sy = Math.sin(yaw),
@@ -90,17 +89,43 @@ export class LiveRenderer {
       gl.texParameteri(gl.TEXTURE_2D, p, gl.LINEAR);
     for (const p of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T])
       gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE);
-    this.math = new Equilibrium(sweep);
+    this.math = new Equilibrium(instanceSweep(new WebAssembly.Instance(module)));
     this.view = new CpuView();
     this.pixel = new Uint8Array(4);
   }
   setScene(scene) {
-    const gl = this.gl,
-      t = performance.now();
+    const t = performance.now();
+    this.applyScene(scene, this.math.update(scene), t);
+  }
+  prepareScene(scene) {
+    const calculate = async () => {
+      if (this.disposed) throw Error('Renderer disposed.');
+      if (typeof Worker === 'undefined' || this.serial) return this.math.update(scene);
+      try {
+        this.workers ??= new BeamWorkers();
+        return await this.math.update(scene, this.workers);
+      } catch (error) {
+        if (this.disposed || (this.workers && !this.workers.failed)) throw error;
+        this.workers?.dispose();
+        this.serial = true;
+        return this.math.update(scene);
+      }
+    };
+    const result = (this.preparations || Promise.resolve()).then(calculate);
+    this.preparations = result.then(
+      () => {},
+      () => {},
+    );
+    return result;
+  }
+  applyScene(scene, result, t) {
+    const gl = this.gl;
     this.scene = scene;
     this.eye = null;
-    const result = this.math.update(scene);
+    this.viewMs = 0;
+    const appearanceStart = performance.now();
     this.view.setScene(scene, result);
+    this.timings = { ...result.timings, appearance: performance.now() - appearanceStart };
     this.iterations = result.iterations;
     this.cpuMs = performance.now() - t;
     const u = performance.now();
@@ -109,6 +134,8 @@ export class LiveRenderer {
     this.uploadMs = performance.now() - u;
     this.stats = {
       bytes: result.bytes + tex.byteLength,
+      workerBytes: result.workerBytes,
+      links: result.links,
       iterations: result.iterations,
       residual: result.residual,
     };
@@ -148,6 +175,8 @@ export class LiveRenderer {
   }
   dispose() {
     const gl = this.gl;
+    this.disposed = true;
+    this.workers?.dispose();
     gl.deleteTexture(this.texture);
     gl.deleteBuffer(this.buffer);
     gl.deleteProgram(this.program);

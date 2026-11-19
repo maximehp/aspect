@@ -3,7 +3,7 @@ import { cavityWeight } from './equilibrium.js';
 import { painter } from './painter.js';
 import { volume, regions, shell, dot, cross, sub, unit, point } from './cpu-geometry.js';
 import { split } from './visibility.js';
-import { planarCharts } from './irradiance-layout.js';
+import { planarCharts, chartPoint, chartCoordinate, chartPolygons } from './irradiance-layout.js';
 
 function intersect(poly, mask) {
   for (let i = 0; i < mask.length && poly.length; i++) {
@@ -132,6 +132,7 @@ function chartFilter(g, sources, width, rows, tex, row, lamp) {
     vs = centers(0, nu, nv, 2);
   const terms = oneSheet ? 4 : sources.length,
     weights = new Float32Array(rows * width * terms),
+    linearWeights = new Float32Array(weights.length),
     indices = oneSheet ? new Uint32Array(weights.length) : null;
   const n = unit(cross(rect.axisU, rect.axisV)),
     area = dot(cross(rect.axisU, rect.axisV), n),
@@ -139,7 +140,7 @@ function chartFilter(g, sources, width, rows, tex, row, lamp) {
     dv = cross(n, rect.axisU);
   for (let y = 0; y < rows; y++)
     for (let x = 0; x < width; x++) {
-      const p = g.origin.map((v, k) => v + (g.u[k] * x) / (width - 1) + (g.v[k] * y) / (rows - 1)),
+      const p = chartPoint(g, x / (width - 1), y / (rows - 1)),
         i = y * width + x;
       tex[4 * (row * width + i) + 3] = direct(p, g.n, lamp);
       const base = i * terms;
@@ -165,13 +166,25 @@ function chartFilter(g, sources, width, rows, tex, row, lamp) {
         }
         for (let j = 0; j < sources.length; j++) weights[base + j] /= sum;
       }
+      for (let j = 0; j < terms; j++) {
+        const r = sources[indices ? indices[base + j] : j].r;
+        linearWeights[base + j] =
+          weights[base + j] * Math.max(-1, Math.min(1, dot(sub(p, r.center), r.momentAxis)));
+      }
     }
-  return { weights, indices, terms, byteLength: weights.byteLength + (indices?.byteLength || 0) };
+  return {
+    weights,
+    linearWeights,
+    indices,
+    terms,
+    byteLength: weights.byteLength + linearWeights.byteLength + (indices?.byteLength || 0),
+  };
 }
 export class CpuView {
   constructor() {
     this.cache = {};
     this.shells = new WeakMap();
+    this.vertices = new Float32Array(0);
   }
   setScene(scene, solution) {
     this.scene = scene;
@@ -186,7 +199,7 @@ export class CpuView {
         side: s,
         r: m,
         covers: (solution.covers.get(r) || []).filter((h) => h.side === s),
-        slope: solution.slopes.subarray(3 * (offset + i), 3 * (offset + i) + 3),
+        slope: solution.sidedSlopes.subarray(6 * (offset + i) + 3 * s, 6 * (offset + i) + 3 * s + 3),
         rgb: solution.incident.subarray(3 * (2 * (offset + i) + s), 3 * (2 * (offset + i) + s) + 3),
       }));
     };
@@ -228,7 +241,7 @@ export class CpuView {
           : null;
       if (local)
         for (let j = 0; j < sources.length; j++) sources[j].rgb = local.other.subarray(3 * j, 3 * j + 3);
-      const { weights, indices, terms } = this.filters[chart++];
+      const { weights, linearWeights, indices, terms } = this.filters[chart++];
       let k = 0;
       for (let i = 0; i < width * rows; i++, base += 4) {
         let r = 0,
@@ -236,10 +249,11 @@ export class CpuView {
           b = 0;
         for (let j = 0; j < terms; j++) {
           const source = sources[indices ? indices[k] : j];
-          const w = weights[k++];
-          r += source.rgb[0] * w;
-          g += source.rgb[1] * w;
-          b += source.rgb[2] * w;
+          const m = local ? 0 : linearWeights[k],
+            w = weights[k++];
+          r += source.rgb[0] * w + source.slope[0] * m;
+          g += source.rgb[1] * w + source.slope[1] * m;
+          b += source.rgb[2] * w + source.slope[2] * m;
         }
         if (local) {
           const open = local.open[i];
@@ -247,10 +261,11 @@ export class CpuView {
           g *= open;
           b *= open;
           for (let j = 0; j < local.count; j++) {
-            const w = local.weights[i * local.count + j];
-            r += w * local.emitted[3 * j];
-            g += w * local.emitted[3 * j + 1];
-            b += w * local.emitted[3 * j + 2];
+            const w = local.weights[i * local.count + j],
+              m = local.gradients[i * local.count + j];
+            r += w * local.emitted[3 * j] + m * local.slopes[3 * j];
+            g += w * local.emitted[3 * j + 1] + m * local.slopes[3 * j + 1];
+            b += w * local.emitted[3 * j + 2] + m * local.slopes[3 * j + 2];
           }
         }
         tex[base] = r;
@@ -265,42 +280,61 @@ export class CpuView {
         this.shells.set(b, faces);
       }
       const refs = solution.proxy[i].map((r) => modeSources(r, 0));
-      const lamp = relevant(b, solution.lampVolumes);
+      const lamp = relevant(solution.boxes[i], solution.lampVolumes);
       const shaded = new Map();
       return faces.map((vertices) => {
         const p = vertices[0].p,
           n = unit(cross(sub(vertices[1].p, p), sub(vertices[2].p, p)));
-        const poly = vertices.map((vertex) => {
-          if (shaded.has(vertex)) return shaded.get(vertex);
-          const { p, normal } = vertex;
-          const value = [0, 0, 0];
-          for (let k = 0; k < 3; k++) {
-            const c = dot(b.axes[k], normal);
-            if (Math.abs(c) < 1e-7) continue;
-            const f = field(p, refs[2 * k + Number(c < 0)], rgb);
-            for (let j = 0; j < 3; j++) value[j] += c * c * f[j];
-          }
-          const result = [...p, ...value, direct(p, normal, scene.lightPosition)];
-          shaded.set(vertex, result);
-          return result;
-        });
-        const [lit, dark] = poly.every((v) => v[6] === 0) ? [[], [poly]] : trim([poly], lamp, true);
-        return { p, n, lit, dark };
+        // Defer clipping and lighting until this part of the convex shell is visible.
+        const face = {
+          p,
+          n,
+          regions: null,
+          prepare() {
+            const poly = vertices.map((vertex) => {
+              if (shaded.has(vertex)) return shaded.get(vertex);
+              const { p, normal } = vertex;
+              const value = [0, 0, 0];
+              for (let k = 0; k < 3; k++) {
+                const c = dot(b.axes[k], normal);
+                if (Math.abs(c) < 1e-7) continue;
+                const f = field(p, refs[2 * k + Number(c < 0)], rgb);
+                for (let j = 0; j < 3; j++) value[j] += c * c * f[j];
+              }
+              const result = [...p, ...value, direct(p, normal, scene.lightPosition)];
+              shaded.set(vertex, result);
+              return result;
+            });
+            const [lit, dark] = poly.every((v) => v[6] === 0) ? [[], [poly]] : trim([poly], lamp, true);
+            return (face.regions = [lit, dark]);
+          },
+        };
+        return face;
       });
     });
     this.shadows = scene.rectangles.map((r) => solution.lampRegions.get(r));
   }
   drawList(eye) {
     const order = painter(this.shapes, eye);
-    const volumes = order ? null : this.shapes.map((s) => [s, volume(s, eye)]),
-      data = [];
+    const volumes = order ? null : this.shapes.map((s) => [s, volume(s, eye)]);
+    let data = this.vertices,
+      length = 0;
     function fan(poly, vertex) {
       if (poly.length < 3) return;
+      const end = length + 39 * (poly.length - 2);
+      if (end > data.length) {
+        const next = new Float32Array(Math.max(end, 1024, data.length * 2));
+        next.set(data.subarray(0, length));
+        data = next;
+      }
       const a = vertex(poly[0]);
       let b = vertex(poly[1]);
       for (let i = 2; i < poly.length; i++) {
         const c = vertex(poly[i]);
-        data.push(...a, ...b, ...c);
+        data.set(a, length);
+        data.set(b, length + 13);
+        data.set(c, length + 26);
+        length += 39;
         b = c;
       }
     }
@@ -312,30 +346,32 @@ export class CpuView {
       for (const v of visible)
         for (const s of this.shadows[i]) {
           const uv = v ? intersect(v.uv, s.uv) : s.uv;
-          fan(uv, ([u, v]) => {
-            const p = point(r, u, v);
-            return [
-              ...p,
-              (0.5 + (atlas.width - 1) * (dot(g.du, p) + g.du[3])) / atlas.width,
-              (g.displayRow + 0.5 + (atlas.rows - 1) * (dot(g.dv, p) + g.dv[3])) / atlas.height,
-              ...r.color,
-              0,
-              0,
-              0,
-              0,
-              +s.lit,
-            ];
-          });
+          const poly = uv.map(([u, v]) => point(r, u, v));
+          for (const cell of g.coords ? chartPolygons(poly, [g]) : [poly])
+            fan(cell, (p) => {
+              return [
+                ...p,
+                (0.5 + (atlas.width - 1) * chartCoordinate(g, 0, dot(g.du, p) + g.du[3])) / atlas.width,
+                (g.displayRow + 0.5 + (atlas.rows - 1) * chartCoordinate(g, 1, dot(g.dv, p) + g.dv[3])) /
+                  atlas.height,
+                ...r.color,
+                0,
+                0,
+                0,
+                0,
+                +s.lit,
+              ];
+            });
         }
     };
     const solid = (b, i) => {
       const blocks = volumes ? relevant(b, volumes) : null;
       for (const f of this.solidFaces[i]) {
         if (dot(sub(eye, f.p), f.n) <= 0) continue;
-        for (const [polys, lit] of [
-          [f.lit, 1],
-          [f.dark, 0],
-        ]) {
+        const parts = f.regions || f.prepare();
+        for (let j = 0; j < 2; j++) {
+          const polys = parts[j],
+            lit = 1 - j;
           for (const poly of blocks ? trim(polys, blocks, false)[0] : polys)
             fan(poly, (p) => [p[0], p[1], p[2], -1, 0, ...b.color, ...p.slice(3), lit]);
         }
@@ -345,6 +381,7 @@ export class CpuView {
       if (i < scene.rectangles.length) sheet(this.shapes[i], i);
       else solid(this.shapes[i], i - scene.rectangles.length);
     }
-    return new Float32Array(data);
+    this.vertices = data;
+    return data.subarray(0, length);
   }
 }
