@@ -1,3 +1,4 @@
+import { incidentDirections } from './contact-transfer.js';
 import { cross, unit, point } from './cpu-geometry.js';
 
 export const directionCount = 96;
@@ -64,7 +65,7 @@ export class BeamWorkspace {
     this.vertices = this.records + 72 * np;
     this.axes = this.reserve(frames.length * 4);
     this.op = this.reserve(20);
-    this.scratch = this.reserve(np * 120);
+    this.scratch = this.reserve(np * 140 + 16);
     this.grow();
     this.bytes.set(packet, this.records);
     this.floats.set(frames, this.axes / 4);
@@ -182,7 +183,7 @@ export class BeamWorkspace {
     return {
       links: used,
       bytes: this.wasm.memory.buffer.byteLength + base.byteLength,
-      solve: (lamp, gradient, colors) => {
+      solve: (lamp, gradient, colors, contacts = []) => {
         if (colors)
           for (let i = 0; i < modes.length; i++) this.floats.set(colors[i], this.records / 4 + i * 18 + 12);
         this.floats.set(lamp, direct / 4);
@@ -203,7 +204,17 @@ export class BeamWorkspace {
         if (!iterations) throw Error('Diffuse equilibrium failed to converge.');
         const memory = this.wasm.memory.buffer;
         const [residual, maxRow] = new Float64Array(memory, bounds, 2);
+        const directional = incidentDirections(
+          contacts,
+          modes,
+          this.ints.subarray(offset / 4),
+          this.ints.subarray(rows / 4),
+          this.floats.subarray(rows / 4),
+          new Float64Array(memory, outgoing, 3 * n),
+          new Float64Array(memory, outSlope, 3 * n),
+        );
         return {
+          directional,
           iterations,
           residual,
           maxRow,

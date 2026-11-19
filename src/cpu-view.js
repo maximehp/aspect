@@ -1,3 +1,4 @@
+import { compileContact, drawContact, contactMoving } from './contact-transfer.js';
 import { nearField } from './parallel-transfer.js';
 import { cavityWeight } from './equilibrium.js';
 import { painter } from './painter.js';
@@ -190,7 +191,7 @@ export class CpuView {
     this.scene = scene;
     this.solution = solution;
     this.shapes = [...scene.rectangles, ...scene.roundedBoxes];
-    const sheets = planarCharts(scene.rectangles, this.cache).slots;
+    const sheets = planarCharts(scene.rectangles, this.cache, solution.contacts).slots;
     const charts = new Map();
     this.faces = sheets;
     const modeSources = (r, s) => {
@@ -217,6 +218,7 @@ export class CpuView {
       this.prevCharts = sheets;
       this.lamp = scene.lightPosition.slice();
       this.filters = [];
+      this.contacts = new Map();
       const tex = new Float32Array(width * height * 4);
       this.atlas = { tex, width, height, rows };
       let row = 0;
@@ -240,8 +242,13 @@ export class CpuView {
           ? nearField(blocks[0], grid, width, rows, solution)
           : null;
       if (local)
-        for (let j = 0; j < sources.length; j++) sources[j].rgb = local.other.subarray(3 * j, 3 * j + 3);
-      const { weights, linearWeights, indices, terms } = this.filters[chart++];
+        for (let j = 0; j < sources.length; j++) {
+          sources[j].rgb = local.other.subarray(3 * j, 3 * j + 3);
+          sources[j].slope = local.otherSlope.subarray(3 * j, 3 * j + 3);
+        }
+      const filter = this.filters[chart++],
+        { weights, linearWeights, indices, terms } = filter;
+      const chartBase = base;
       let k = 0;
       for (let i = 0; i < width * rows; i++, base += 4) {
         let r = 0,
@@ -249,7 +256,7 @@ export class CpuView {
           b = 0;
         for (let j = 0; j < terms; j++) {
           const source = sources[indices ? indices[k] : j];
-          const m = local ? 0 : linearWeights[k],
+          const m = linearWeights[k],
             w = weights[k++];
           r += source.rgb[0] * w + source.slope[0] * m;
           g += source.rgb[1] * w + source.slope[1] * m;
@@ -257,9 +264,12 @@ export class CpuView {
         }
         if (local) {
           const open = local.open[i];
-          r *= open;
-          g *= open;
-          b *= open;
+          // In the cavity the opening varies on the gap scale. At the exposed
+          // side of the edge use the continuous background across the sheet.
+          const mix = local.blend[i];
+          r = open * (r + mix * (local.background[3 * i] - r));
+          g = open * (g + mix * (local.background[3 * i + 1] - g));
+          b = open * (b + mix * (local.background[3 * i + 2] - b));
           for (let j = 0; j < local.count; j++) {
             const w = local.weights[i * local.count + j],
               m = local.gradients[i * local.count + j];
@@ -271,6 +281,22 @@ export class CpuView {
         tex[base] = r;
         tex[base + 1] = g;
         tex[base + 2] = b;
+      }
+      const feature =
+        !local && indices && solution.contacts.find((f) => f.receiver === rect && f.side === side);
+      if (feature) {
+        let contact = this.contacts.get(grid);
+        const moving = contact && contactMoving(contact.domain, solution.boxes);
+        if (
+          !contact ||
+          contact.feature !== feature ||
+          moving.length !== contact.moving.length ||
+          moving.some((b, i) => b !== contact.moving[i])
+        ) {
+          contact = compileContact(grid, feature, solution, width, rows, filter);
+          this.contacts.set(grid, contact);
+        }
+        drawContact(contact, filter, solution, tex, chartBase);
       }
     }
     this.solidFaces = scene.roundedBoxes.map((b, i) => {

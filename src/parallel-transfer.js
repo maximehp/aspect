@@ -167,6 +167,73 @@ export function compileParallel(sheets, groups, modes, covers) {
 export function activeParallel(pairs, movers) {
   return pairs.filter((p) => !movers.some((s) => intersects(s, p.axes, p.bounds))).flatMap((p) => p.sides);
 }
+// Plate edges create narrow transport rows even far outside the projected plate.
+// The exterior background uses a continuous area-weighted footprint at each
+// display site. Covered modes carry less information about this background.
+function backgroundFilter(block, modes, grid, width, rows) {
+  const { axes, receiver, other, offset, size } = block;
+  const radii = axes.slice(0, 2).map((axis) => {
+    const half = extent(receiver, axis);
+    return half / Math.min(5, Math.ceil(half / 0.82));
+  });
+  const shapes = modes.slice(offset, offset + size).map((mode) => ({
+    mode,
+    bounds: axes.slice(0, 2).map((a) => interval(mode, a)),
+  }));
+  function moments(lo, hi, x, radius) {
+    const a = Math.max(-1, (lo - x) / radius),
+      b = Math.min(1, (hi - x) / radius);
+    if (a >= b) return [0, 0];
+    const mass = (t) => t - 0.5 * t * Math.abs(t);
+    const first = (t) => t * t * (0.5 - Math.abs(t) / 3);
+    const w = mass(b) - mass(a);
+    return [w, radius * (first(b) - first(a)) + (x - 0.5 * (lo + hi)) * w];
+  }
+  const plate = axes.slice(0, 2).map((axis) => interval(other, axis));
+  const blend = new Float32Array(width * rows);
+  const taps = [],
+    weights = [],
+    gradients = [],
+    ends = [];
+  for (let j = 0; j < rows; j++)
+    for (let i = 0; i < width; i++) {
+      const p = chartPoint(grid, i / (width - 1), j / (rows - 1));
+      const xy = axes.slice(0, 2).map((a) => dot(p, a));
+      const clearance = Math.hypot(...xy.map((x, k) => Math.max(0, plate[k][0] - x, x - plate[k][1])));
+      const t = Math.min(1, clearance / (2 * block.height));
+      blend[j * width + i] = t * t * (3 - 2 * t);
+      if (t === 0) {
+        ends.push(taps.length);
+        continue;
+      }
+      const entries = [];
+      let sum = 0;
+      for (const [j, src] of shapes.entries()) {
+        const [u, v] = src.bounds.map(([lo, hi], k) => moments(lo, hi, xy[k], radii[k]));
+        const exposed = Math.max(0, 1 - block.mass[j]);
+        const w = u[0] * v[0] * exposed;
+        if (!w) continue;
+        const m =
+          u[1] * v[0] * dot(src.mode.momentAxis, axes[0]) + v[1] * u[0] * dot(src.mode.momentAxis, axes[1]);
+        entries.push([j, w, exposed * m]);
+        sum += w;
+      }
+      if (!entries.length) blend[j * width + i] = 0;
+      for (const [id, w, m] of entries) {
+        taps.push(id);
+        weights.push(w / sum);
+        gradients.push(m / sum);
+      }
+      ends.push(taps.length);
+    }
+  return {
+    blend,
+    ends: Uint32Array.from(ends),
+    taps: Uint32Array.from(taps),
+    weights: Float32Array.from(weights),
+    gradients: Float32Array.from(gradients),
+  };
+}
 // Point-to-rectangle transfer evaluates a continuous function on the receiver.
 // The unobstructed portion uses the same outgoing solution as the equilibrium.
 export function nearField(block, grid, width, rows, solution) {
@@ -235,16 +302,48 @@ export function nearField(block, grid, width, rows, solution) {
     const p = 6 * (block.otherOffset + j) + 3 * block.otherSide;
     slopes.set(solution.outSlope.subarray(p, p + 3), 3 * j);
   }
-  const other = new Float64Array(size * 3);
+  const other = new Float64Array(size * 3),
+    otherSlope = new Float64Array(size * 3);
   for (let y = 0; y < size; y++)
     for (let c = 0; c < 3; c++) {
-      let reflected = 0;
-      for (let j = 0; j < count; j++)
-        reflected +=
-          block.mean[y * count + j] * emitted[j * 3 + c] +
-          (block.m2[y * count + j] / modes[block.offset + y].area) * slopes[j * 3 + c];
-      const full = incident[6 * (block.offset + y) + 3 * block.side + c];
-      other[y * 3 + c] = Math.max(0, full - reflected) / Math.max(1e-8, 1 - block.mass[y]);
+      const area = modes[block.offset + y].area;
+      let reflected = 0,
+        reflectedSlope = 0,
+        blockedSlope = 0;
+      for (let j = 0; j < count; j++) {
+        const k = y * count + j,
+          e = emitted[j * 3 + c],
+          b = slopes[j * 3 + c];
+        reflected += block.mean[k] * e + (block.m2[k] * b) / area;
+        reflectedSlope += (3 * (block.m1[k] * e + block.m12[k] * b)) / area;
+        blockedSlope += (3 * block.m1[k]) / area;
+      }
+      const i = 6 * (block.offset + y) + 3 * block.side + c;
+      const open = Math.max(1e-8, 1 - block.mass[y]);
+      // Factor the residual as open solid angle times background radiance.
+      // Use the open-area centroid so its reconstructed slope preserves flux.
+      const mean = Math.max(0, incident[i] - reflected) / open;
+      const centroid = Math.max(-1, Math.min(1, -blockedSlope / (3 * open)));
+      const gradient = (solution.sidedSlopes[i] - reflectedSlope + blockedSlope * mean) / open;
+      const slope = Math.max(
+        -mean / (1 - centroid || 1e-8),
+        Math.min(mean / (1 + centroid || 1e-8), gradient),
+      );
+      other[y * 3 + c] = mean - centroid * slope;
+      otherSlope[y * 3 + c] = slope;
     }
-  return { ...block.texels, other, emitted, slopes, count };
+  if (block.background?.grid !== grid)
+    block.background = { grid, ...backgroundFilter(block, modes, grid, width, rows) };
+  const filter = block.background,
+    background = new Float32Array(width * rows * 3);
+  let tap = 0;
+  for (let i = 0; i < width * rows; i++) {
+    for (; tap < filter.ends[i]; tap++) {
+      const j = filter.taps[tap] * 3,
+        w = filter.weights[tap],
+        m = filter.gradients[tap];
+      for (let c = 0; c < 3; c++) background[3 * i + c] += other[j + c] * w + otherSlope[j + c] * m;
+    }
+  }
+  return { ...block.texels, other, otherSlope, background, blend: filter.blend, emitted, slopes, count };
 }

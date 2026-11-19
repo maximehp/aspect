@@ -107,13 +107,13 @@ function components(members, normal, all) {
 // Near a parallel plate, the incident field changes over approximately the
 // distance between the two planes. Sample on both sides of its silhouette.
 // Ordinary broad surfaces keep their regular, hardware-interpolated lookup.
-function placeContacts(g, sheets) {
+function placeContacts(g, sheets, fullContacts) {
   const ranges = [g.du, g.dv],
     scale = [Math.hypot(...g.u), Math.hypot(...g.v)];
   const candidates = [];
   const contacts = [[], []];
   for (const { rect, n, corners } of sheets) {
-    if (Math.abs(dot(n, g.n)) < 1e-8 && Math.min(g.w, g.h) === 2) {
+    if (Math.abs(dot(n, g.n)) < 1e-8 && (fullContacts || Math.min(g.w, g.h) === 2)) {
       const heights = corners.map((p) => dot(add(p, g.origin, -1), g.n));
       if (
         Math.min(...heights) < 1e-6 &&
@@ -167,7 +167,7 @@ function placeContacts(g, sheets) {
         ...knots,
         ...knots.slice(1).flatMap((v, i) => (v - knots[i] > 0.22 ? [(v + knots[i]) * 0.5] : [])),
       ]);
-      if (axis.length <= 15) {
+      if (axis.length <= (fullContacts ? 23 : 15)) {
         coords[d] = axis;
         hasContacts = true;
       }
@@ -217,7 +217,7 @@ function grid(origin, u, v, n) {
 }
 // Rectangles can be edited in place by the calling game. Comparing their
 // coordinates keeps the blind-only path cheap without relying on immutability.
-export function planarCharts(rectangles, cache) {
+export function planarCharts(rectangles, cache, contacts = []) {
   const geometry = rectangles.flatMap((r) => [...r.center, ...r.axisU, ...r.axisV]);
   if (cache.geometry?.length === geometry.length && geometry.every((v, i) => v === cache.geometry[i]))
     return cache.charts;
@@ -257,7 +257,13 @@ export function planarCharts(rectangles, cache) {
           }
         const o = add(add(mul(g.n, g.plane), g.u, lo[0]), g.v, lo[1]);
         const field = grid(o, mul(g.u, hi[0] - lo[0]), mul(g.v, hi[1] - lo[1]), n);
-        placeContacts(field, all);
+        placeContacts(
+          field,
+          all,
+          contacts.some(
+            (f) => group.length === 1 && group[0].r.id === f.receiver.id && dot(n, f.n) > 0.99999,
+          ),
+        );
         grids.push(field);
         for (const m of group) slots[m.id][dot(m.n, n) > 0 ? 0 : 1] = field;
       }

@@ -1,5 +1,6 @@
 // Diffuse power transfer by reciprocal projected area. The unknowns are mean
 // incident RGB on each side. Lamp flux integrates over actual lit polygons.
+import { contactReceivers } from './contact-transfer.js';
 import { compileParallel, activeParallel } from './parallel-transfer.js';
 import { split, VisibilityCompiler } from './visibility.js';
 import { dot, sub, cross, unit, point, broadFaces, volume, regions } from './cpu-geometry.js';
@@ -67,14 +68,27 @@ export function cavityWeight(p, h) {
 function elements(rect, covers, lamp, edgeGaps) {
   const lampDelta = sub(lamp, rect.center),
     distance = Math.abs(dot(lampDelta, unit(cross(rect.axisU, rect.axisV))));
+  // The inverse-square field varies on the scale of the closest lamp-to-sheet
+  // distance. Plane distance alone introduces thin rows across a distant
+  // receiver when the lamp projection lies outside its finite footprint.
+  const lengths = [rect.axisU, rect.axisV].map((axis) => Math.hypot(...axis));
+  const orthogonal = Math.abs(dot(rect.axisU, rect.axisV)) <= 1e-10 * lengths[0] * lengths[1];
+  const featureScale = orthogonal
+    ? Math.hypot(
+        distance,
+        ...[rect.axisU, rect.axisV].map((axis, i) =>
+          Math.max(0, Math.abs(dot(lampDelta, axis)) / lengths[i] - lengths[i]),
+        ),
+      )
+    : distance;
   const knots = [rect.axisU, rect.axisV].map((axis, d) => {
     const count = Math.min(5, Math.ceil(Math.hypot(...axis) / 0.82));
     const cuts = Array.from({ length: count + 1 }, (_, i) => (2 * i) / count - 1);
     const length = Math.hypot(...axis);
-    if (!rect.owner && distance > 1e-5 && length / count > distance) {
+    if (!rect.owner && distance > 1e-5 && length / count > featureScale) {
       const center = dot(lampDelta, axis) / (length * length);
       for (const k of [-3, -1, 0, 1, 3]) {
-        const t = center + (k * distance) / length;
+        const t = center + (k * featureScale) / length;
         if (t > -0.99999 && t < 0.99999) cuts.push(t);
       }
     }
@@ -229,6 +243,7 @@ export class Equilibrium {
     if (boxesChanged) this.shadowState = null;
     if (staticChanged || !this.lamp || lamp.some((x, i) => x !== this.lamp[i])) {
       this.parallel = null;
+      this.contacts = null;
       this.shadowState = null;
       this.lamp = lamp.slice();
       this.fixedLamp = new Map(
@@ -261,6 +276,8 @@ export class Equilibrium {
       groups.set(rect, { offset: modes.length, nu: group[0].nu, nv: group[0].nv });
       modes.push(...group);
     }
+    this.contacts ??= contactReceivers(this.sheets, groups);
+    const contacts = this.contacts;
     const original = new Map(this.sheets.map((r, i) => [r, scene.rectangles[i]]));
     boxes.forEach((b, i) => original.set(b, scene.roundedBoxes[i]));
     const colors = modes.map((m) => (original.get(m.owner) || m).color);
@@ -322,7 +339,7 @@ export class Equilibrium {
     const lit = performance.now();
     function finish({ solve, bytes, links, workerBytes, workerMs, assemblyMs }) {
       const solveStart = performance.now(),
-        result = solve(direct, directSlope, colors);
+        result = solve(direct, directSlope, colors, contacts);
       const outgoing = Float32Array.from(
         direct,
         (d, k) => d + result.incident[k] * colors[Math.floor(k / 6)][k % 3],
@@ -337,6 +354,7 @@ export class Equilibrium {
           lamp: lit - visible,
           solve: performance.now() - solveStart,
         },
+        contacts,
         modes,
         links,
         workerBytes,

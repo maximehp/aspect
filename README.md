@@ -33,3 +33,7 @@ The checked-in WebAssembly module runs on the CPU. Rebuild it with Zig from the 
 zig cc -target wasm32-freestanding -O3 -c src/beam-sweep.c -o /tmp/room-beam.o
 zig wasm-ld --strip-debug --no-entry --export=sweep --export=mergeLinks --export=openOperator --export=installExact --export=prepareRows --export=solveLinks --export=__heap_base --export-memory /tmp/room-beam.o -o src/beam-sweep.wasm
 ```
+
+## Two-tuft fur study
+
+With the local server running, open [the fur study](http://127.0.0.1:8736/fur-lab/). **Brush center part** reproduces the measured groom. Drag in **Brush** mode to make your own part. Orbit and zoom, then switch between the CPU appearance, native-pixel individual hairs, and their difference. **Measure at 4K** takes the current groom on a repeatable twelve-view walk and exports per-view costs and image errors. The GPU displays CPU-generated images. The study lives in `fur-lab/` and can also run directly by opening its `index.html` in a WebGL 2 browser.
