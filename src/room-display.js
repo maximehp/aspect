@@ -142,6 +142,7 @@ export class LiveRenderer {
         const result = await this.math.update(scene, this.workers, (geometry) => {
           const start = performance.now();
           preparedContacts = this.view.prepareContactGeometry(geometry);
+          this.view.contactBackend?.prepareGeometry?.(preparedContacts);
           contactMs = performance.now() - start;
         });
         result.preparedContacts = preparedContacts;

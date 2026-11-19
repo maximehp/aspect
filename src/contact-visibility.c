@@ -20,7 +20,7 @@ typedef struct {
 } Shape;
 typedef struct {
     int site, group, first, last, sourceRect, regionRect;
-    float target, weight, source, moment, row;
+    int cell, row;
 } Address;
 typedef struct {
     int offset, count;
@@ -384,14 +384,14 @@ static List partition(Arena *a, List lit, Poly mask, int onlyCovered, int *chang
     return result;
 }
 typedef struct {
-    float first, count, target, weight, source, moment, row;
+    float first, count, row, sign;
 } Job;
 typedef struct {
     int cached, changed, vertices, maxVertices;
 } Counts;
 enum { moreScratch = -1, moreJobs = -2, moreVertices = -3 };
 _Static_assert(sizeof(Vec) == 24 && sizeof(Rect) == 72 && sizeof(Shape) == 128, "geometry packet layout");
-_Static_assert(sizeof(Address) == 44 && sizeof(Range) == 8 && sizeof(Job) == 28, "contact packet layout");
+_Static_assert(sizeof(Address) == 32 && sizeof(Range) == 8 && sizeof(Job) == 16, "contact packet layout");
 // One near cap and two tangents for each of the twelve core edges.
 static int planeCountFor(int angleCount) { return 1 + angleCount + 2 * 12; }
 int coneBytes(int angleCount) { return sizeof(Cone) + planeCountFor(angleCount) * sizeof(Vec); }
@@ -400,7 +400,7 @@ int coneBytes(int angleCount) { return sizeof(Cone) + planeCountFor(angleCount) 
 int contactPackets(const Vec *eyes, const Rect *rectangles, const Address *addresses, int count,
                    const Shape *shapes, int shapeCount, const Range *apertures, const UV *fixed,
                    const int *groups, const int *indices, const UV *angles, int angleCount, Cone *cones,
-                   unsigned char *scratch, int scratchBytes, Job *cached, Job *changed, int jobCapacity,
+                   unsigned char *scratch, int scratchBytes, float *cached, Job *changed, int jobCapacity,
                    float *vertices, int vertexCapacity, Counts *out) {
     *out = (Counts){0};
     Vec *planes = (Vec *)(cones + shapeCount);
@@ -446,7 +446,7 @@ int contactPackets(const Vec *eyes, const Rect *rectangles, const Address *addre
                 append(&arena, &lit, (Poly){p.offset < 0 ? square : fixed + p.offset, p.count});
             }
             List original = lit;
-            int coveredOnly = numMasks == 1 && r.source < 0, modified = 0;
+            int coveredOnly = numMasks == 1 && r.cell, modified = 0;
             for (Piece *mask = masks.head; mask && lit.head; mask = mask->next)
                 lit = partition(&arena, lit, mask->poly, coveredOnly, &modified);
             if (arena.failed)
@@ -467,9 +467,7 @@ int contactPackets(const Vec *eyes, const Rect *rectangles, const Address *addre
                         return moreJobs;
                     if (poly.n > vertexCapacity - out->vertices)
                         return moreVertices;
-                    changed[out->changed++] =
-                        (Job){out->vertices, poly.n,   r.target, coveredOnly ? -r.weight : r.weight,
-                              r.source,      r.moment, r.row};
+                    changed[out->changed++] = (Job){out->vertices, poly.n, r.row, coveredOnly ? -1 : 1};
                     if (poly.n > out->maxVertices)
                         out->maxVertices = poly.n;
                     for (int k = 0; k < poly.n; k++) {
@@ -482,7 +480,7 @@ int contactPackets(const Vec *eyes, const Rect *rectangles, const Address *addre
                     continue;
             }
         }
-        cached[out->cached++] = (Job){r.row, 0, r.target, r.weight, r.source, r.moment, r.row};
+        cached[out->cached++] = r.row;
     }
     return 0;
 }

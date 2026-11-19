@@ -1,6 +1,5 @@
 // Compile immutable receiver/source geometry once per chart. A moving frame
 // supplies the solid transforms and the shape indices in each surviving bundle.
-import { areaSteps } from './contact-transfer.js';
 import { shadowAzimuths } from './cpu-geometry.js';
 import { contactTextureWidth } from './gpu-contact.js';
 import { square } from './visibility.js';
@@ -20,9 +19,8 @@ function block(start = 0) {
   };
 }
 
-function compileChart(sites, cells, kernel, base) {
+function compileChart(sites, kernel, base) {
   const groups = new Map(),
-    sources = new Map(),
     rects = new Map(),
     polygons = new Map();
   let count = 0,
@@ -33,7 +31,6 @@ function compileChart(sites, cells, kernel, base) {
       count++;
       if (!groups.has(sample.bundle)) groups.set(sample.bundle, groups.size);
       for (const rect of [sample.m, sample.region]) if (!rects.has(rect)) rects.set(rect, rects.size);
-      if (site.cell === undefined && !sources.has(sample.side)) sources.set(sample.side, sources.size);
       for (const { uv } of sample.lit) {
         pieces++;
         if (uv !== square && !polygons.has(uv)) {
@@ -45,15 +42,14 @@ function compileChart(sites, cells, kernel, base) {
   const space = block(),
     eyes = space.reserve(sites.length * 24),
     rectangles = space.reserve(rects.size * 72),
-    addresses = space.reserve(count * 44),
+    addresses = space.reserve(count * 32),
     ranges = space.reserve(pieces * 8),
     fixed = space.reserve(vertices * 16);
   ensure(kernel.memory, base + space.end);
   const buffer = kernel.memory.buffer;
   const coordinates = new Float64Array(buffer, base + eyes, sites.length * 3);
   const planes = new Float64Array(buffer, base + rectangles, rects.size * 9);
-  const ints = new Int32Array(buffer, base + addresses, count * 11),
-    floats = new Float32Array(buffer, base + addresses, count * 11);
+  const ints = new Int32Array(buffer, base + addresses, count * 8);
   const spans = new Int32Array(buffer, base + ranges, pieces * 2),
     points = new Float64Array(buffer, base + fixed, vertices * 2);
   for (const [rect, i] of rects) {
@@ -75,18 +71,17 @@ function compileChart(sites, cells, kernel, base) {
         spans.set([uv === square ? -1 : polygons.get(uv), uv.length], 2 * piece++);
       }
       ints.set(
-        [i, groups.get(sample.bundle), first, piece, rects.get(sample.m), rects.get(sample.region)],
-        row * 11,
-      );
-      floats.set(
         [
-          cell ? site.cell : cells + site.texel,
-          cell ? 1 / (areaSteps * areaSteps) : 1,
-          cell ? -1 : sources.get(sample.side),
-          cell ? 3 * site.pos : 0,
+          i,
+          groups.get(sample.bundle),
+          first,
+          piece,
+          rects.get(sample.m),
+          rects.get(sample.region),
+          Number(cell),
           sample.coefficientRow,
         ],
-        row * 11 + 6,
+        row * 8,
       );
       row++;
     }
@@ -101,7 +96,6 @@ function compileChart(sites, cells, kernel, base) {
     fixed,
     count,
     groups: [...groups.keys()],
-    sources: [...sources.keys()],
   };
 }
 
@@ -140,10 +134,10 @@ export class ContactVisibility {
     }
     this.end = end;
   }
-  packets(sites, moving, cells) {
+  packets(sites, moving) {
     let chart = this.layouts.get(sites);
     if (!chart) {
-      chart = compileChart(sites, cells, this.kernel, this.end);
+      chart = compileChart(sites, this.kernel, this.end);
       this.end += chart.bytes;
       this.layouts.set(sites, chart);
     }
@@ -157,7 +151,7 @@ export class ContactVisibility {
       indices = space.reserve(candidates * 4),
       cones = space.reserve(kernel.coneBytes(shadowAzimuths.length) * moving.length),
       counts = space.reserve(16),
-      cached = space.reserve(count * 28),
+      cached = space.reserve(count * 4),
       workspace = space.end;
     let jobs, points;
     ensure(memory, workspace);
@@ -181,7 +175,7 @@ export class ContactVisibility {
     for (;;) {
       space.end = workspace;
       const scratch = space.reserve(this.scratchBytes);
-      jobs = space.reserve(this.jobCapacity * 28);
+      jobs = space.reserve(this.jobCapacity * 16);
       points = space.reserve(this.vertexCapacity * 8);
       ensure(memory, space.end);
       const status = kernel.contactPackets(
@@ -221,9 +215,8 @@ export class ContactVisibility {
     const positions = new Float32Array(stride * Math.max(1, Math.ceil((vertices * 2) / stride)));
     positions.set(new Float32Array(buffer, points, vertices * 2));
     return {
-      sources: chart.sources,
-      cachedJobs: new Float32Array(buffer, cached, cachedCount * 7).slice(),
-      changed: { positions, jobs: new Float32Array(buffer, jobs, changedCount * 7).slice(), maxVertices },
+      cachedJobs: new Float32Array(buffer, cached, cachedCount).slice(),
+      changed: { positions, jobs: new Float32Array(buffer, jobs, changedCount * 4).slice(), maxVertices },
     };
   }
 }

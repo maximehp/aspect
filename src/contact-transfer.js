@@ -376,7 +376,7 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
     }
   }
   if (batch) {
-    const packets = backend.visibility?.packets(stationary, moving, feature.size);
+    const packets = backend.visibility?.packets(stationary, moving);
     const sites = [],
       strength = [];
     for (const site of stationary) {

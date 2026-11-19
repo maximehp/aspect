@@ -64,9 +64,9 @@ vec2 integratePart(in vec4 b[limit], int n) {
 vec4 sectorIntegral(int k, ivec2 range, int sampleRow) {
   ${
     surfaceCoordinates
-      ? `vec4 origin = transformColumn(3 * sampleRow);
-  vec4 axisU = transformColumn(3 * sampleRow + 1);
-  vec4 axisV = transformColumn(3 * sampleRow + 2);`
+      ? `vec4 origin = transformColumn(4 * sampleRow);
+  vec4 axisU = transformColumn(4 * sampleRow + 1);
+  vec4 axisV = transformColumn(4 * sampleRow + 2);`
       : ''
   }
   vec4 a[limit], b[limit];

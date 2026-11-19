@@ -68,7 +68,7 @@ run.addEventListener('click', async () => {
         record('Within exchange · sparse operator assembly', t.assemblyMs);
         record('Within exchange · lamp visibility', t.visibility);
         record('Within exchange · lamp input', t.lamp);
-        record('Within exchange · contact geometry', t.contactMs || 0);
+        record('Within exchange · contact geometry and submission', t.contactMs || 0);
       }
       if (renderer.gl.isContextLost()) throw Error('The graphics context was lost during the replay.');
       return finished - start;

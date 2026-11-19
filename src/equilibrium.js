@@ -285,6 +285,9 @@ export class Equilibrium {
     const prepared = performance.now(),
       exchangeStart = prepared;
     const transfer = this.sweep(modes, near, pool);
+    // The angular aperture depends only on geometry. Its GPU integration can
+    // overlap both the global sweep and the construction of the lamp input.
+    if (geometryReady && transfer.then) geometryReady({ boxes, modes, groups, contacts });
     const visibilityStart = performance.now();
     if (!this.shadowState) {
       const volumes = [...this.sheets, ...boxes].map((shape) => {
@@ -346,9 +349,6 @@ export class Equilibrium {
       }
     }
     const lit = performance.now();
-    // The directional sweep is in flight. Its answer is not an input to
-    // view-dependent geometric integrals on these receivers.
-    if (geometryReady && transfer.then) geometryReady({ boxes, modes, groups, contacts });
     function finish({ solve, bytes, links, workerBytes, workerMs, assemblyMs }) {
       const solveStart = performance.now(),
         result = solve(direct, directSlope, colors, contacts);
