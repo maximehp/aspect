@@ -15,7 +15,7 @@ if (target < 0) throw new Error('Unknown planar receiver: ' + id);
 const bins = axis => Math.min(5, Math.max(1, Math.ceil(Math.hypot(...axis))));
 const grid = { nu: bins(room.rectangles[target].axisU), nv: bins(room.rectangles[target].axisV) };
 if (![iu, iv].every(Number.isInteger) || iu < 0 || iu >= grid.nu || iv < 0 || iv >= grid.nv) {
-  throw new Error('Patch index outside the ' + grid.nu + ' × ' + grid.nv + ' surface grid.');
+  throw new Error('Area index outside the ' + grid.nu + ' × ' + grid.nv + ' surface grid.');
 }
 
 const dot = (a,b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];

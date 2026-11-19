@@ -108,6 +108,85 @@ vec3 roundedBoxNormal(vec3 p, vec3 h, float r) {
   return normalize(sign(p)*max(abs(p)-(h-vec3(r)),vec3(0.)));
 }
 
+// Distance from a closed segment to the inner box, minus the fillet radius.
+// The segment origin is fixed. At the minimizing parameter t the derivative
+// with respect to the segment's endpoint is t times the separation normal.
+float roundedBoxSegmentDistance(vec3 o, vec3 d, vec3 h, float r, out vec3 gradEndpoint) {
+  vec3 core=h-vec3(r);
+  gradEndpoint=vec3(0.);
+  vec3 q0=o-clamp(o,-core,core);
+  float slope0=dot(q0,d);
+  if(slope0>=0.) return length(q0)-r;
+  vec3 endPoint=o+d, q1=endPoint-clamp(endPoint,-core,core);
+  float slope1=dot(q1,d);
+  if(slope1<=0.) {
+    float separation=length(q1);
+    if(separation>0.) gradEndpoint=q1/separation;
+    return separation-r;
+  }
+
+  // A line missing the XY core rectangle has a closest supporting corner.
+  // When that point lies on the segment and within the extrusion, its 2D
+  // distance is the exact 3D minimum. This covers long-edge silhouettes.
+  float speed2=dot(d.xy,d.xy);
+  if(speed2>0.) {
+    vec2 perp=vec2(-d.y,d.x);
+    float signedHeight=dot(perp,o.xy);
+    float gap=abs(signedHeight)-dot(abs(perp),core.xy);
+    if(gap>0.) {
+      perp*=sign(signedHeight);
+      vec2 corner=sign(perp)*core.xy;
+      float t=dot(corner-o.xy,d.xy)/speed2;
+      if(t>=0. && t<=1. && abs(o.z+t*d.z)<=core.z) {
+        float invSpeed=inversesqrt(speed2);
+        gradEndpoint=vec3(t*invSpeed*perp,0.);
+        return gap*invSpeed-r;
+      }
+    }
+  }
+
+  // Squared distance has a continuous piecewise-linear derivative. On each
+  // interval use only its active coordinates. Evaluating the slope on a
+  // core-plane event itself can admit a spurious axis after FP32 rounding.
+  bvec3 parallel=equal(d,vec3(0.));
+  vec3 inv=1./mix(d,vec3(1.),parallel);
+  vec3 a=mix((-core-o)*inv,vec3(2.),parallel);
+  vec3 b=mix((core-o)*inv,vec3(2.),parallel);
+  vec3 starts=mix(min(a,b),vec3(0.),parallel);
+  vec3 stops=mix(max(a,b),vec3(1.),parallel);
+  float enter=max(0.,max(starts.x,max(starts.y,starts.z)));
+  float leave=min(1.,min(stops.x,min(stops.y,stops.z)));
+  bool outsideParallel=(parallel.x && abs(o.x)>core.x) ||
+                       (parallel.y && abs(o.y)>core.y) ||
+                       (parallel.z && abs(o.z)>core.z);
+  if(!outsideParallel && enter<=leave) return -r;
+
+  float from=0., best=dot(q0,q0), bestT=0.;
+  for(int i=0;i<7;++i) {
+    a=mix(a,vec3(2.),lessThanEqual(a,vec3(from)));
+    b=mix(b,vec3(2.),lessThanEqual(b,vec3(from)));
+    vec3 next=min(a,b);
+    float until=min(1.,min(next.x,min(next.y,next.z)));
+    vec3 mid=o+(from+.5*(until-from))*d;
+    bvec3 activeAxes=greaterThan(abs(mid),core);
+    vec3 v=mix(vec3(0.),d,activeAxes);
+    vec3 offset=mix(vec3(0.),(o-sign(mid)*core)+from*d,activeAxes);
+    float curvature=dot(v,v);
+    float localMin=curvature>0. ? -dot(offset,v)/curvature : 0.;
+    float t=from+clamp(localMin,0.,until-from);
+    vec3 p=o+t*d;
+    vec3 q=p-clamp(p,-core,core);
+    float distance2=dot(q,q);
+    if(distance2<best) { best=distance2; bestT=t; }
+    if(until>=1.) break;
+    from=until;
+  }
+  vec3 p=o+bestT*d;
+  float separation=sqrt(best);
+  if(separation>0.) gradEndpoint=bestT*(p-clamp(p,-core,core))/separation;
+  return separation-r;
+}
+
 bool roundedFlat(vec3 p, vec3 core) {
   bvec3 outside = greaterThan(abs(p), core);
   return !(outside.x && outside.y || outside.x && outside.z || outside.y && outside.z);

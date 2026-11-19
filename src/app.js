@@ -7,7 +7,9 @@ const radians = Math.PI / 180;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const freshCamera = () => ({ ...START_CAMERA, position: [...START_CAMERA.position] });
 let camera = freshCamera();
-let renderer, scene, queuedScene, frameFence;
+let renderer, scene, queuedScene;
+const frameFences = [];
+let viewChanged = true;
 let editStarted = 0;
 let request = 0, builds = 0;
 const keys = new Set();
@@ -17,8 +19,14 @@ function schedule() {
   if (renderer && !request) request = requestAnimationFrame(render);
 }
 
+function requestView() {
+  viewChanged = true;
+  schedule();
+}
+
 function requestScene() {
   if (!renderer) return;
+  const requestedAt = performance.now();
   const next = buildRoom({
     angle: Number(element('angle').value)*radians,
     secondBlind: element('second').checked,
@@ -31,7 +39,7 @@ function requestScene() {
   if (last && sameObjects(next.rectangles,last.rectangles) && sameObjects(next.roundedBoxes,last.roundedBoxes) &&
       sameObjects(next.lightPosition,last.lightPosition) && sameObjects(next.lampRGB,last.lampRGB)) return;
   queuedScene = next;
-  editStarted = performance.now();
+  editStarted = requestedAt;
   canvas.setAttribute('aria-busy','true');
   schedule();
 }
@@ -52,15 +60,19 @@ function render(time) {
   request = 0;
   try {
     const gl = renderer.gl;
-    // Keep at most one GPU frame outstanding. New input can replace an edit
-    // that has yet to start, including while the last refinement is running.
-    if (frameFence) {
-      const completion = gl.clientWaitSync(frameFence, 0, 0);
-      if (completion === gl.TIMEOUT_EXPIRED) { schedule(); return; }
-      gl.deleteSync(frameFence);
-      frameFence = null;
+    while (frameFences.length) {
+      const fence = frameFences[0];
+      const completion = gl.clientWaitSync(fence, 0, 0);
+      if (completion === gl.TIMEOUT_EXPIRED) break;
+      gl.deleteSync(fence);
+      frameFences.shift();
       if (completion === gl.WAIT_FAILED && !gl.isContextLost()) throw new Error('GPU frame fence failed.');
     }
+    // A refinement never occupies the second slot. A fresh input can start
+    // while the previous frame is completing, without a backlog of old poses.
+    const frameLimit = (queuedScene || viewChanged || keys.size) ? 2 : 1;
+    if (frameFences.length >= frameLimit) { schedule(); return; }
+    viewChanged = false;
     const started = performance.now();
     walk(Math.min((time - previousTime) / 1000, 0.05));
     previousTime = time;
@@ -87,7 +99,7 @@ function render(time) {
     } else {
       element('frame-time').textContent = '—';
       element('edit-time').textContent = '—';
-      frameFence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      frameFences.push(gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0));
       gl.flush();
     }
     canvas.setAttribute('aria-busy','false');
@@ -115,7 +127,7 @@ for (const id of ['lamp','angle','angle2','second','layout','floor','lighting','
     element('angle-value').textContent = element('angle').value + '°';
     element('angle2-value').textContent = element('angle2').value + '°';
     element('second-controls').hidden = !element('second').checked;
-    schedule();
+    requestView();
   });
 }
 
@@ -125,7 +137,7 @@ window.addEventListener('keydown', event => {
       event.target.matches('input,select,button,textarea,[contenteditable=true]')) return;
   event.preventDefault();
   keys.add(event.code);
-  schedule();
+  requestView();
 });
 window.addEventListener('keyup', event => keys.delete(event.code));
 window.addEventListener('blur', () => keys.clear());
@@ -142,25 +154,25 @@ canvas.addEventListener('pointermove', event => {
   camera.yaw += (event.clientX - drag[0]) * 0.005;
   camera.pitch = clamp(camera.pitch - (event.clientY - drag[1]) * 0.005, -1.45, 1.45);
   drag = [event.clientX, event.clientY];
-  schedule();
+  requestView();
 });
 canvas.addEventListener('lostpointercapture', () => { drag = null; });
 for (const button of document.querySelectorAll('[data-move]')) {
   button.addEventListener('pointerdown', event => {
     button.setPointerCapture(event.pointerId);
     keys.add(button.dataset.move);
-    schedule();
+    requestView();
   });
   button.addEventListener('lostpointercapture', () => keys.delete(button.dataset.move));
 }
-element('reset-camera').addEventListener('click', () => { camera = freshCamera(); schedule(); });
-new ResizeObserver(schedule).observe(canvas);
+element('reset-camera').addEventListener('click', () => { camera = freshCamera(); requestView(); });
+new ResizeObserver(requestView).observe(canvas);
 canvas.addEventListener('webglcontextlost', event => {
   event.preventDefault();
   cancelAnimationFrame(request);
   request = 0;
   renderer = null;
-  frameFence = null;
+  frameFences.length = 0;
   scene = queuedScene = null;
   element('problem').textContent = 'Graphics context lost. Waiting for the browser to restore it.';
   element('problem').hidden = false;

@@ -9,7 +9,6 @@ main { display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:clamp(18px,3
 .stage { min-width:0 }
 .stage-head,.navigation,label,dl div { display:flex; align-items:center; justify-content:space-between; gap:.5rem }
 .stage-head { margin:0 0 16px }
-#pending { margin-left:auto; color:var(--muted); font-size:.85rem }
 h1 { margin:0; font:normal clamp(36px,4.8vw,74px)/1.05 'Instrument Serif',Georgia,serif; letter-spacing:-.055em }
 #dimensions,output,dd { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:.81rem; font-variant-numeric:tabular-nums }
 #dimensions { color:var(--muted); align-self:flex-end; padding-bottom:5px }
