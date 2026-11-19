@@ -2,10 +2,13 @@ import { compileContact, drawContact, contactMoving } from './contact-transfer.j
 import { nearField } from './parallel-transfer.js';
 import { cavityWeight } from './equilibrium.js';
 import { painter } from './painter.js';
-import { volume, regions, shell, dot, cross, sub, unit, point } from './cpu-geometry.js';
+import { volume, regions, localShell, dot, cross, sub, unit, point } from './cpu-geometry.js';
 import { split } from './visibility.js';
 import { planarCharts, chartPoint, chartCoordinate, chartPolygons } from './irradiance-layout.js';
 
+function sameBlockers(contact, moving) {
+  return moving.length === contact.moving.length && moving.every((b, i) => b === contact.moving[i]);
+}
 function intersect(poly, mask) {
   for (let i = 0; i < mask.length && poly.length; i++) {
     const a = mask[i],
@@ -17,7 +20,9 @@ function intersect(poly, mask) {
   return poly;
 }
 function signed(p, plane) {
-  return dot(sub(p, plane.origin), plane.normal);
+  const n = plane.normal,
+    o = plane.origin;
+  return (p[0] - o[0]) * n[0] + (p[1] - o[1]) * n[1] + (p[2] - o[2]) * n[2];
 }
 function splitFace(poly, plane) {
   const pos = [],
@@ -184,7 +189,7 @@ function chartFilter(g, sources, width, rows, tex, row, lamp) {
 export class CpuView {
   constructor() {
     this.cache = {};
-    this.shells = new WeakMap();
+    this.shells = new Map();
     this.vertices = new Float32Array(0);
   }
   // Use the same float projection as WebGL. A conservative world-space box
@@ -273,55 +278,90 @@ export class CpuView {
       }
     }
     this.pendingCharts = charts;
+    this.chartMs = 0;
     this.atlasChanged = false;
     if (!visibleOnly) for (const grid of charts.keys()) this.prepareChart(grid);
     this.solidFaces = new Array(scene.roundedBoxes.length);
+    // A rigid transform changes neither the fillet topology nor its facet
+    // planes in object coordinates. Keep one template per live set of dimensions.
+    const keys = scene.roundedBoxes.map((b) => [b.radius, ...b.halfSize].join(','));
+    const active = new Set(keys);
+    for (const key of this.shells.keys()) if (!active.has(key)) this.shells.delete(key);
     this.prepareSolid = (b, i) => {
-      let faces = this.shells.get(b);
-      if (!faces) {
-        faces = shell(b);
-        this.shells.set(b, faces);
-      }
+      const key = keys[i];
+      let faces = this.shells.get(key);
+      if (!faces) this.shells.set(key, (faces = localShell(b)));
       const refs = solution.proxy[i].map((r) => modeSources(r, 0));
       const lamp = relevant(solution.boxes[i], solution.lampVolumes);
-      const shaded = new Map();
-      return faces.map((vertices) => {
-        const p = vertices[0].p,
-          n = unit(cross(sub(vertices[1].p, p), sub(vertices[2].p, p)));
-        // Defer clipping and lighting until this part of the convex shell is visible.
-        const face = {
-          p,
-          n,
-          regions: null,
-          prepare() {
-            const poly = vertices.map((vertex) => {
-              if (shaded.has(vertex)) return shaded.get(vertex);
-              const { p, normal } = vertex;
-              const value = [0, 0, 0];
-              for (let k = 0; k < 3; k++) {
-                const c = dot(b.axes[k], normal);
-                if (Math.abs(c) < 1e-7) continue;
-                const f = field(p, refs[2 * k + Number(c < 0)], rgb);
-                for (let j = 0; j < 3; j++) value[j] += c * c * f[j];
-              }
-              const result = [...p, ...value, direct(p, normal, scene.lightPosition)];
-              shaded.set(vertex, result);
-              return result;
-            });
-            const [lit, dark] = poly.every((v) => v[6] === 0) ? [[], [poly]] : trim([poly], lamp, true);
-            return (face.regions = [lit, dark]);
-          },
-        };
-        return face;
-      });
+      const shaded = new Map(),
+        prepared = new Map();
+      const world = (v, origin) => {
+        const result = origin.slice();
+        for (let j = 0; j < 3; j++) for (let k = 0; k < 3; k++) result[k] += b.axes[j][k] * v[j];
+        return result;
+      };
+      function shade(vertex) {
+        if (shaded.has(vertex)) return shaded.get(vertex);
+        const p = world(vertex.p, b.center),
+          normal = world(vertex.normal, [0, 0, 0]),
+          value = [0, 0, 0];
+        for (let k = 0; k < 3; k++) {
+          const c = dot(b.axes[k], normal);
+          if (Math.abs(c) < 1e-7) continue;
+          const f = field(p, refs[2 * k + Number(c < 0)], rgb);
+          for (let j = 0; j < 3; j++) value[j] += c * c * f[j];
+        }
+        const result = [...p, ...value, direct(p, normal, scene.lightPosition)];
+        shaded.set(vertex, result);
+        return result;
+      }
+      return {
+        faces,
+        handedness: Math.sign(dot(cross(b.axes[0], b.axes[1]), b.axes[2])),
+        regions(face) {
+          let parts = prepared.get(face);
+          if (!parts) {
+            const poly = face.vertices.map(shade);
+            parts = poly.every((v) => v[6] === 0) ? [[], [poly]] : trim([poly], lamp, true);
+            prepared.set(face, parts);
+          }
+          return parts;
+        },
+      };
     };
     this.shadows = scene.rectangles.map((r) => solution.lampRegions.get(r));
+  }
+  // Reuse the last drawn receivers as a visibility hint while the transport
+  // workers run. A newly visible chart still compiles against this exact pose.
+  prepareContactGeometry(geometry) {
+    if (!this.contacts?.size || this.contactBackend) return;
+    const prepared = new Map();
+    for (const [grid, contact] of this.contacts) {
+      if (this.pendingCharts.has(grid) || !geometry.contacts.includes(contact.feature)) continue;
+      const moving = contactMoving(contact.domain, geometry.boxes);
+      if (sameBlockers(contact, moving)) continue;
+      const { width, rows } = this.atlas;
+      prepared.set(
+        grid,
+        compileContact(
+          grid,
+          contact.feature,
+          geometry,
+          width,
+          rows,
+          this.filters.get(grid),
+          contact.stationary,
+        ),
+      );
+    }
+    return prepared;
   }
   // The equilibrium includes the entire scene. Only reconstruct a surface-side
   // texture when a drawable polygon first refers to it in this revision.
   prepareChart(grid) {
     const sheets = this.pendingCharts.get(grid);
     if (!sheets) return;
+    const start = performance.now();
     const sources = sheets.flatMap(({ rect, side }) => this.modeSources(rect, side));
     const { tex, width, rows } = this.atlas;
     const solution = this.solution;
@@ -383,14 +423,9 @@ export class CpuView {
     const feature =
       !local && indices && solution.contacts.find((f) => f.receiver === rect && f.side === side);
     if (feature) {
-      let contact = this.contacts.get(grid);
+      let contact = solution.preparedContacts?.get(grid) || this.contacts.get(grid);
       const moving = contact && contactMoving(contact.domain, solution.boxes);
-      if (
-        !contact ||
-        contact.feature !== feature ||
-        moving.length !== contact.moving.length ||
-        moving.some((b, i) => b !== contact.moving[i])
-      ) {
+      if (!contact || contact.feature !== feature || !sameBlockers(contact, moving)) {
         contact = compileContact(
           grid,
           feature,
@@ -401,16 +436,17 @@ export class CpuView {
           contact?.feature === feature ? contact.stationary : undefined,
           this.contactBackend,
         );
-        this.contacts.set(grid, contact);
       }
+      this.contacts.set(grid, contact);
       drawContact(contact, filter, solution, tex, chartBase);
     }
+    this.chartMs += performance.now() - start;
     this.pendingCharts.delete(grid);
     this.atlasChanged = true;
   }
   drawList(eye, mask) {
     const order = painter(this.shapes, eye);
-    const volumes = order ? null : this.shapes.map((s) => [s, volume(s, eye)]);
+
     let data = this.vertices,
       length = 0;
     const { scene, atlas } = this;
@@ -457,7 +493,7 @@ export class CpuView {
         write(poly[i]);
       }
     }
-    const sheet = (r, i) => {
+    const sheet = (r, i, volumes) => {
       const side = Number(dot(sub(eye, r.center), cross(r.axisU, r.axisV)) < 0),
         g = this.faces[i][side];
       const visible = volumes ? regions(r, volumes).filter((c) => c.lit) : [null];
@@ -470,11 +506,14 @@ export class CpuView {
           for (const cell of g.coords ? chartPolygons(poly, [g]) : [poly]) fan(cell, r.color, +s.lit, g);
         }
     };
-    const solid = (b, i) => {
+    const solid = (b, i, volumes) => {
       const blocks = volumes ? relevant(b, volumes) : null;
-      for (const f of (this.solidFaces[i] ??= this.prepareSolid(b, i))) {
-        if (dot(sub(eye, f.p), f.n) <= 0) continue;
-        const parts = f.regions || f.prepare();
+      const shell = (this.solidFaces[i] ??= this.prepareSolid(b, i));
+      const relative = sub(eye, b.center),
+        localEye = b.axes.map((axis) => dot(relative, axis));
+      for (const f of shell.faces) {
+        if (shell.handedness * dot(sub(localEye, f.p), f.n) <= 0 && dot(f.n, f.n) > 0) continue;
+        const parts = shell.regions(f);
         for (let j = 0; j < 2; j++) {
           const polys = parts[j],
             lit = 1 - j;
@@ -482,10 +521,18 @@ export class CpuView {
         }
       }
     };
-    for (const i of order || this.shapes.keys()) {
-      if (mask && !mask[i]) continue;
-      if (i < scene.rectangles.length) sheet(this.shapes[i], i);
-      else solid(this.shapes[i], i - scene.rectangles.length);
+    const drawShape = (i, volumes) => {
+      if (mask && !mask[i]) return;
+      if (i < scene.rectangles.length) sheet(this.shapes[i], i, volumes);
+      else solid(this.shapes[i], i - scene.rectangles.length, volumes);
+    };
+    for (const entry of order) {
+      if (typeof entry === 'number') drawShape(entry, null);
+      else {
+        if (mask && !entry.some((i) => mask[i])) continue;
+        const volumes = entry.map((i) => [this.shapes[i], volume(this.shapes[i], eye)]);
+        for (const i of entry) drawShape(i, volumes);
+      }
     }
     this.vertices = data;
     return data.subarray(0, length);

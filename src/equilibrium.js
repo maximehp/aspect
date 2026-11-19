@@ -2,7 +2,7 @@
 // incident RGB on each side. Lamp flux integrates over actual lit polygons.
 import { contactReceivers } from './contact-transfer.js';
 import { compileParallel, activeParallel } from './parallel-transfer.js';
-import { split, VisibilityCompiler } from './visibility.js';
+import { boundsOf, split, VisibilityCompiler } from './visibility.js';
 import { dot, sub, cross, unit, point, broadFaces, volume, regions } from './cpu-geometry.js';
 function solidAngle(vertices, eye) {
   const dirs = vertices.map((p) => unit(sub(p, eye))),
@@ -175,23 +175,13 @@ function lampFlux(mode, lit, lamp) {
     height = Math.abs(dot(lampOffset, mode.normal));
   for (const cell of lit) {
     if (!cell.lit) continue;
-    if (!cell.bounds) {
-      const u = cell.uv.map((p) => p[0]),
-        v = cell.uv.map((p) => p[1]);
-      cell.bounds = [Math.min(...u), Math.max(...u), Math.min(...v), Math.max(...v)];
-    }
-    const [left, right, bottom, top] = cell.bounds;
+    const [left, right, bottom, top] = (cell.bounds ??= boundsOf(cell.uv));
     if (right <= u0 || left >= u1 || top <= v0 || bottom >= v1) continue;
     let poly = cell.uv;
-    for (const [a, b, c] of [
-      [1, 0, -u0],
-      [-1, 0, u1],
-      [0, 1, -v0],
-      [0, -1, v1],
-    ]) {
-      [poly] = split(poly, a, b, c, 1e-12);
-      if (poly.length < 3) break;
-    }
+    if (left < u0) [poly] = split(poly, 1, 0, -u0, 1e-12, false);
+    if (poly.length >= 3 && right > u1) [poly] = split(poly, -1, 0, u1, 1e-12, false);
+    if (poly.length >= 3 && bottom < v0) [poly] = split(poly, 0, 1, -v0, 1e-12, false);
+    if (poly.length >= 3 && top > v1) [poly] = split(poly, 0, -1, v1, 1e-12, false);
     if (poly.length < 3) continue;
     const vertices = poly.map(([u, v]) => point(mode.rect, u, v));
     const omega = solidAngle(vertices, lamp);
@@ -236,7 +226,7 @@ export class Equilibrium {
     this.elements = new WeakMap();
     this.boxFaces = new WeakMap();
   }
-  update(scene, pool) {
+  update(scene, pool, geometryReady) {
     const start = performance.now();
     const lamp = scene.lightPosition;
     const staticChanged =
@@ -356,6 +346,9 @@ export class Equilibrium {
       }
     }
     const lit = performance.now();
+    // The directional sweep is in flight. Its answer is not an input to
+    // view-dependent geometric integrals on these receivers.
+    if (geometryReady && transfer.then) geometryReady({ boxes, modes, groups, contacts });
     function finish({ solve, bytes, links, workerBytes, workerMs, assemblyMs }) {
       const solveStart = performance.now(),
         result = solve(direct, directSlope, colors, contacts);

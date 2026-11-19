@@ -42,6 +42,59 @@ static void sort(Edge *a, int lo, int hi) {
     }
   }
 }
+// Crossings in a clipped column have a known finite range. Bucket them by
+// x, then compare exact coordinates only within the same bucket. Keep the
+// comparison sort for unusually dense buckets and the tiny-column path.
+static void sortCrossings(Edge *edges, Edge *scratch, int n, float left, float right) {
+  int buckets = n / 4;
+  if (buckets > 128)
+    buckets = 128;
+  int ends[128];
+  if (buckets >= 8 && right - left > 1e-20f) {
+    float scale = buckets / (right - left);
+    for (int b = 0; b < buckets; b++)
+      ends[b] = 0;
+    for (int i = 0; i < n; i++) {
+      int b = (int)((edges[i].x - left) * scale);
+      if (b >= buckets)
+        b = buckets - 1;
+      ends[b]++;
+    }
+    int total = 0;
+    for (int b = 0; b < buckets; b++) {
+      int count = ends[b];
+      ends[b] = total;
+      total += count;
+    }
+    for (int i = 0; i < n; i++) {
+      int b = (int)((edges[i].x - left) * scale);
+      if (b >= buckets)
+        b = buckets - 1;
+      scratch[ends[b]++] = edges[i];
+    }
+    for (int i = 0; i < n; i++)
+      edges[i] = scratch[i];
+  } else {
+    buckets = 1;
+    ends[0] = n;
+  }
+  for (int b = 0; b < buckets; b++) {
+    int start = b ? ends[b - 1] : 0, end = ends[b];
+    if (end - start > 32) {
+      sort(edges, start, end - 1);
+      continue;
+    }
+    for (int i = start + 1; i < end; i++) {
+      Edge v = edges[i];
+      int j = i;
+      while (j > start && edges[j - 1].x > v.x) {
+        edges[j] = edges[j - 1];
+        j--;
+      }
+      edges[j] = v;
+    }
+  }
+}
 // One record per observed unordered pair of surface sides. Store measures in
 // projected square metres. Dividing by the receiving area gives each direction.
 typedef struct {
@@ -147,7 +200,8 @@ int installExact(Operator *op, int a, int b, float area, float firstA, float fir
 }
 __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, int nv, V *frame,
                                                   int dirs, int bins, Operator *op, int correction,
-                                                  char *scratch, int firstDir, int endDir) {
+                                                  char *scratch, int firstDir, int endDir,
+                                                  int stride) {
   float *xs = (float *)scratch, *ys = xs + nv;
   Project *q = (Project *)(ys + nv);
   Edge *edges = (Edge *)(q + count);
@@ -157,7 +211,9 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
   Edge *cuts = (Edge *)(column + count);
   if (!count)
     return;
-  for (int d = firstDir; d < endDir; d++) {
+  if (stride < 1)
+    stride = 1;
+  for (int d = firstDir; d < endDir; d += stride) {
     V u = frame[3 * d], v = frame[3 * d + 1], w = frame[3 * d + 2];
     for (int i = 0; i < nv; i++) {
       xs[i] = dot(verts[i], u);
@@ -213,6 +269,9 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
     sort(starts, 0, nstart - 1);
     int begin = 0, na = 0;
     for (int row = first; row < end; row++) {
+      // An undersized sparse table restarts this integration after growing.
+      if (op->failed)
+        return;
       float y0 = staticLo + row * step, y1 = y0 + step;
       while (begin < nstart && starts[begin].x < y1)
         active[na++] = starts[begin++].encoded;
@@ -334,7 +393,7 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
               edges[interior++] = b;
           }
           if (interior > 1)
-            sort(edges, 0, interior - 1);
+            sortCrossings(edges, cuts + nv + 2, interior, left, right);
           float prev = left;
           for (int e = 0; e <= interior; e++) {
             float x = e == interior ? right : edges[e].x;

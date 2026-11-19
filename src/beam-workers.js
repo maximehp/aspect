@@ -1,6 +1,6 @@
 import { directionCount } from './beam-exchange.js';
 
-// Angular contributions are independent. Reduce in direction order even when
+// Angular contributions are independent. Reduce in fixed worker order even when
 // workers finish out of order; presentation always receives a complete solve.
 export class BeamWorkers {
   constructor(count = Math.min(6, Math.max(1, (navigator.hardwareConcurrency || 2) - 1))) {
@@ -34,8 +34,9 @@ export class BeamWorkers {
               packet,
               fixed,
               changed,
-              first: Math.floor((i * directionCount) / this.workers.length),
-              end: Math.floor(((i + 1) * directionCount) / this.workers.length),
+              first: i,
+              end: directionCount,
+              stride: this.workers.length,
             });
           }),
       ),

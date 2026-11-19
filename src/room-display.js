@@ -114,7 +114,16 @@ export class LiveRenderer {
       if (typeof Worker === 'undefined' || this.serial) return this.math.update(scene);
       try {
         this.workers ??= new BeamWorkers();
-        return await this.math.update(scene, this.workers);
+        let preparedContacts,
+          contactMs = 0;
+        const result = await this.math.update(scene, this.workers, (geometry) => {
+          const start = performance.now();
+          preparedContacts = this.view.prepareContactGeometry(geometry);
+          contactMs = performance.now() - start;
+        });
+        result.preparedContacts = preparedContacts;
+        result.timings.contactMs = contactMs;
+        return result;
       } catch (error) {
         if (this.disposed || (this.workers && !this.workers.failed)) throw error;
         this.workers?.dispose();

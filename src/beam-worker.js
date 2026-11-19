@@ -4,7 +4,14 @@ const ready = WebAssembly.instantiateStreaming(fetch(new URL('./beam-sweep.wasm'
 );
 self.onmessage = async ({ data }) => {
   try {
-    const result = (await ready).integrate(data.packet, data.fixed, data.first, data.end, data.changed);
+    const result = (await ready).integrate(
+      data.packet,
+      data.fixed,
+      data.first,
+      data.end,
+      data.changed,
+      data.stride,
+    );
     const transfer = [result.change.buffer];
     if (result.stationary) transfer.push(result.stationary.buffer);
     self.postMessage(result, transfer);

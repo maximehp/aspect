@@ -65,7 +65,7 @@ export class BeamWorkspace {
     this.vertices = this.records + 72 * np;
     this.axes = this.reserve(frames.length * 4);
     this.op = this.reserve(20);
-    this.scratch = this.reserve(np * 144 + 16);
+    this.scratch = this.reserve(np * 160 + 16);
     this.grow();
     this.bytes.set(packet, this.records);
     this.floats.set(frames, this.axes / 4);
@@ -84,7 +84,7 @@ export class BeamWorkspace {
       this.capacity *= 2;
     }
   }
-  integrate(packet, fixed, first, end, buildStatic) {
+  integrate(packet, fixed, first, end, buildStatic, stride = 1) {
     const started = performance.now();
     this.start(packet);
     const np = packet.length / 120,
@@ -105,6 +105,7 @@ export class BeamWorkspace {
           this.scratch,
           first,
           end,
+          stride,
         ),
       );
       return this.bytes.slice(this.links, this.links + 24 * used);

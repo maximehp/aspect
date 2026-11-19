@@ -52,18 +52,18 @@ function shadowVolume(rect, lamp) {
 
 function hasArea(vertices) {
   if (vertices.length < 3) return false;
-  const [ox, oy] = vertices[0];
+  const ox = vertices[0][0], oy = vertices[0][1];
   let area = 0;
   for (let i = 1; i < vertices.length - 1; i++) {
-    const [x, y] = vertices[i], [nx, ny] = vertices[i + 1];
-    area += (x - ox) * (ny - oy) - (y - oy) * (nx - ox);
+    const p = vertices[i], q = vertices[i + 1];
+    area += (p[0] - ox) * (q[1] - oy) - (p[1] - oy) * (q[0] - ox);
   }
   return area > 0;
 }
 
 // Split both sides together so they get literally the same intersection.
 // Marking a whole polygon coplanar assigns it to the positive half-space.
-function split(vertices, a, b, c, tolerance) {
+function split(vertices, a, b, c, tolerance, keepOutside = true) {
   let positive = false, negative = false;
   for (const p of vertices) {
     const d = a * p[0] + b * p[1] + c;
@@ -81,12 +81,12 @@ function split(vertices, a, b, c, tolerance) {
     if (Math.abs(dp) <= tolerance) dp = 0;
     if (Math.abs(dq) <= tolerance) dq = 0;
     if (dp >= 0) inside.push(p);
-    if (dp <= 0) outside.push(p);
+    if (keepOutside && dp <= 0) outside.push(p);
     if ((dp > 0 && dq < 0) || (dp < 0 && dq > 0)) {
       const t = dp / (dp - dq);
       const crossing = [p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1])];
       inside.push(crossing);
-      outside.push(crossing);
+      if (keepOutside) outside.push(crossing);
     }
   }
   return [inside, outside];
@@ -112,8 +112,9 @@ function projectedFootprint(receiver, planes) {
     if (i === 0 && c + radius <= tolerance) return null;
     if (c + radius < -tolerance) return null;
     if (c - radius >= -tolerance) continue;
-    [uv] = split(uv, a, b, c, tolerance);
-    if (!hasArea(uv)) return null;
+    const [inside] = split(uv, a, b, c, tolerance, false);
+    if (inside !== uv && !hasArea(inside)) return null;
+    uv = inside;
   }
   return uv;
 }
@@ -132,11 +133,12 @@ function footprintEdges(polygon) {
 }
 
 const polygonBounds = new WeakMap();
-function boundsOf(uv) {
+export function boundsOf(uv) {
   let box = polygonBounds.get(uv);
   if (!box) {
     let left = Infinity, right = -Infinity, bottom = Infinity, top = -Infinity;
-    for (const [u, v] of uv) {
+    for (const p of uv) {
+      const u = p[0], v = p[1];
       left = Math.min(left, u);
       right = Math.max(right, u);
       bottom = Math.min(bottom, v);
@@ -162,12 +164,16 @@ function partitionReceiver(footprints, initial) {
       const uncovered = [];
       let intersection = original;
       for (const edge of edges) {
-        const [inside, outside] = split(intersection, ...edge);
+        const [inside, outside] = split(intersection, edge[0], edge[1], edge[2], edge[3]);
+        if (inside === intersection) continue;
+        if (!hasArea(inside)) {
+          intersection = null;
+          break;
+        }
         intersection = inside;
-        if (!hasArea(inside)) break;
         if (hasArea(outside)) uncovered.push(outside);
       }
-      if (hasArea(intersection)) {
+      if (intersection) {
         dark.push(intersection);
         next.push(...uncovered);
       } else {

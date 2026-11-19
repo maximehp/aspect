@@ -44,21 +44,48 @@ function distanceToEdge(p, [a, b]) {
     t = Math.max(0, Math.min(1, dot(d, delta) / dot(d, d)));
   return Math.hypot(...delta.map((v, k) => v - t * d[k]));
 }
-function projectedArea(ps, p, n) {
-  const dirs = ps
-    .map((q) => sub(q, p))
-    .filter((d) => dot(d, d) > 1e-24)
-    .map(unit);
-  if (dirs.length < 3) return 0;
-  let sum = 0;
-  for (let i = 0; i < dirs.length; i++) {
-    const a = dirs[i],
-      b = dirs[(i + 1) % dirs.length],
-      z = cross(a, b),
-      s = Math.hypot(...z);
-    if (s > 1e-12) sum += (dot(z, n) * Math.atan2(s, dot(a, b))) / s;
+function projectedArea(poly, p, n) {
+  // Both the angle atan2(|a×b|, a·b) and the oriented unit edge
+  // normal are invariant under positive scaling of either direction.
+  // The closing edge uses the last nondegenerate direction, as do the interior edges.
+  let last = poly.length - 1;
+  const length2 = (q) => {
+    const x = q[0] - p[0],
+      y = q[1] - p[1],
+      z = q[2] - p[2];
+    return x * x + y * y + z * z;
+  };
+  while (last >= 0 && length2(poly[last]) <= 1e-24) last--;
+  if (last < 2) return 0;
+  let a = poly[last],
+    ax = a[0] - p[0],
+    ay = a[1] - p[1],
+    az = a[2] - p[2],
+    al = length2(a);
+  let sum = 0,
+    count = 0;
+  for (let i = 0; i <= last; i++) {
+    const b = poly[i],
+      bx = b[0] - p[0],
+      by = b[1] - p[1],
+      bz = b[2] - p[2];
+    const bl = bx * bx + by * by + bz * bz;
+    if (bl <= 1e-24) continue;
+    const x = ay * bz - az * by,
+      y = az * bx - ax * bz,
+      z = ax * by - ay * bx;
+    const squared = x * x + y * y + z * z;
+    if (squared > 1e-24 * al * bl) {
+      const sine = Math.sqrt(squared);
+      sum += ((x * n[0] + y * n[1] + z * n[2]) * Math.atan2(sine, ax * bx + ay * by + az * bz)) / sine;
+    }
+    ax = bx;
+    ay = by;
+    az = bz;
+    al = bl;
+    count++;
   }
-  return Math.abs(sum) / (2 * Math.PI);
+  return count < 3 ? 0 : Math.abs(sum) / (2 * Math.PI);
 }
 const azimuthCount = 8,
   sectorCount = 2 * azimuthCount,
@@ -110,11 +137,21 @@ export function contactReceivers(sheets, groups) {
   return result;
 }
 function clip(poly, p, axis) {
+  const distance = (v) => (v[0] - p[0]) * axis[0] + (v[1] - p[1]) * axis[1] + (v[2] - p[2]) * axis[2];
+  let positive = false,
+    negative = false;
+  for (const v of poly) {
+    if (distance(v) >= 0) positive = true;
+    else negative = true;
+    if (positive && negative) break;
+  }
+  if (!positive) return [];
+  if (!negative) return poly;
   const out = [];
   let a = poly.at(-1),
-    da = dot(sub(a, p), axis);
+    da = distance(a);
   for (const b of poly) {
-    const db = dot(sub(b, p), axis);
+    const db = distance(b);
     if (da * db < 0) out.push(a.map((x, k) => x + ((b[k] - x) * da) / (da - db)));
     if (db >= 0) out.push(b);
     a = b;
@@ -146,7 +183,7 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
   const domain = feature.domain;
   const blockers = sheets.filter((r) => r !== receiver && overlaps(domain, bounds(vertices(r))));
   const moving = contactMoving(domain, solution.boxes);
-  let nextSite = 0;
+
   function influence(p) {
     const proximity = Math.min(...contacts.map((c) => distanceToEdge(p, c.foot) / c.height));
     const t = Math.max(0, Math.min(1, (3 - proximity) / 2));
@@ -175,10 +212,9 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
       }
     }
   }
-  function stencil(p, emit) {
-    const site = nextSite++;
-    let stored = stationary[site];
-    if (!stored) {
+  function stencil(site, emit) {
+    const p = site.p;
+    if (!site.samples) {
       const samples = [],
         integrals = [];
       const shadows = blockers.map((s) => [s, volume(s, p)]);
@@ -192,9 +228,10 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
         integrate(m, side, p, lit, (_, w, moment, bin) => integrals.push(w, moment, bin));
         samples.push({ m, side, lit, start, end: integrals.length });
       }
-      stored = stationary[site] = { samples, integrals: Float64Array.from(integrals) };
+      site.samples = samples;
+      site.integrals = Float64Array.from(integrals);
     }
-    const { samples, integrals } = stored;
+    const { samples, integrals } = site;
     if (!samples.length) return;
     const shadows = moving.map((shape) => ({ shape, bounds: shadowBounds(shape, p) }));
     for (const { m, side, lit, start, end } of samples) {
@@ -229,20 +266,33 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
     { length: sectorCount },
     (_, d) => (d < azimuthCount ? lowerFraction : 1 - lowerFraction) / azimuthCount,
   );
-  for (let j = 0; j < size; j++) {
-    cellOpen.set(empty, j * sectorCount);
-    const m = solution.modes[offset + j];
-    for (let y = 0; y < areaSteps; y++)
-      for (let x = 0; x < areaSteps; x++) {
-        const p = point(m, (2 * x + 1) / areaSteps - 1, (2 * y + 1) / areaSteps - 1);
-        if (!influence(p)) continue;
-        const pos = dot(sub(p, m.center), m.momentAxis);
-        stencil(p, (_, w, moment, d) => {
-          const i = j * sectorCount + d;
-          cellOpen[i] -= w / (areaSteps * areaSteps);
-          slopeOpen[i] -= (3 * pos * w) / (areaSteps * areaSteps);
-        });
+  // Site membership and quadrature coordinates are intrinsic to the receiver.
+  // Only visibility and its integrals depend on the current solid transforms.
+  if (!stationary.length) {
+    for (let j = 0; j < size; j++) {
+      const mode = solution.modes[offset + j];
+      for (let y = 0; y < areaSteps; y++)
+        for (let x = 0; x < areaSteps; x++) {
+          const p = point(mode, (2 * x + 1) / areaSteps - 1, (2 * y + 1) / areaSteps - 1);
+          if (influence(p)) stationary.push({ p, cell: j, pos: dot(sub(p, mode.center), mode.momentAxis) });
+        }
+    }
+    for (let j = 0; j < rows; j++)
+      for (let i = 0; i < width; i++) {
+        const p = chartPoint(grid, i / (width - 1), j / (rows - 1)),
+          fade = influence(p);
+        if (fade) stationary.push({ p, texel: j * width + i, fade });
       }
+  }
+  for (let j = 0; j < size; j++) cellOpen.set(empty, j * sectorCount);
+  let index = 0;
+  for (; index < stationary.length && stationary[index].cell !== undefined; index++) {
+    const site = stationary[index],
+      base = site.cell * sectorCount;
+    stencil(site, (_, w, moment, d) => {
+      cellOpen[base + d] -= w / (areaSteps * areaSteps);
+      slopeOpen[base + d] -= (3 * site.pos * w) / (areaSteps * areaSteps);
+    });
   }
   function limitOpen() {
     for (let i = 0; i < cellOpen.length; i++) {
@@ -279,24 +329,22 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
     }
   }
   const deferred = [];
-  for (let j = 0; j < rows; j++)
-    for (let i = 0; i < width; i++) {
-      const p = chartPoint(grid, i / (width - 1), j / (rows - 1)),
-        fade = influence(p);
-      if (!fade) continue;
-      const site = j * width + i,
-        open = empty.slice(),
-        local = new Map();
-      stencil(p, (side, w, m, d) => {
-        open[d] -= w;
-        const pair = local.get(side) || [0, 0];
-        pair[0] += w;
-        pair[1] += m;
-        local.set(side, pair);
-      });
-      if (backend) deferred.push([site, fade, open, local]);
-      else finishSite(site, fade, open, local);
-    }
+  for (; index < stationary.length; index++) {
+    const record = stationary[index],
+      site = record.texel,
+      fade = record.fade;
+    const open = empty.slice(),
+      local = new Map();
+    stencil(record, (side, w, m, d) => {
+      open[d] -= w;
+      const pair = local.get(side) || [0, 0];
+      pair[0] += w;
+      pair[1] += m;
+      local.set(side, pair);
+    });
+    if (backend) deferred.push([site, fade, open, local]);
+    else finishSite(site, fade, open, local);
+  }
   if (backend) {
     backend.flush();
     limitOpen();

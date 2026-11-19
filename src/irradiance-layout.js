@@ -431,39 +431,47 @@ export function chartPolygons(polygon, faces) {
     if (!face.coords) continue;
     for (const [d, knots] of face.coords.entries()) {
       const axis = d === 0 ? face.du : face.dv;
-      for (let i = 1; i + 1 < knots.length; i++) {
-        const knot = knots[i];
-        if (Math.abs(2 * knot - knots[i - 1] - knots[i + 1]) < 1e-10) continue;
-        const next = [];
-        for (const cell of cells) {
-          const value = (p) => axis[0] * p[0] + axis[1] * p[1] + axis[2] * p[2] + axis[3] - knot;
-          const distances = cell.map(value);
-          if (Math.min(...distances) > -1e-10 || Math.max(...distances) < 1e-10) {
-            next.push(cell);
-            continue;
-          }
+      const next = [];
+      for (let cell of cells) {
+        // Knots increase along this axis. Once the low half is emitted, no
+        // later knot can cut it. A convex cell has only one remaining high half.
+        let distances = cell.map((p) => dot(axis, p) + axis[3]);
+        let lo = Math.min(...distances),
+          hi = Math.max(...distances);
+        for (let i = 1; i + 1 < knots.length; i++) {
+          const knot = knots[i];
+          if (hi - knot < 1e-10) break;
+          if (lo - knot > -1e-10 || Math.abs(2 * knot - knots[i - 1] - knots[i + 1]) < 1e-10) continue;
           const low = [],
-            high = [];
+            high = [],
+            highDistances = [];
           for (let k = 0; k < cell.length; k++) {
             const j = (k + 1) % cell.length,
               a = cell[k],
-              b = cell[j],
-              x = distances[k],
-              y = distances[j];
+              b = cell[j];
+            const x = distances[k] - knot,
+              y = distances[j] - knot;
             if (x <= 0) low.push(a);
-            if (x >= 0) high.push(a);
+            if (x >= 0) {
+              high.push(a);
+              highDistances.push(distances[k]);
+            }
             if ((x < 0 && y > 0) || (x > 0 && y < 0)) {
               const t = x / (x - y),
                 point = a.map((v, m) => v + t * (b[m] - v));
               low.push(point);
               high.push(point);
+              highDistances.push(dot(axis, point) + axis[3]);
             }
           }
           if (low.length >= 3) next.push(low);
-          if (high.length >= 3) next.push(high);
+          cell = high;
+          distances = highDistances;
+          lo = knot;
         }
-        cells = next;
+        if (cell.length >= 3) next.push(cell);
       }
+      cells = next;
     }
   }
   return cells;

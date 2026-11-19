@@ -47,7 +47,13 @@ export function painter(shapes, eye) {
           Math.abs(dot(n, b.axisU)) + Math.abs(dot(n, b.axisV)) < 1e-9
         )
           continue;
-        return null;
+        // No separating witness. Both directions belong to the unresolved
+        // group, but certified relations to other objects still apply.
+        edges[i].push(j);
+        edges[j].push(i);
+        incoming[i]++;
+        incoming[j]++;
+        continue;
       }
       const [far, near] = order === 1 ? [j, i] : [i, j];
       edges[far].push(near);
@@ -56,5 +62,50 @@ export function painter(shapes, eye) {
   const out = [];
   for (let i = 0; i < incoming.length; i++) if (!incoming[i]) out.push(i);
   for (let h = 0; h < out.length; h++) for (const i of edges[out[h]]) if (--incoming[i] === 0) out.push(i);
-  return out.length === shapes.length ? out : null;
+  if (out.length === shapes.length) return out;
+  // A cycle needs exact clipping only among its own members. The strongly
+  // connected components themselves admit a far-to-near order. Keep the
+  // ordinary acyclic path above allocation-light.
+  const reverse = shapes.map(() => []);
+  for (let i = 0; i < edges.length; i++) for (const j of edges[i]) reverse[j].push(i);
+  const visited = new Uint8Array(edges.length),
+    next = new Int32Array(edges.length);
+  const finished = [],
+    stack = [];
+  for (let i = 0; i < edges.length; i++) {
+    if (visited[i]) continue;
+    stack.push(i);
+    visited[i] = 1;
+    while (stack.length) {
+      const v = stack[stack.length - 1];
+      if (next[v] === edges[v].length) finished.push(stack.pop());
+      else {
+        const j = edges[v][next[v]++];
+        if (!visited[j]) {
+          visited[j] = 1;
+          stack.push(j);
+        }
+      }
+    }
+  }
+  visited.fill(0);
+  const groups = [];
+  while (finished.length) {
+    const i = finished.pop();
+    if (visited[i]) continue;
+    const members = [];
+    visited[i] = 1;
+    stack.push(i);
+    while (stack.length) {
+      const v = stack.pop();
+      members.push(v);
+      for (const j of reverse[v])
+        if (!visited[j]) {
+          visited[j] = 1;
+          stack.push(j);
+        }
+    }
+    groups.push(members.length === 1 ? i : members.sort((a, b) => a - b));
+  }
+  return groups;
 }

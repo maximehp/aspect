@@ -13,19 +13,13 @@ export const unit = (a) => {
 export const point = (r, u, v) => r.center.map((x, k) => x + r.axisU[k] * u + r.axisV[k] * v);
 const scale = (v, a) => v.map((x) => x * a);
 function roundedPoint(b, signs, dirs) {
-  const n = unit(dirs),
-    p = b.center.slice(),
-    normal = [0, 0, 0];
-  for (let i = 0; i < 3; i++)
-    for (let k = 0; k < 3; k++) {
-      p[k] += b.axes[i][k] * (signs[i] * (b.halfSize[i] - b.radius) + b.radius * n[i]);
-      normal[k] += b.axes[i][k] * n[i];
-    }
+  const normal = unit(dirs);
+  const p = normal.map((n, i) => signs[i] * (b.halfSize[i] - b.radius) + b.radius * n);
   return { p, normal };
 }
 // Flat faces, circular edge strips and spherical corner octants. All vertices
 // lie on the analytic fillet. Chord tolerance controls only its drawing outline.
-export function shell(b) {
+export function localShell(b) {
   const faces = [],
     steps = 2;
   for (let d = 0; d < 3; d++)
@@ -59,7 +53,9 @@ export function shell(b) {
         for (let j = 0; j + 1 < vs.length; j++) {
           const verts = [vertices[i][j], vertices[i + 1][j], vertices[i + 1][j + 1], vertices[i][j + 1]];
           if (side < 0) verts.reverse();
-          faces.push(verts);
+          const p = verts[0].p,
+            n = cross(sub(verts[1].p, p), sub(verts[2].p, p));
+          faces.push({ vertices: verts, p, n });
         }
     }
   return faces;
@@ -157,14 +153,40 @@ export function volume(shape, eye, projection) {
         const a = Math.atan2(dot(n, y), dot(n, x));
         angles.push(a, a + Math.PI);
       }
+  const depth = corners.map((p) => dot(z, p));
+  const radius = shape.radius,
+    r2 = radius * radius;
+  const denominator = depth.map((d) => d * d - r2);
+  const dz = shape.axes.map((axis) => dot(axis, z));
   for (const a of angles) {
-    const v = x.map((q, k) => q * Math.cos(a) + y[k] * Math.sin(a));
-    let h = -Infinity;
-    for (const p of corners) {
-      const X = dot(v, p),
-        Z = dot(z, p),
-        r = shape.radius;
-      h = Math.max(h, (X * Z + r * Math.sqrt(Math.max(0, X * X + Z * Z - r * r))) / (Z * Z - r * r));
+    const ca = Math.cos(a),
+      sa = Math.sin(a);
+    const v = [x[0] * ca + y[0] * sa, x[1] * ca + y[1] * sa, x[2] * ca + y[2] * sa];
+    const vx = dot(shape.axes[0], v),
+      vy = dot(shape.axes[1], v),
+      vz = dot(shape.axes[2], v);
+    const cornerAt = (h) => +(vx > h * dz[0]) | (+(vy > h * dz[1]) << 1) | (+(vz > h * dz[2]) << 2);
+    const tangent = (i) => {
+      const X = dot(v, corners[i]),
+        Z = depth[i];
+      return (X * Z + radius * Math.sqrt(Math.max(0, X * X + Z * Z - r2))) / denominator[i];
+    };
+    // At slope h all eight spherical corners have the same support radius.
+    // Maximizing X − hZ on the box selects the corner by three signs. Its
+    // tangent increases h until that same corner supports the whole solid.
+    let i = cornerAt(0),
+      h = tangent(i);
+    for (let step = 0; ; step++) {
+      const next = cornerAt(h);
+      if (next === i) break;
+      const candidate = tangent(next);
+      if (candidate <= h || step === 7) {
+        // At floating-point ties use the full definition.
+        for (let k = 0; k < 8; k++) h = Math.max(h, tangent(k));
+        break;
+      }
+      i = next;
+      h = candidate;
     }
     planes.push({ normal: z.map((q, k) => q * h - v[k]), origin: eye });
   }

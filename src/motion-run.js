@@ -13,17 +13,24 @@ const ms = (n) => n.toFixed(1) + ' ms';
 run.addEventListener('click', async () => {
   run.disabled = true;
   results.replaceChildren();
+  const profile = document.querySelector('#profile'),
+    stages = document.querySelector('#stages');
+  profile.hidden = true;
+  stages.replaceChildren();
   const integrator = document.querySelector('#integrator');
+  const bodies = document.querySelector('#extra-bodies');
+  const count = Number(bodies.value);
+  bodies.disabled = true;
   integrator.disabled = true;
   let renderer, backend;
-  const report = (label, value) => {
+  const report = (label, value, target = results) => {
     const group = document.createElement('div'),
       name = document.createElement('dt'),
       output = document.createElement('dd');
     name.textContent = label;
     output.textContent = value;
     group.append(name, output);
-    results.append(group);
+    target.append(group);
   };
   try {
     progress.textContent = 'Preparing the first pose…';
@@ -34,15 +41,40 @@ run.addEventListener('click', async () => {
       const { GpuContactIntegrals } = await import('./gpu-contact.js');
       backend = renderer.view.contactBackend = new GpuContactIntegrals(renderer);
     }
-    async function renderTick(tick) {
+    const totals = new Map();
+    function record(label, elapsed) {
+      totals.set(label, (totals.get(label) || 0) + elapsed);
+    }
+    async function renderTick(tick, profile = false) {
       const start = performance.now();
-      const { scene, camera } = motionPose(tick / 60);
+      const { scene, camera } = motionPose(tick / 60, count);
+      const authored = performance.now();
       const solution = await renderer.prepareScene(scene);
+      const solved = performance.now();
       renderer.applyScene(scene, solution, start);
+      const ready = performance.now();
       renderer.draw(camera, 1, resolution);
+      const submitted = performance.now();
       renderer.synchronize();
+      const finished = performance.now();
+      if (profile) {
+        const t = solution.timings,
+          charts = renderer.view.chartMs;
+        record('Scene, basis and view setup', authored - start + t.basis + ready - solved);
+        record('Exchange and overlapping geometry', solved - authored - t.basis - t.solve);
+        record('Equilibrium and directional light', t.solve);
+        record('Visible light fields', charts);
+        record('View geometry', renderer.viewMs - charts);
+        record('Draw submission and upload', submitted - ready - renderer.viewMs);
+        record('Wait for finished 4K pixels', finished - submitted);
+        record('Within exchange · longest angular worker', t.workerMs);
+        record('Within exchange · sparse operator assembly', t.assemblyMs);
+        record('Within exchange · lamp visibility', t.visibility);
+        record('Within exchange · lamp input', t.lamp);
+        record('Within exchange · contact geometry', t.contactMs || 0);
+      }
       if (renderer.gl.isContextLost()) throw Error('The graphics context was lost during the replay.');
-      return performance.now() - start;
+      return finished - start;
     }
     await renderTick(0);
     const startWarm = performance.now(),
@@ -51,11 +83,12 @@ run.addEventListener('click', async () => {
     const times = [];
     for (let tick = 1; tick <= ticks; tick++) {
       await nextFrame();
-      times.push(await renderTick(tick));
+      times.push(await renderTick(tick, true));
       if (tick % 10 === 0) progress.textContent = tick + ' / ' + ticks + ' moving frames';
     }
     const elapsed = performance.now() - startWarm;
     times.sort((a, b) => a - b);
+    report('Additional moving solids', String(count));
     report('Contact integrator', integrator.selectedOptions[0].textContent);
     report('Fully lit frames per second', ((ticks * 1000) / elapsed).toFixed(1));
     report('Moving poses finished', ticks + ' / ' + ticks);
@@ -65,6 +98,9 @@ run.addEventListener('click', async () => {
     report('Worst frame work', ms(times.at(-1)));
     report('Frames over 16.7 ms of work', times.filter((t) => t > deadline).length + ' / ' + ticks);
     report('First pose', ms(cold));
+    // Means add to the complete mean. The nested exchange timings overlap.
+    profile.hidden = false;
+    for (const [name, sum] of totals) report(name, ms(sum / ticks), stages);
     if (backend) {
       const s = backend.stats;
       report(
@@ -100,6 +136,7 @@ run.addEventListener('click', async () => {
   } finally {
     backend?.dispose();
     renderer?.dispose();
+    bodies.disabled = false;
     integrator.disabled = false;
     run.disabled = false;
   }
