@@ -48,9 +48,18 @@ precision highp float;
 in vec2 uv;flat in vec3 material;in vec4 value;flat in float lit;
 uniform sampler2D field;uniform vec3 lamp;uniform float intensity;uniform int mode;
 out vec4 color;
+// Ordered rounding keeps sub-code gradients visible in the 8-bit output.
+// This threshold is fixed per framebuffer pixel across all scene revisions.
+float roundingThreshold(ivec2 p){
+  int x=p.x, y=p.y, m=x^y;
+  int rank=32*(m&1)+16*(y&1)+8*((m>>1)&1)+4*((y>>1)&1)+2*((m>>2)&1)+((y>>2)&1);
+  return (float(rank)+0.5)/64.;
+}
 void main(){vec4 f=uv.x<0.?value:texture(field,uv);
  vec3 x=material*intensity*((mode==1?vec3(0):f.rgb)+(mode==2?vec3(0):lit*f.a*lamp));
- x=x/(1.+x);color=vec4(mix(12.92*x,1.055*pow(x,vec3(1./2.4))-.055,greaterThan(x,vec3(.0031308))),1);}`;
+ x=x/(1.+x);
+ vec3 srgb=mix(12.92*x,1.055*pow(x,vec3(1./2.4))-.055,greaterThan(x,vec3(.0031308)));
+ color=vec4(floor(255.*srgb+roundingThreshold(ivec2(gl_FragCoord.xy)))/255.,1);}`;
 export class LiveRenderer {
   constructor(canvas) {
     this.gl = canvas.getContext('webgl2', { alpha: false, antialias: true, depth: false });

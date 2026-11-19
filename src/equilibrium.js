@@ -66,27 +66,33 @@ export function cavityWeight(p, h) {
   return 0.5 + (0.5 * edge) / Math.hypot(edge, h.gap);
 }
 function elements(rect, covers, lamp, edgeGaps) {
-  const lampDelta = sub(lamp, rect.center),
-    distance = Math.abs(dot(lampDelta, unit(cross(rect.axisU, rect.axisV))));
+  const lampDelta = sub(lamp, rect.center);
+  const axes = [rect.axisU, rect.axisV], normal = unit(cross(...axes));
+  const distance = Math.abs(dot(lampDelta, normal));
+  const duals = [cross(rect.axisV, normal), cross(normal, rect.axisU)];
+  const area = dot(rect.axisU, duals[0]);
+  const projected = duals.map((axis) => dot(lampDelta, axis) / area);
   // The inverse-square field varies on the scale of the closest lamp-to-sheet
   // distance. Plane distance alone introduces thin rows across a distant
   // receiver when the lamp projection lies outside its finite footprint.
-  const lengths = [rect.axisU, rect.axisV].map((axis) => Math.hypot(...axis));
-  const orthogonal = Math.abs(dot(rect.axisU, rect.axisV)) <= 1e-10 * lengths[0] * lengths[1];
-  const featureScale = orthogonal
-    ? Math.hypot(
-        distance,
-        ...[rect.axisU, rect.axisV].map((axis, i) =>
-          Math.max(0, Math.abs(dot(lampDelta, axis)) / lengths[i] - lengths[i]),
-        ),
-      )
-    : distance;
-  const knots = [rect.axisU, rect.axisV].map((axis, d) => {
+  let featureScale = distance;
+  if (!rect.owner && projected.some((t) => Math.abs(t) > 1)) {
+    featureScale = Infinity;
+    for (const [d, axis] of axes.entries()) {
+      const edge = axes[1 - d];
+      for (const sign of [-1, 1]) {
+        const delta = lampDelta.map((x, i) => x - sign * axis[i]);
+        const t = Math.max(-1, Math.min(1, dot(delta, edge) / dot(edge, edge)));
+        featureScale = Math.min(featureScale, Math.hypot(...delta.map((x, i) => x - t * edge[i])));
+      }
+    }
+  }
+  const knots = axes.map((axis, d) => {
     const count = Math.min(5, Math.ceil(Math.hypot(...axis) / 0.82));
     const cuts = Array.from({ length: count + 1 }, (_, i) => (2 * i) / count - 1);
     const length = Math.hypot(...axis);
     if (!rect.owner && distance > 1e-5 && length / count > featureScale) {
-      const center = dot(lampDelta, axis) / (length * length);
+      const center = projected[d];
       for (const k of [-3, -1, 0, 1, 3]) {
         const t = center + (k * featureScale) / length;
         if (t > -0.99999 && t < 0.99999) cuts.push(t);

@@ -166,16 +166,18 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
           moveHi = -1e20f;
     for (int i = 0; i < count; i++) {
       Poly f = p[i];
-      float lo = 1e20f, hi = -1e20f, left=1e20f, right=-1e20f;
+      float lo = 1e20f, hi = -1e20f, left = 1e20f, right = -1e20f;
       for (int j = f.start; j < f.start + f.count; j++) {
         lo = min(lo, ys[j]);
         hi = max(hi, ys[j]);
-        left=min(left,xs[j]);right=max(right,xs[j]);
+        left = min(left, xs[j]);
+        right = max(right, xs[j]);
       }
       float g = dot(f.n, w);
       q[i] = (Project){lo, hi, -dot(f.n, u) / g, -dot(f.n, v) / g, dot(f.n, f.center) / g, g};
       {
-        q[i].left=left;q[i].right=right;
+        q[i].left = left;
+        q[i].right = right;
         float dw = dot(f.axis, w);
         q[i].mx = dot(f.axis, u) + dw * q[i].a;
         q[i].my = dot(f.axis, v) + dw * q[i].b;
@@ -215,137 +217,157 @@ __attribute__((visibility("default"))) void sweep(Poly *p, int count, V *verts, 
         active[na++] = starts[begin++].encoded;
       // Integrate thin projected polygons between their vertex heights. Use
       // each sub-strip's ordinate for every surface, including its blockers.
-      int kept=0;
-      float left=1e20f, right=-1e20f, thinLeft=1e20f, thinRight=-1e20f;
-      for(int k=0;k<na;k++){
-        int i=active[k];
-        if(q[i].hi<=y0 || __builtin_fabsf(q[i].cosine)<1e-7f)continue;
-        active[kept++]=i;
-        if(!correction || p[i].solid){left=min(left,q[i].left);right=max(right,q[i].right);}
-        if(q[i].hi-q[i].lo<step){thinLeft=min(thinLeft,q[i].left);thinRight=max(thinRight,q[i].right);}
+      int kept = 0;
+      float left = 1e20f, right = -1e20f, thinLeft = 1e20f, thinRight = -1e20f;
+      for (int k = 0; k < na; k++) {
+        int i = active[k];
+        if (q[i].hi <= y0 || __builtin_fabsf(q[i].cosine) < 1e-7f)
+          continue;
+        active[kept++] = i;
+        if (!correction || p[i].solid) {
+          left = min(left, q[i].left);
+          right = max(right, q[i].right);
+        }
+        if (q[i].hi - q[i].lo < step) {
+          thinLeft = min(thinLeft, q[i].left);
+          thinRight = max(thinRight, q[i].right);
+        }
       }
-      na=kept;
+      na = kept;
       // Restrict extra ordinates to columns containing the narrow feature.
       // Fixed world-projection column boundaries are shared by both sweeps.
-      const float span=8*step;
-      thinLeft=__builtin_floorf(thinLeft/span)*span;
-      thinRight=__builtin_ceilf(thinRight/span)*span;
-      for(float x0=left;x0<right;){
-        float x1=right;
-        int refined=x0>=thinLeft && x0<thinRight;
-        if(x0<thinLeft) x1=min(right,thinLeft);
-        else if(refined) {
-          float next=(__builtin_floorf(x0/span)+1)*span;
-          if(next<=x0) next+=span;
-          x1=min(right,next);
+      const float span = 8 * step;
+      thinLeft = __builtin_floorf(thinLeft / span) * span;
+      thinRight = __builtin_ceilf(thinRight / span) * span;
+      for (float x0 = left; x0 < right;) {
+        float x1 = right;
+        int refined = x0 >= thinLeft && x0 < thinRight;
+        if (x0 < thinLeft)
+          x1 = min(right, thinLeft);
+        else if (refined) {
+          float next = (__builtin_floorf(x0 / span) + 1) * span;
+          if (next <= x0)
+            next += span;
+          if (next <= x0)
+            next = right;
+          x1 = min(right, next);
         }
-        float clipLeft=x0,clipRight=x1;x0=x1;
-        int nc=1;cuts[0]=(Edge){y0,0};
-        if(refined)for(int k=0;k<na;k++){
-          int i=active[k];
-          if(q[i].right<=clipLeft || q[i].left>=clipRight || q[i].hi-q[i].lo>=step)continue;
-          for(int j=p[i].start;j<p[i].start+p[i].count;j++)
-            if(ys[j]>y0 && ys[j]<y1)cuts[nc++]=(Edge){ys[j],0};
-        }
-      if (nc > 1) sort(cuts, 1, nc - 1);
-      cuts[nc++] = (Edge){y1,0};
-      for (int c = 1; c < nc; c++) {
-        const float low = cuts[c-1].x, high = cuts[c].x;
-        if (high <= low) continue;
-        const float y = (low + high) * .5f, dy = high - low;
-        int ne = 0;
-        for (int k = 0; k < na; k++) {
-          int i = active[k];
-          if (y < q[i].lo || y >= q[i].hi || q[i].right<=clipLeft || q[i].left>=clipRight) continue;
-          float L = 1e20f, R = -1e20f;
-        int start = p[i].start, end = start + p[i].count;
-        for (int j = start, k = end - 1; j < end; k = j++) {
-          if ((ys[k] > y) != (ys[j] > y)) {
-            float x = xs[k] + (xs[j] - xs[k]) * ((y - ys[k]) / (ys[j] - ys[k]));
-            L = min(L, x);
-            R = max(R, x);
+        float clipLeft = x0, clipRight = x1;
+        x0 = x1;
+        int nc = 1;
+        cuts[0] = (Edge){y0, 0};
+        if (refined)
+          for (int k = 0; k < na; k++) {
+            int i = active[k];
+            if (q[i].right <= clipLeft || q[i].left >= clipRight || q[i].hi - q[i].lo >= step)
+              continue;
+            for (int j = p[i].start; j < p[i].start + p[i].count; j++)
+              if (ys[j] > y0 && ys[j] < y1)
+                cuts[nc++] = (Edge){ys[j], 0};
           }
-        }
-        L=max(L,clipLeft);R=min(R,clipRight);
-        if (L >= R)
-          continue;
-        edges[ne++] = (Edge){L, i + 1};
-        edges[ne++] = (Edge){R, -i - 1};
-      }
-      if (!ne)
-        continue;
-      if (correction) {
-        float left = 1e20f, right = -1e20f;
-        for (int i = 0; i < ne; i++) {
-          int id = edges[i].encoded;
-          int j = id > 0 ? id - 1 : -id - 1;
-          if (p[j].solid) {
-            left = min(left, edges[i].x);
-            right = max(right, edges[i].x);
-          }
-        }
-        if (left >= right)
-          continue;
-        // Skip fixed segments outside the projected footprint of every edited body.
-        int out = 0;
-        for (int i = 0; i < ne; i += 2) {
-          if (edges[i + 1].x <= left || edges[i].x >= right)
+        if (nc > 1)
+          sort(cuts, 1, nc - 1);
+        cuts[nc++] = (Edge){y1, 0};
+        for (int c = 1; c < nc; c++) {
+          const float low = cuts[c - 1].x, high = cuts[c].x;
+          if (high <= low)
             continue;
-          Edge a = edges[i], b = edges[i + 1];
-          a.x = max(a.x, left);
-          b.x = min(b.x, right);
-          edges[out++] = a;
-          edges[out++] = b;
-        }
-        ne = out;
-      }
-      sort(edges, 0, ne - 1);
-      int nh = 0, moving = 0;
-      float prev = edges[0].x;
-      for (int e = 0; e < ne; e++) {
-        float x = edges[e].x;
-        if (x > prev && nh > 1 && (!correction || moving)) {
-          float mid = (prev + x) * .5f;
-          for (int i = 1; i < nh; i++) {
-            int s = hits[i], j = i;
-            float z = q[s].a * mid + q[s].b * y + q[s].c;
-            while (j > 0) {
-              int t = hits[j - 1];
-              if (q[t].a * mid + q[t].b * y + q[t].c <= z)
-                break;
-              hits[j] = t;
-              j--;
+          const float y = (low + high) * .5f, dy = high - low;
+          int ne = 0;
+          for (int k = 0; k < na; k++) {
+            int i = active[k];
+            if (y < q[i].lo || y >= q[i].hi || q[i].right <= clipLeft || q[i].left >= clipRight)
+              continue;
+            float L = 1e20f, R = -1e20f;
+            int start = p[i].start, end = start + p[i].count;
+            for (int j = start, k = end - 1; j < end; k = j++) {
+              if ((ys[k] > y) != (ys[j] > y)) {
+                float x = xs[k] + (xs[j] - xs[k]) * ((y - ys[k]) / (ys[j] - ys[k]));
+                L = min(L, x);
+                R = max(R, x);
+              }
             }
-            hits[j] = s;
+            L = max(L, clipLeft);
+            R = min(R, clipRight);
+            if (L >= R)
+              continue;
+            edges[ne++] = (Edge){L, i + 1};
+            edges[ne++] = (Edge){R, -i - 1};
           }
-          int previous = -1, stationary = -1;
-          for (int i = 0; i < nh; i++) {
-            int id = hits[i];
-            float area = (x - prev) * dy * (2.f / dirs);
-            if (previous >= 0 && (!correction || p[id].solid || p[previous].solid))
-              exchange(p, q, previous, id, area, op, mid, y, x - prev, dy);
-            if (correction && !p[id].solid) {
-              if (stationary >= 0 && stationary != previous)
-                exchange(p, q, stationary, id, -area, op, mid, y, x - prev, dy);
-              stationary = id;
+          if (!ne)
+            continue;
+          if (correction) {
+            float left = 1e20f, right = -1e20f;
+            for (int i = 0; i < ne; i++) {
+              int id = edges[i].encoded;
+              int j = id > 0 ? id - 1 : -id - 1;
+              if (p[j].solid) {
+                left = min(left, edges[i].x);
+                right = max(right, edges[i].x);
+              }
             }
-            previous = id;
+            if (left >= right)
+              continue;
+            // Skip fixed segments outside the projected footprint of every edited body.
+            int out = 0;
+            for (int i = 0; i < ne; i += 2) {
+              if (edges[i + 1].x <= left || edges[i].x >= right)
+                continue;
+              Edge a = edges[i], b = edges[i + 1];
+              a.x = max(a.x, left);
+              b.x = min(b.x, right);
+              edges[out++] = a;
+              edges[out++] = b;
+            }
+            ne = out;
+          }
+          sort(edges, 0, ne - 1);
+          int nh = 0, moving = 0;
+          float prev = edges[0].x;
+          for (int e = 0; e < ne; e++) {
+            float x = edges[e].x;
+            if (x > prev && nh > 1 && (!correction || moving)) {
+              float mid = (prev + x) * .5f;
+              for (int i = 1; i < nh; i++) {
+                int s = hits[i], j = i;
+                float z = q[s].a * mid + q[s].b * y + q[s].c;
+                while (j > 0) {
+                  int t = hits[j - 1];
+                  if (q[t].a * mid + q[t].b * y + q[t].c <= z)
+                    break;
+                  hits[j] = t;
+                  j--;
+                }
+                hits[j] = s;
+              }
+              int previous = -1, stationary = -1;
+              for (int i = 0; i < nh; i++) {
+                int id = hits[i];
+                float area = (x - prev) * dy * (2.f / dirs);
+                if (previous >= 0 && (!correction || p[id].solid || p[previous].solid))
+                  exchange(p, q, previous, id, area, op, mid, y, x - prev, dy);
+                if (correction && !p[id].solid) {
+                  if (stationary >= 0 && stationary != previous)
+                    exchange(p, q, stationary, id, -area, op, mid, y, x - prev, dy);
+                  stationary = id;
+                }
+                previous = id;
+              }
+            }
+            int s = edges[e].encoded;
+            if (s > 0) {
+              hits[nh++] = s - 1;
+              moving += p[s - 1].solid;
+            } else {
+              moving -= p[-s - 1].solid;
+              int t = 0;
+              while (hits[t] != -s - 1)
+                t++;
+              hits[t] = hits[--nh];
+            }
+            prev = x;
           }
         }
-        int s = edges[e].encoded;
-        if (s > 0) {
-          hits[nh++] = s - 1;
-          moving += p[s - 1].solid;
-        } else {
-          moving -= p[-s - 1].solid;
-          int t = 0;
-          while (hits[t] != -s - 1)
-            t++;
-          hits[t] = hits[--nh];
-        }
-        prev = x;
-      }
-      }
       }
     }
   }
