@@ -1,4 +1,4 @@
-import { LiveRenderer } from './live-renderer.js';
+import { LiveRenderer } from './room-display.js';
 import { buildRoom, START_CAMERA, WALK_BOUNDS } from './room.js';
 
 const element = id => document.getElementById(id);
@@ -9,7 +9,6 @@ const freshCamera = () => ({ ...START_CAMERA, position: [...START_CAMERA.positio
 let camera = freshCamera();
 let renderer, scene, queuedScene;
 const frameFences = [];
-let viewChanged = true;
 let editStarted = 0;
 let request = 0, builds = 0;
 const keys = new Set();
@@ -20,7 +19,6 @@ function schedule() {
 }
 
 function requestView() {
-  viewChanged = true;
   schedule();
 }
 
@@ -68,11 +66,7 @@ function render(time) {
       frameFences.shift();
       if (completion === gl.WAIT_FAILED && !gl.isContextLost()) throw new Error('GPU frame fence failed.');
     }
-    // A refinement never occupies the second slot. A fresh input can start
-    // while the previous frame is completing, without a backlog of old poses.
-    const frameLimit = (queuedScene || viewChanged || keys.size) ? 2 : 1;
-    if (frameFences.length >= frameLimit) { schedule(); return; }
-    viewChanged = false;
+    if (frameFences.length >= 2) { schedule(); return; }
     const started = performance.now();
     walk(Math.min((time - previousTime) / 1000, 0.05));
     previousTime = time;
@@ -104,11 +98,10 @@ function render(time) {
     }
     canvas.setAttribute('aria-busy','false');
     element('builds').textContent = builds;
-    element('samples').textContent = renderer.samples;
+    element('samples').textContent = renderer.iterations;
     element('update-time').textContent = uploadMs.toFixed(2) + ' ms';
     element('dimensions').textContent = renderer.gl.drawingBufferWidth + ' × ' + renderer.gl.drawingBufferHeight;
-    const refining = renderer.needsFrame && intensity > 0 && mode !== 'direct';
-    if (keys.size || refining) schedule();
+    if (keys.size) schedule();
   } catch (error) {
     report(error);
   }

@@ -64,17 +64,22 @@ function hasArea(vertices) {
 // Split both sides together so they get literally the same intersection.
 // Marking a whole polygon coplanar assigns it to the positive half-space.
 function split(vertices, a, b, c, tolerance) {
-  const distances = vertices.map(([x, y]) => {
-    const d = a * x + b * y + c;
-    return Math.abs(d) <= tolerance ? 0 : d;
-  });
-  if (distances.every(d => d >= 0)) return [vertices, []];
-  if (distances.every(d => d <= 0)) return [[], vertices];
+  let positive = false, negative = false;
+  for (const p of vertices) {
+    const d = a * p[0] + b * p[1] + c;
+    positive ||= d > tolerance;
+    negative ||= d < -tolerance;
+    if (positive && negative) break;
+  }
+  if (!negative) return [vertices, []];
+  if (!positive) return [[], vertices];
   const inside = [], outside = [];
   for (let i = 0; i < vertices.length; i++) {
     const j = (i + 1) % vertices.length;
     const p = vertices[i], q = vertices[j];
-    const dp = distances[i], dq = distances[j];
+    let dp = a * p[0] + b * p[1] + c, dq = a * q[0] + b * q[1] + c;
+    if (Math.abs(dp) <= tolerance) dp = 0;
+    if (Math.abs(dq) <= tolerance) dq = 0;
     if (dp >= 0) inside.push(p);
     if (dp <= 0) outside.push(p);
     if ((dp > 0 && dq < 0) || (dp < 0 && dq > 0)) {
@@ -89,16 +94,19 @@ function split(vertices, a, b, c, tolerance) {
 
 function projectedFootprint(receiver, planes) {
   if (!planes) return null;
-  let uv = square;
+  let uv = square, previousOrigin, delta, tolerance;
+  const size = Math.hypot(...receiver.axisU) + Math.hypot(...receiver.axisV);
   for (let i = 0; i < planes.length; i++) {
     const { normal, origin } = planes[i];
-    const delta = subtract(receiver.center, origin);
+    if (origin !== previousOrigin) {
+      delta = subtract(receiver.center, origin);
+      tolerance = roundoff * (Math.hypot(...delta) + size);
+      previousOrigin = origin;
+    }
     const a = dot(normal, receiver.axisU), b = dot(normal, receiver.axisV);
     const c = dot(normal, delta), radius = Math.abs(a) + Math.abs(b);
     // Errors in dot products depend on the input lengths, including for a
     // receiver exactly coplanar with an adjacent panel.
-    const tolerance = roundoff * (Math.hypot(...delta) +
-      Math.hypot(...receiver.axisU) + Math.hypot(...receiver.axisV));
     // Points on the blocker's own plane only touch the end of the light
     // segment. Coplanar receiver sheets must never shadow one another.
     if (i === 0 && c + radius <= tolerance) return null;
@@ -123,9 +131,9 @@ function footprintEdges(polygon) {
   });
 }
 
-function partitionReceiver(footprints) {
-  let lit = [square];
-  const dark = [];
+function partitionReceiver(footprints, initial) {
+  let lit = initial ? initial.filter(c => c.lit).map(c => c.uv) : [square];
+  const dark = initial ? initial.filter(c => !c.lit).map(c => c.uv) : [];
   for (const polygon of footprints.values()) {
     if (!lit.length) break;
     const edges = footprintEdges(polygon), next = [];
@@ -208,3 +216,6 @@ export class VisibilityCompiler {
     return { surfaces, stats };
   }
 }
+
+// CPU projections used by camera visibility and diffuse transfer.
+export { shadowVolume, projectedFootprint, partitionReceiver, split };

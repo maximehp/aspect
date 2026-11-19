@@ -207,7 +207,7 @@ function grid(origin, u, v, n) {
 }
 // Rectangles can be edited in place by the calling game. Comparing their
 // coordinates keeps the blind-only path cheap without relying on immutability.
-function planarCharts(rectangles, cache) {
+export function planarCharts(rectangles, cache) {
   const geometry = rectangles.flatMap((r) => [...r.center, ...r.axisU, ...r.axisV]);
   if (cache.geometry?.length === geometry.length && geometry.every((v, i) => v === cache.geometry[i]))
     return cache.charts;
