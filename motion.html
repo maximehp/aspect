@@ -16,8 +16,8 @@
   </section>
   <aside>
     <p>Replay 120 consecutive game ticks with a walking camera, a shadow-casting player body, two rotating blinds and a block moving alongside the bench.</p>
-    <label for="integrator">Changing contact integrals</label>
-    <select id="integrator"><option value="cpu">CPU</option><option value="gpu">GPU with readback</option><option value="resident">GPU-resident contact field</option></select>
+    <label for="integrator">Contact integrator</label>
+    <select id="integrator"><option value="resident">GPU-resident contact field</option><option value="cpu">CPU reference</option><option value="gpu">GPU with readback reference</option></select>
     <label for="extra-bodies">Additional moving solids</label>
     <select id="extra-bodies"><option>0</option><option>4</option><option>8</option></select>
     <button id="run">Run 120 frames at 4K</button>

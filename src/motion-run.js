@@ -36,14 +36,8 @@ run.addEventListener('click', async () => {
     progress.textContent = 'Preparing the first pose…';
     await nextFrame();
     const started = performance.now();
-    renderer = new LiveRenderer(document.querySelector('#room'));
-    if (integrator.value === 'resident') {
-      const { ResidentContacts } = await import('./resident-contacts.js');
-      backend = renderer.view.contactBackend = new ResidentContacts(renderer);
-    } else if (integrator.value === 'gpu') {
-      const { GpuContactIntegrals } = await import('./gpu-contact.js');
-      backend = renderer.view.contactBackend = new GpuContactIntegrals(renderer);
-    }
+    renderer = new LiveRenderer(document.querySelector('#room'), { contacts: integrator.value });
+    backend = renderer.view.contactBackend;
     const totals = new Map();
     function record(label, elapsed) {
       totals.set(label, (totals.get(label) || 0) + elapsed);
@@ -108,7 +102,7 @@ run.addEventListener('click', async () => {
     if (backend) {
       const s = backend.stats;
       report(
-        'GPU integrals per moving frame',
+        'Submitted GPU sector integrals per moving frame',
         Math.round((16 * (s.polygons - initialStats.polygons)) / ticks).toLocaleString(),
       );
       if (backend.beginChart) {
@@ -117,7 +111,10 @@ run.addEventListener('click', async () => {
           ((s.uploadBytes - initialStats.uploadBytes) / ticks / 1024).toFixed(0) + ' KiB',
         );
         report('Peak contact texture and buffer payload', (s.peakBytes / 1048576).toFixed(2) + ' MiB');
-        report('Oversized charts using CPU fallback', String(s.fallbackCharts - initialStats.fallbackCharts));
+        report(
+          'Stationary polygons integrated on GPU, including first pose',
+          s.staticPolygons.toLocaleString(),
+        );
       } else {
         report('Packing per frame', ms((s.packMs - initialStats.packMs) / ticks));
         report(
@@ -126,7 +123,6 @@ run.addEventListener('click', async () => {
         );
         report('Result reduction per frame', ms((s.reduceMs - initialStats.reduceMs) / ticks));
       }
-      report('Changed polygons using CPU fallback', String(s.fallback - initialStats.fallback));
     }
     // A real-time game clock also advances while rendering. Draw the newest
     // due tick and count the intermediate poses the player never sees.
@@ -150,7 +146,6 @@ run.addEventListener('click', async () => {
   } catch (error) {
     progress.textContent = error.message;
   } finally {
-    backend?.dispose();
     renderer?.dispose();
     bodies.disabled = false;
     integrator.disabled = false;

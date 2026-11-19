@@ -85,14 +85,7 @@ SETUP = """(async (mode) => {
   const canvas = document.createElement('canvas');
   document.body.replaceChildren(canvas);
   canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block';
-  window.room = new LiveRenderer(canvas);
-  if (mode === 'resident') {
-    const { ResidentContacts } = await import('/src/resident-contacts.js');
-    room.view.contactBackend = new ResidentContacts(room);
-  } else if (mode === 'gpu') {
-    const { GpuContactIntegrals } = await import('/src/gpu-contact.js');
-    room.view.contactBackend = new GpuContactIntegrals(room);
-  }
+  window.room = new LiveRenderer(canvas, { contacts: mode });
 })"""
 
 REPLAY = """(async (extra) => {

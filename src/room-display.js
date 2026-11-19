@@ -1,5 +1,7 @@
 import { BeamWorkers } from './beam-workers.js';
 import { CpuView } from './cpu-view.js';
+import { ResidentContacts } from './resident-contacts.js';
+import { GpuContactIntegrals } from './gpu-contact.js';
 import { Equilibrium } from './equilibrium.js';
 import { instanceSweep } from './beam-exchange.js';
 const module = await WebAssembly.compileStreaming(fetch(new URL('./beam-sweep.wasm', import.meta.url)));
@@ -63,7 +65,7 @@ void main(){vec4 f=uv.x<0.?value:texture(field,vec2(uv.x,clamp(uv.y,verticalLimi
  vec3 srgb=mix(12.92*x,1.055*pow(x,vec3(1./2.4))-.055,greaterThan(x,vec3(.0031308)));
  color=vec4(floor(255.*srgb+roundingThreshold(ivec2(gl_FragCoord.xy)))/255.,1);}`;
 export class LiveRenderer {
-  constructor(canvas) {
+  constructor(canvas, { contacts = 'resident' } = {}) {
     this.gl = canvas.getContext('webgl2', { alpha: false, antialias: true, depth: false });
     const gl = this.gl;
     if (!gl) throw Error('WebGL 2 required');
@@ -103,6 +105,14 @@ export class LiveRenderer {
     this.math = new Equilibrium(instanceSweep(new WebAssembly.Instance(module)));
     this.view = new CpuView();
     this.pixel = new Uint8Array(4);
+    try {
+      if (contacts === 'resident') this.view.contactBackend = new ResidentContacts(this);
+      else if (contacts === 'gpu') this.view.contactBackend = new GpuContactIntegrals(this);
+      else if (contacts !== 'cpu') throw Error('Unknown contact integrator: ' + contacts);
+    } catch (error) {
+      this.dispose();
+      throw error;
+    }
   }
   setScene(scene) {
     const t = performance.now();
@@ -150,6 +160,7 @@ export class LiveRenderer {
     this.viewMs = 0;
     const appearanceStart = performance.now();
     this.view.setScene(scene, result, true);
+    this.view.contactBackend?.retainCharts?.(this.view.contacts);
     this.timings = { ...result.timings, appearance: performance.now() - appearanceStart };
     this.iterations = result.iterations;
     this.cpuMs = performance.now() - t;
@@ -226,6 +237,7 @@ export class LiveRenderer {
     const gl = this.gl;
     this.disposed = true;
     this.workers?.dispose();
+    this.view.contactBackend?.dispose();
     gl.deleteTexture(this.texture);
     gl.deleteBuffer(this.buffer);
     gl.deleteProgram(this.program);

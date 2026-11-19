@@ -135,32 +135,37 @@ export function canShadow(rect, bounds) {
   }
   return true;
 }
+// The angular stencil and a solid's corner offsets are independent of the
+// eye. Only their perspective tangents change when another receiver uses it.
+export const shadowAzimuthCount = 24;
+const fixedAzimuths = Array.from({ length: shadowAzimuthCount }, (_, i) => {
+  const a = (2 * Math.PI * i) / shadowAzimuthCount;
+  return [Math.cos(a), Math.sin(a)];
+});
+const cornerOffsets = new WeakMap();
+function coreOffsets(shape, core) {
+  let offsets = cornerOffsets.get(shape);
+  if (!offsets) {
+    offsets = Array.from({ length: 8 }, (_, i) =>
+      core.map((_, k) => shape.axes.reduce((s, ax, j) => s + ((i >> j) & 1 ? 1 : -1) * ax[k] * core[j], 0)),
+    );
+    cornerOffsets.set(shape, offsets);
+  }
+  return offsets;
+}
 export function volume(shape, eye, projection) {
   if (!shape.axes) return shadowVolume(shape, eye);
   const basis = projection || roundedProjection(shape, eye);
   if (!basis) return null;
   const { rel, core, distance, z, x, y } = basis;
   const planes = [{ normal: z, origin: eye.map((v, k) => v + (distance - shape.radius) * z[k]) }];
-  const corners = Array.from({ length: 8 }, (_, i) =>
-    rel.map((v, k) => v + shape.axes.reduce((s, ax, j) => s + ((i >> j) & 1 ? 1 : -1) * ax[k] * core[j], 0)),
-  );
-  // Include the corner-to-corner tangent directions of the core outline.
-  const angles = Array.from({ length: 24 }, (_, i) => (2 * Math.PI * i) / 24);
-  for (let i = 0; i < 8; i++)
-    for (let j = 0; j < 3; j++)
-      if (!(i & (1 << j))) {
-        const n = cross(corners[i], corners[i | (1 << j)]);
-        const a = Math.atan2(dot(n, y), dot(n, x));
-        angles.push(a, a + Math.PI);
-      }
+  const corners = coreOffsets(shape, core).map((o) => [rel[0] + o[0], rel[1] + o[1], rel[2] + o[2]]);
   const depth = corners.map((p) => dot(z, p));
   const radius = shape.radius,
     r2 = radius * radius;
   const denominator = depth.map((d) => d * d - r2);
   const dz = shape.axes.map((axis) => dot(axis, z));
-  for (const a of angles) {
-    const ca = Math.cos(a),
-      sa = Math.sin(a);
+  function addPlane(ca, sa) {
     const v = [x[0] * ca + y[0] * sa, x[1] * ca + y[1] * sa, x[2] * ca + y[2] * sa];
     const vx = dot(shape.axes[0], v),
       vy = dot(shape.axes[1], v),
@@ -190,6 +195,19 @@ export function volume(shape, eye, projection) {
     }
     planes.push({ normal: z.map((q, k) => q * h - v[k]), origin: eye });
   }
+  for (const [c, s] of fixedAzimuths) addPlane(c, s);
+  for (let i = 0; i < 8; i++)
+    for (let j = 0; j < 3; j++)
+      if (!(i & (1 << j))) {
+        const n = cross(corners[i], corners[i | (1 << j)]);
+        const nx = dot(n, x),
+          ny = dot(n, y);
+        const length = Math.sqrt(nx * nx + ny * ny);
+        const c = length ? nx / length : 1,
+          s = length ? ny / length : 0;
+        addPlane(c, s);
+        addPlane(-c, -s);
+      }
   return planes;
 }
 export function regions(rect, blockers, initial, previous) {

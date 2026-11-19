@@ -1,27 +1,21 @@
 // A moving polygon contributes to one receiver and eight azimuth bins. Accumulate
 // both elevation bands and reflected RGB at their destinations on the device.
 import { contactKernel, contactTextureWidth, contactVertexLimit, setContactPlanes } from './gpu-contact.js';
-import { areaSteps, azimuthCount } from './contact-transfer.js';
-import { dot, point, sub } from './cpu-geometry.js';
+import { areaSteps, azimuthCount, lowerFraction } from './contact-transfer.js';
+import { dot, sub } from './cpu-geometry.js';
 
 const header = `#version 300 es
 precision highp float;
 precision highp int;
 `;
-const integrate =
-  header +
-  `
-layout(location=0) in vec4 polygon; // start, count, receiver, quadrature weight
-layout(location=1) in vec2 source; // packed source index and receiver moment multiplier
-uniform highp sampler2D radiance;
+const attributes = `
+layout(location=0) in vec4 polygon; // vertex range, receiver, quadrature weight
+layout(location=1) in vec3 source; // radiance row, receiver moment multiplier, static coefficient row
+uniform highp sampler2D radiance, cached;
 uniform float targets;
 flat out vec4 opening;
-flat out vec3 light;
-${contactKernel}
-void main() {
-  int bin = gl_VertexID;
-  // Two (area, source moment) pairs, one for each elevation band.
-  vec4 integral = sectorIntegral(bin, ivec2(polygon.xy));
+flat out vec3 light;`;
+const deposit = `
   opening = -integral.xzxz * polygon.w * vec4(1., 1., source.y, source.y);
   light = vec3(0);
   if (source.x >= 0.) {
@@ -30,7 +24,51 @@ void main() {
           + (integral.y + integral.w) * texelFetch(radiance, ivec2(1, side), 0).rgb;
   }
   gl_Position = vec4(2. * (float(bin) + .5) / 8. - 1., 2. * (polygon.z + .5) / targets - 1., 0., 1.);
+  gl_PointSize = 1.;`;
+function polygonShader(kernel, save) {
+  if (!save)
+    return (
+      header +
+      attributes +
+      kernel +
+      `
+void main() {
+  int bin = gl_VertexID;
+  int index = int(source.z) * 8 + bin;
+  int width = textureSize(cached, 0).x;
+  vec4 whole = texelFetch(cached, ivec2(index % width, index / width), 0);
+  // A moving occluder can only remove light from this stationary aperture.
+  vec4 integral = whole.x + whole.z > 0. ? sectorIntegral(bin, ivec2(polygon.xy), int(source.z)) : vec4(0);
+  ${deposit}
+}`
+    );
+  return (
+    header +
+    kernel +
+    `
+layout(location=0) in vec4 polygon;
+uniform ivec2 table;
+flat out vec4 coefficients;
+void main() {
+  int bin = gl_VertexID, index = 8 * int(polygon.z) + bin;
+  vec2 texel = vec2(index % table.x, index / table.x);
+  gl_Position = vec4((texel + .5) * 2. / vec2(table) - 1., 0., 1.);
   gl_PointSize = 1.;
+  coefficients = sectorIntegral(bin, ivec2(polygon.xy), int(polygon.z));
+}`
+  );
+}
+const saveCoefficients =
+  header + `flat in vec4 coefficients;out vec4 result;void main(){result=coefficients;}`;
+const reuse =
+  header +
+  attributes +
+  `
+void main() {
+  int bin = gl_VertexID, index = 8 * int(polygon.x) + bin;
+  int width = textureSize(cached, 0).x;
+  vec4 integral = texelFetch(cached, ivec2(index % width, index / width), 0);
+  ${deposit}
 }`;
 const accumulate =
   header +
@@ -44,16 +82,16 @@ const resolve =
 layout(location=0) in vec4 cells;
 layout(location=1) in vec4 weights;
 layout(location=2) in vec4 moments;
-layout(location=3) in vec4 local; // cached source RGB and site number
+layout(location=3) in float siteNumber;
 layout(location=4) in vec4 background; // original RGB and contact strength
 uniform highp sampler2D openings, energy, directional;
 uniform ivec2 chart;
 uniform int cellCount;
 flat out vec3 rgb;
 void main(){
-  int site = int(local.w);
+  int site = int(siteNumber);
   int target = cellCount + site;
-  vec3 sum = local.rgb;
+  vec3 sum = vec3(0.);
   for (int bin = 0; bin < 8; bin++) {
     vec2 open = max(vec2(0), texelFetch(openings, ivec2(bin, target), 0).xy);
     vec2 denominator = vec2(0);
@@ -77,6 +115,12 @@ void main(){
   gl_Position = vec4((texel + .5) * 2. / vec2(chart) - 1., 0., 1.);
   gl_PointSize = 1.;
 }`;
+const emptyOpening = new Float32Array([
+  lowerFraction / azimuthCount,
+  (1 - lowerFraction) / azimuthCount,
+  0,
+  0,
+]);
 const shade = header + `flat in vec3 rgb;out vec4 color;void main(){color=vec4(rgb,0.);}`;
 
 function program(gl, vs, fs) {
@@ -102,6 +146,23 @@ function program(gl, vs, fs) {
   }
 }
 
+// A row may contain several convex pieces of the same stationary aperture.
+// The static pass adds all of their area and first-moment coefficients.
+function polygonBatch() {
+  return { positions: [], jobs: [], maxVertices: 0 };
+}
+function packPolygon(batch, polygon, target, weight, source, moment, staticRow) {
+  const count = polygon.uv.length;
+  batch.maxVertices = Math.max(batch.maxVertices, count);
+  batch.jobs.push(batch.positions.length / 2, count, target, weight, source, moment, staticRow);
+  for (const [u, v] of polygon.uv) batch.positions.push(u, v);
+}
+function sealBatch(batch) {
+  const stride = 4 * contactTextureWidth;
+  const positions = new Float32Array(stride * Math.max(1, Math.ceil(batch.positions.length / stride)));
+  positions.set(batch.positions);
+  return { positions, jobs: Float32Array.from(batch.jobs), maxVertices: batch.maxVertices };
+}
 export class ResidentContacts {
   constructor(renderer) {
     const gl = (this.gl = renderer.gl);
@@ -109,19 +170,21 @@ export class ResidentContacts {
       throw Error('Resident contacts require renderable and blendable RGBA32F.');
     this.renderer = renderer;
     this.limit = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-    this.stats = { polygons: 0, fallback: 0, fallbackCharts: 0, uploadBytes: 0, peakBytes: 0 };
+    this.stats = { polygons: 0, staticPolygons: 0, uploadBytes: 0, peakBytes: 0 };
     this.payloadBytes = 0;
+    this.tables = new Map();
+    this.staticRecords = new WeakMap();
+    this.kernels = new Map();
     this.buffers = [];
     this.vaos = [];
     this.textures = [];
     this.programs = [];
     this.frames = [];
     try {
-      this.acc = this.makeProgram(integrate, accumulate, { positions: 1, radiance: 5 });
-      setContactPlanes(gl, this.acc);
+      this.reuse = this.makeProgram(reuse, accumulate, { cached: 6, radiance: 5 });
       this.final = this.makeProgram(resolve, shade, { openings: 2, energy: 3, directional: 4 });
-      this.poly = this.attributes([4, 2], 1);
-      this.site = this.attributes([4, 4, 4, 4, 4], 0);
+      this.poly = this.attributes([4, 3], 1);
+      this.site = this.attributes([4, 4, 4, 1, 4], 0);
       this.scratch = gl.createFramebuffer();
       this.frames.push(this.scratch);
       this.atlasFbo = gl.createFramebuffer();
@@ -160,6 +223,7 @@ export class ResidentContacts {
     return { vao, buffer };
   }
   texture(unit, w, h, data) {
+    if (w > this.limit || h > this.limit) throw Error('Contact field exceeds GPU texture capacity.');
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE0 + unit);
     let t = this.textures[unit];
@@ -177,81 +241,185 @@ export class ResidentContacts {
     } else if (data) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, w, h, gl.RGBA, gl.FLOAT, data);
     return t.id;
   }
-  beginChart(feature, width, rows) {
+  kernel(vertices, save) {
+    const capacity = Math.max(contactVertexLimit, 2 ** Math.ceil(Math.log2(vertices + 3)));
+    const key = capacity + '/' + save;
+    let p = this.kernels.get(key);
+    if (!p) {
+      const kernel = contactKernel(capacity, true);
+      p = this.makeProgram(
+        polygonShader(kernel, save),
+        save ? saveCoefficients : accumulate,
+        save ? { positions: 1, frames: 7 } : { positions: 1, radiance: 5, cached: 6, frames: 7 },
+      );
+      setContactPlanes(this.gl, p);
+      this.kernels.set(key, p);
+    }
+    return p;
+  }
+  beginChart(feature, width, rows, stationary) {
     const targets = feature.size + width * rows;
-    if (targets > this.limit) {
-      this.stats.fallbackCharts++;
-      return null;
+    if (targets > this.limit) throw Error('Contact chart exceeds GPU texture height.');
+    let cache = this.staticRecords.get(stationary);
+    if (!cache) {
+      cache = { count: 0, build: polygonBatch() };
+      this.staticRecords.set(stationary, cache);
     }
     const sources = new Map(),
-      positions = [],
-      jobs = [],
-      owner = this;
+      changed = polygonBatch(),
+      cachedJobs = [];
+    function sourceRow(side, site) {
+      if (site.cell !== undefined) return -1;
+      if (!sources.has(side)) sources.set(side, sources.size);
+      return sources.get(side);
+    }
     return {
-      enqueue(mode, side, site, poly) {
-        const start = positions.length / 4,
-          n = poly.uv.length;
-        if (n + 3 > contactVertexLimit || start + n > contactTextureWidth * owner.limit) {
-          owner.stats.fallback++;
-          return false;
-        }
+      register(sample) {
+        sample.coefficientRow = cache.count++;
+        for (const poly of sample.lit) packPolygon(cache.build, poly, sample.coefficientRow, 0, 0, 0, 0);
+      },
+      reuse(sample, site) {
         const cell = site.cell !== undefined;
-        if (!cell && !sources.has(side)) {
-          if (sources.size >= owner.limit) {
-            owner.stats.fallback++;
-            return false;
-          }
-          sources.set(side, sources.size);
-        }
-        jobs.push(
-          start,
-          n,
+        cachedJobs.push(
+          sample.coefficientRow,
+          0,
           cell ? site.cell : feature.size + site.texel,
           cell ? 1 / (areaSteps * areaSteps) : 1,
-          cell ? -1 : sources.get(side),
+          sourceRow(sample.side, site),
           cell ? 3 * site.pos : 0,
+          sample.coefficientRow,
         );
-        for (const [u, v] of poly.uv) {
-          const q = point(mode, u, v),
-            d = sub(q, site.p);
-          positions.push(
-            dot(d, feature.u),
-            dot(d, feature.v),
-            dot(d, feature.n),
-            dot(sub(q, mode.center), mode.momentAxis),
-          );
-        }
-        return true;
       },
-      finish(cellOpen, slopeOpen, sites, openings) {
-        const initial = new Float32Array(targets * 8 * 4);
-        for (let c = 0; c < feature.size; c++)
-          for (let k = 0; k < 8; k++) {
-            const src = c * 16 + k;
-            initial.set(
-              [cellOpen[src], cellOpen[src + 8], slopeOpen[src], slopeOpen[src + 8]],
-              4 * (8 * c + k),
-            );
-          }
-        sites.forEach((s, i) => {
-          for (let k = 0; k < 8; k++) {
-            const dest = 4 * (8 * (feature.size + s) + k);
-            initial[dest] = openings[16 * i + k];
-            initial[dest + 1] = openings[16 * i + k + 8];
-          }
-        });
-        const rowLength = 4 * contactTextureWidth;
-        const packed = new Float32Array(rowLength * Math.max(1, Math.ceil(positions.length / rowLength)));
-        packed.set(positions);
+      enqueue(sample, site, poly, sign = 1) {
+        const cell = site.cell !== undefined;
+        packPolygon(
+          changed,
+          poly,
+          cell ? site.cell : feature.size + site.texel,
+          cell ? sign / (areaSteps * areaSteps) : 1,
+          sourceRow(sample.side, site),
+          cell ? 3 * site.pos : 0,
+          sample.coefficientRow,
+        );
+      },
+      finish() {
+        if (cache.build) {
+          cache.batch = sealBatch(cache.build);
+          delete cache.build;
+        }
         return {
-          initial,
-          packed,
-          jobs: Float32Array.from(jobs),
+          cache,
+          cachedJobs: Float32Array.from(cachedJobs),
+          changed: sealBatch(changed),
           targets,
           sources: Array.from(sources.keys()),
         };
       },
     };
+  }
+  drawPolygons(batch, save, width, height) {
+    if (!batch.jobs.length) return;
+    const gl = this.gl;
+    if (batch.positions.length > contactTextureWidth * 4 * this.limit)
+      throw Error('Contact polygon batch exceeds GPU vertex texture capacity.');
+    this.texture(1, contactTextureWidth, batch.positions.length / (4 * contactTextureWidth), batch.positions);
+    const p = this.kernel(batch.maxVertices, save);
+    gl.useProgram(p);
+    if (save) gl.uniform2i(gl.getUniformLocation(p, 'table'), width, height);
+    else gl.uniform1f(gl.getUniformLocation(p, 'targets'), height);
+    this.upload(this.poly, batch.jobs);
+    gl.drawArraysInstanced(gl.POINTS, 0, 8, batch.jobs.length / 7);
+    if (save) this.stats.staticPolygons += batch.jobs.length / 7;
+    else this.stats.polygons += batch.jobs.length / 7;
+  }
+  staticTable(grid, contact) {
+    const cache = contact.resident.cache;
+    const gl = this.gl;
+    let t = this.tables.get(grid);
+    if (t?.cache === cache) return t;
+    if (t) this.releaseTable(t);
+    this.tables.delete(grid);
+    const width = Math.min(contactTextureWidth, this.limit);
+    const height = Math.max(1, Math.ceil((cache.count * 8) / width));
+    if (height > this.limit) throw Error('Contact coefficient table exceeds GPU texture capacity.');
+    t = { id: gl.createTexture(), frames: gl.createTexture(), cache };
+    try {
+      gl.activeTexture(gl.TEXTURE6);
+      gl.bindTexture(gl.TEXTURE_2D, t.id);
+      for (const param of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER])
+        gl.texParameteri(gl.TEXTURE_2D, param, gl.NEAREST);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, height, 0, gl.RGBA, gl.FLOAT, null);
+      const frameHeight = Math.max(1, Math.ceil((cache.count * 3) / width));
+      const frames = new Float32Array(4 * width * frameHeight);
+      const { u, v, n } = contact.feature;
+      for (const site of contact.stationary)
+        for (const sample of site.samples) {
+          const m = sample.m,
+            delta = sub(m.center, site.p);
+          const offset = sample.coefficientRow * 12;
+          frames.set(
+            [
+              dot(delta, u),
+              dot(delta, v),
+              dot(delta, n),
+              0,
+              dot(m.axisU, u),
+              dot(m.axisU, v),
+              dot(m.axisU, n),
+              dot(m.axisU, m.momentAxis),
+              dot(m.axisV, u),
+              dot(m.axisV, v),
+              dot(m.axisV, n),
+              dot(m.axisV, m.momentAxis),
+            ],
+            offset,
+          );
+        }
+      gl.activeTexture(gl.TEXTURE7);
+      gl.bindTexture(gl.TEXTURE_2D, t.frames);
+      for (const param of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER])
+        gl.texParameteri(gl.TEXTURE_2D, param, gl.NEAREST);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, frameHeight, 0, gl.RGBA, gl.FLOAT, frames);
+      this.stats.uploadBytes += frames.byteLength;
+      this.sizeAllocation(t, width * height * 16 + frames.byteLength);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.scratch);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t.id, 0);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, null, 0);
+      gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+      gl.clearBufferfv(gl.COLOR, 0, new Float32Array(4));
+      gl.viewport(0, 0, width, height);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE);
+      // A rebuilt table can recover the input from retained scene geometry.
+      // Release the packed upload once the device owns its coefficients.
+      if (!cache.batch) {
+        const batch = polygonBatch();
+        for (const site of contact.stationary)
+          for (const sample of site.samples)
+            for (const poly of sample.lit) packPolygon(batch, poly, sample.coefficientRow, 0, 0, 0, 0);
+        cache.batch = sealBatch(batch);
+      }
+      this.drawPolygons(cache.batch, true, width, height);
+      delete cache.batch;
+      this.tables.set(grid, t);
+    } catch (error) {
+      this.releaseTable(t);
+      throw error;
+    }
+    gl.disable(gl.BLEND);
+    return t;
+  }
+  releaseTable(t) {
+    this.gl.deleteTexture(t.id);
+    this.gl.deleteTexture(t.frames);
+    this.sizeAllocation(t, 0);
+  }
+  retainCharts(charts) {
+    for (const [grid, t] of this.tables)
+      if (!charts.has(grid)) {
+        this.releaseTable(t);
+        this.tables.delete(grid);
+      }
   }
   paint(view) {
     const gl = this.gl,
@@ -259,7 +427,10 @@ export class ResidentContacts {
     try {
       for (const [grid, { contact, filter }] of view.contactDraws) {
         const { feature, sites, resident } = contact,
-          { jobs, targets, initial, packed } = resident;
+          { changed, cachedJobs, targets } = resident;
+        const table = this.staticTable(grid, contact);
+        gl.activeTexture(gl.TEXTURE7);
+        gl.bindTexture(gl.TEXTURE_2D, table.frames);
         const sol = view.solution,
           { field, slope } = sol.directional.get(feature);
         const dir = new Float32Array(feature.size * 32 * 4);
@@ -269,15 +440,15 @@ export class ResidentContacts {
             dir[8 * i + 4 + c] = slope[3 * i + c];
           }
         this.texture(4, 32, feature.size, dir);
-        this.texture(1, contactTextureWidth, packed.length / (4 * contactTextureWidth), packed);
-        const openTex = this.texture(2, 8, targets, initial),
+        const openTex = this.texture(2, 8, targets, null),
           lightTex = this.texture(3, 8, targets, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.scratch);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, openTex, 0);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, lightTex, 0);
         gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+        gl.clearBufferfv(gl.COLOR, 0, emptyOpening);
         gl.clearBufferfv(gl.COLOR, 1, new Float32Array(4));
-        if (jobs.length) {
+        if (changed.jobs.length || cachedJobs.length) {
           const lighting = new Float32Array(8 * Math.max(1, resident.sources.length));
           resident.sources.forEach((side, i) => {
             for (let c = 0; c < 3; c++) {
@@ -286,21 +457,24 @@ export class ResidentContacts {
             }
           });
           this.texture(5, 2, lighting.length / 8, lighting);
-          gl.useProgram(this.acc);
-          gl.uniform1f(gl.getUniformLocation(this.acc, 'targets'), targets);
-          this.upload(this.poly, jobs);
           gl.viewport(0, 0, 8, targets);
           gl.enable(gl.BLEND);
           gl.blendFunc(gl.ONE, gl.ONE);
-          gl.drawArraysInstanced(gl.POINTS, 0, 8, jobs.length / 6);
+          gl.activeTexture(gl.TEXTURE6);
+          gl.bindTexture(gl.TEXTURE_2D, table.id);
+          if (cachedJobs.length) {
+            gl.useProgram(this.reuse);
+            gl.uniform1f(gl.getUniformLocation(this.reuse, 'targets'), targets);
+            this.upload(this.poly, cachedJobs);
+            gl.drawArraysInstanced(gl.POINTS, 0, 8, cachedJobs.length / 7);
+          }
+          this.drawPolygons(changed, false, 8, targets);
           gl.disable(gl.BLEND);
-          this.stats.polygons += jobs.length / 6;
         }
-        const data = new Float32Array(sites.length * 20);
-        let link = 0;
+        const data = new Float32Array(sites.length * 17);
         for (let i = 0; i < sites.length; i++) {
           const site = sites[i],
-            a = 20 * i,
+            a = 17 * i,
             o = 4 * site,
             b = 4 * grid.displayRow * width + o;
           for (let k = 0; k < 4; k++) {
@@ -308,15 +482,7 @@ export class ResidentContacts {
             data[a + 4 + k] = filter.weights[o + k];
             data[a + 8 + k] = filter.linearWeights[o + k];
           }
-          const sum = [0, 0, 0];
-          for (; link < contact.ends[i]; link++) {
-            const j = 3 * contact.sides[link];
-            for (let c = 0; c < 3; c++)
-              sum[c] +=
-                contact.localMean[link] * sol.outgoing[j + c] +
-                contact.localSlope[link] * sol.outSlope[j + c];
-          }
-          data.set([...sum, site, tex[b], tex[b + 1], tex[b + 2], contact.strength[i]], a + 12);
+          data.set([site, tex[b], tex[b + 1], tex[b + 2], contact.strength[i]], a + 12);
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.atlasFbo);
         gl.framebufferTexture2D(
@@ -367,6 +533,8 @@ export class ResidentContacts {
   }
   dispose() {
     const gl = this.gl;
+    for (const t of this.tables.values()) this.releaseTable(t);
+    this.tables.clear();
     this.programs.forEach((p) => gl.deleteProgram(p));
     this.vaos.forEach((v) => gl.deleteVertexArray(v));
     this.buffers.forEach((b) => gl.deleteBuffer(b));

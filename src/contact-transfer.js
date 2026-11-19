@@ -2,7 +2,8 @@
 // the cosine-weighted solid angle of visible polygons; their radiance comes
 // from the same equilibrium as the surrounding surface.
 import { canShadow, cross, dot, point, regions, shadowBounds, sub, unit, volume } from './cpu-geometry.js';
-import { projectedFootprint, partitionReceiver } from './visibility.js';
+import { boundsOf, coveredReceiver, projectedFootprint, partitionReceiver } from './visibility.js';
+import { prepareBundles } from './contact-bundles.js';
 import { chartPoint } from './irradiance-layout.js';
 
 const corners = [
@@ -93,7 +94,7 @@ export const azimuthCount = 8,
 const halfSector = Math.PI / azimuthCount;
 // Within a sector at azimuth a, the divider has tan(elevation) = cos(a).
 // Integrate its cosine-weighted solid angle to normalize a constant field.
-const lowerFraction = 1 - Math.atan(Math.tan(halfSector) / Math.SQRT2) / (halfSector * Math.SQRT2);
+export const lowerFraction = 1 - Math.atan(Math.tan(halfSector) / Math.SQRT2) / (halfSector * Math.SQRT2);
 
 export function contactReceivers(sheets, groups) {
   const result = [];
@@ -159,6 +160,56 @@ function clip(poly, p, axis) {
   }
   return out;
 }
+// All still-visible pieces of a source lie inside this one rectangle.
+function visibleBounds(mode, pieces) {
+  let left = 1,
+    right = -1,
+    bottom = 1,
+    top = -1;
+  for (const { uv } of pieces) {
+    const box = boundsOf(uv);
+    left = Math.min(left, box[0]);
+    right = Math.max(right, box[1]);
+    bottom = Math.min(bottom, box[2]);
+    top = Math.max(top, box[3]);
+  }
+  if (left === -1 && right === 1 && bottom === -1 && top === 1) return mode;
+  return {
+    center: point(mode, (left + right) / 2, (bottom + top) / 2),
+    axisU: mode.axisU.map((x) => (x * (right - left)) / 2),
+    axisV: mode.axisV.map((x) => (x * (top - bottom)) / 2),
+  };
+}
+// At a common fraction t of the way from the site to the source, the
+// entire ray bundle is another rectangle. If it fits inside an inscribed
+// box, every part of every visible piece is shadowed by this solid.
+function coversBundle(rect, shape, eye) {
+  const d = sub(rect.center, eye),
+    origin = sub(eye, shape.center);
+  let lo = 0,
+    hi = 1;
+  for (let k = 0; k < 3; k++) {
+    const axis = shape.axes[k],
+      o = dot(origin, axis),
+      slope = dot(d, axis);
+    const spread = Math.abs(dot(rect.axisU, axis)) + Math.abs(dot(rect.axisV, axis));
+    const inner =
+      shape.halfSize[k] -
+      shape.radius * (1 - 1 / Math.sqrt(3)) -
+      1e-9 * (1 + Math.abs(o) + Math.abs(slope) + spread + shape.halfSize[k]);
+    const fast = slope + spread,
+      slow = slope - spread;
+    // o + t * fast <= inner; o + t * slow >= -inner.
+    if (fast > 0) hi = Math.min(hi, (inner - o) / fast);
+    else if (fast < 0) lo = Math.max(lo, (inner - o) / fast);
+    else if (o > inner) return false;
+    if (slow > 0) lo = Math.max(lo, (-inner - o) / slow);
+    else if (slow < 0) hi = Math.min(hi, (-inner - o) / slow);
+    else if (o < -inner) return false;
+    if (hi <= lo) return false;
+  }
+  return true;
+}
 export function compileContact(grid, feature, solution, width, rows, filter, stationary = [], backend) {
   const { receiver, contacts, supports, sheets, u, v } = feature;
   const planes = Array.from({ length: azimuthCount }, (_, i) => {
@@ -183,6 +234,8 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
   const domain = feature.domain;
   const blockers = sheets.filter((r) => r !== receiver && overlaps(domain, bounds(vertices(r))));
   const moving = contactMoving(domain, solution.boxes);
+  prepareBundles(stationary, moving);
+  const allMoving = moving.map((_, i) => i);
 
   function influence(p) {
     const proximity = Math.min(...contacts.map((c) => distanceToEdge(p, c.foot) / c.height));
@@ -212,67 +265,79 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
       }
     }
   }
-  const batch = backend?.beginChart?.(feature, width, rows);
+  const batch = backend?.beginChart?.(feature, width, rows, stationary);
   const readback = backend && !backend.beginChart;
+  function prepareSite(site) {
+    const p = site.p,
+      samples = [],
+      integrals = [];
+    const shadows = blockers.map((s) => [s, volume(s, p)]);
+    for (const { m, j } of contactModes) {
+      const plane = dot(sub(p, m.center), m.normal);
+      if (Math.abs(plane) < 1e-8) continue;
+      const side = 2 * j + Number(plane < 0);
+      const lit = regions(m, shadows).filter((poly) => poly.lit);
+      if (!lit.length) continue;
+      const sample = { m, region: visibleBounds(m, lit), side, lit };
+      samples.push(sample);
+      if (batch) batch.register(sample);
+      else if (readback) {
+        const values = (sample.pendingValues = []);
+        for (const polygon of lit)
+          backend.enqueue(m, side, p, polygon, feature, (_, w, moment, bin) => values.push(w, moment, bin));
+      } else {
+        sample.start = integrals.length;
+        integrate(m, side, p, lit, (_, w, moment, bin) => integrals.push(w, moment, bin));
+        sample.end = integrals.length;
+      }
+    }
+    site.samples = samples;
+    if (!backend) site.integrals = Float64Array.from(integrals);
+  }
   function stencil(site, emit) {
     const p = site.p;
-    if (!site.samples) {
-      const samples = [],
-        integrals = [];
-      const shadows = blockers.map((s) => [s, volume(s, p)]);
-      for (const { m, j } of contactModes) {
-        const plane = dot(sub(p, m.center), m.normal);
-        if (Math.abs(plane) < 1e-8) continue;
-        const side = 2 * j + Number(plane < 0);
-        const lit = regions(m, shadows).filter((poly) => poly.lit);
-        if (!lit.length) continue;
-        const start = integrals.length;
-        integrate(m, side, p, lit, (_, w, moment, bin) => integrals.push(w, moment, bin));
-        samples.push({ m, side, lit, start, end: integrals.length });
-      }
-      site.samples = samples;
-      site.integrals = Float64Array.from(integrals);
-    }
+    if (!site.samples) prepareSite(site);
     const { samples, integrals } = site;
     if (!samples.length) return;
-    const shadows = moving.map((shape) => ({ shape, bounds: shadowBounds(shape, p) }));
-    for (const { m, side, lit, start, end } of samples) {
+    const shadows = [];
+    source: for (const sample of samples) {
+      const { m, side, lit, start, end } = sample;
       const cuts = [];
-      for (const shadow of shadows) {
-        if (!canShadow(m, shadow.bounds)) continue;
+      for (const index of sample.bundle?.candidates ?? allMoving) {
+        const shape = moving[index];
+        const shadow = (shadows[index] ??= { shape, bounds: shadowBounds(shape, p) });
+        if (!canShadow(sample.region, shadow.bounds)) continue;
+        if (coversBundle(sample.region, shape, p)) continue source;
         shadow.planes ??= volume(shadow.shape, p, shadow.bounds.basis);
         const polygon = projectedFootprint(m, shadow.planes);
         if (polygon) cuts.push(polygon);
       }
-      if (cuts.length) {
+      if (cuts.length === 1 && batch && site.cell !== undefined) {
+        // The angular opening uses only additive area. Integrate the blocked
+        // part on the GPU and subtract it from the cached unoccluded opening.
+        const covered = coveredReceiver(cuts[0], lit);
+        if (covered.length === lit.length && covered.every((p, i) => p === lit[i])) continue;
+        for (const poly of covered) batch.enqueue(sample, site, poly, -1);
+      } else if (cuts.length) {
         const visible = partitionReceiver(cuts, lit);
         if (visible.length !== lit.length || visible.some((c, i) => !c.lit || c.uv !== lit[i].uv)) {
           if (!batch && !readback) integrate(m, side, p, visible, emit);
           else
             for (const poly of visible) {
-              if (
-                poly.lit &&
-                !(batch
-                  ? batch.enqueue(m, side, site, poly)
-                  : backend.enqueue(m, side, p, poly, feature, emit))
-              )
-                integrate(m, side, p, [poly], emit);
+              if (!poly.lit) continue;
+              if (batch) batch.enqueue(sample, site, poly);
+              else backend.enqueue(m, side, p, poly, feature, emit);
             }
           continue;
         }
       }
-      for (let i = start; i < end; i += 3) emit(side, integrals[i], integrals[i + 1], integrals[i + 2]);
+      if (batch) batch.reuse(sample, site);
+      else for (let i = start; i < end; i += 3) emit(side, integrals[i], integrals[i + 1], integrals[i + 2]);
     }
   }
   // The amount of background visible in each angular bin is averaged over
   // each transport element. Compare this with the opening at the display site.
-  const { offset, size } = feature,
-    cellOpen = new Float64Array(size * sectorCount),
-    slopeOpen = new Float64Array(cellOpen.length);
-  const empty = Array.from(
-    { length: sectorCount },
-    (_, d) => (d < azimuthCount ? lowerFraction : 1 - lowerFraction) / azimuthCount,
-  );
+  const { offset, size } = feature;
   // Site membership and quadrature coordinates are intrinsic to the receiver.
   // Only visibility and its integrals depend on the current solid transforms.
   if (!stationary.length) {
@@ -291,6 +356,39 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
         if (fade) stationary.push({ p, texel: j * width + i, fade });
       }
   }
+  if (readback) {
+    const cold = stationary.filter((site) => !site.samples);
+    for (const site of cold) prepareSite(site);
+    if (cold.length) backend.flush();
+    for (const site of cold) {
+      const values = [];
+      for (const sample of site.samples) {
+        sample.start = values.length;
+        for (const value of sample.pendingValues) values.push(value);
+        sample.end = values.length;
+        delete sample.pendingValues;
+      }
+      site.integrals = Float64Array.from(values);
+    }
+  }
+  if (batch) {
+    const sites = [],
+      strength = [];
+    for (const site of stationary) {
+      stencil(site);
+      if (site.texel !== undefined) {
+        sites.push(site.texel);
+        strength.push(site.fade);
+      }
+    }
+    return { feature, stationary, domain, moving, sites, strength, resident: batch.finish() };
+  }
+  const cellOpen = new Float64Array(size * sectorCount),
+    slopeOpen = new Float64Array(cellOpen.length);
+  const empty = Array.from(
+    { length: sectorCount },
+    (_, d) => (d < azimuthCount ? lowerFraction : 1 - lowerFraction) / azimuthCount,
+  );
   for (let j = 0; j < size; j++) cellOpen.set(empty, j * sectorCount);
   let index = 0;
   for (; index < stationary.length && stationary[index].cell !== undefined; index++) {
@@ -307,7 +405,7 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
       slopeOpen[i] = Math.max(-cellOpen[i], Math.min(cellOpen[i], slopeOpen[i]));
     }
   }
-  if (!batch && !readback) limitOpen();
+  if (!readback) limitOpen();
   const { terms, weights, linearWeights, indices } = filter;
   const sites = [],
     sides = [],
@@ -315,8 +413,7 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
     localSlope = [],
     ends = [],
     gains = [],
-    strength = [],
-    openings = [];
+    strength = [];
   function finishSite(site, fade, open, local) {
     for (const [side, [w, m]] of local) {
       sides.push(side);
@@ -326,10 +423,6 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
     sites.push(site);
     strength.push(fade);
     ends.push(sides.length);
-    if (batch) {
-      openings.push(...open);
-      return;
-    }
     for (let d = 0; d < sectorCount; d++) {
       let mass = 0;
       for (let t = site * terms; t < (site + 1) * terms; t++) {
@@ -364,7 +457,6 @@ export function compileContact(grid, feature, solution, width, rows, filter, sta
   }
   return {
     feature,
-    resident: batch?.finish(cellOpen, slopeOpen, sites, openings),
     stationary,
     domain,
     moving,

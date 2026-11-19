@@ -149,6 +149,25 @@ export function boundsOf(uv) {
   }
   return box;
 }
+// Only the intersection contributes to an occluded-area integral. A single
+// convex footprint never needs the fan of pieces around its outside.
+export function coveredReceiver(footprint, lit) {
+  if (footprint === square) return lit;
+  if (lit.length === 1 && lit[0].uv === square) return [{ uv: footprint, lit: true }];
+  const edges = footprintEdges(footprint), mask = boundsOf(footprint), covered = [];
+  for (const cell of lit) {
+    let uv = cell.uv;
+    const b = boundsOf(uv);
+    if (mask[0] >= b[1] || mask[1] <= b[0] || mask[2] >= b[3] || mask[3] <= b[2]) continue;
+    for (const [a, b, c, tolerance] of edges) {
+      const [inside] = split(uv, a, b, c, tolerance, false);
+      if (inside !== uv && !hasArea(inside)) { uv = null; break; }
+      uv = inside;
+    }
+    if (uv) covered.push(uv === cell.uv ? cell : { uv, lit: true });
+  }
+  return covered;
+}
 function partitionReceiver(footprints, initial) {
   let lit = initial ? initial.filter(c => c.lit).map(c => c.uv) : [square];
   const dark = initial ? initial.filter(c => !c.lit).map(c => c.uv) : [];
