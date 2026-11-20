@@ -1,0 +1,2957 @@
+{
+  "rendererCommit": "fad1d75736f23546e602d637d6cf2a70d87a7b2a",
+  "expandedCommit": "43828e0d1b346301a56ad775afc750e95a3010b9",
+  "device": "M1 Pro, Chrome 136, ANGLE Metal",
+  "framebuffer": [
+    3840,
+    2160
+  ],
+  "movingPosesPerPopulation": 120,
+  "timingEndpoint": "GPU-complete readback and separately marked compositor swap. The 4K framebuffer is scaled to the window.",
+  "replays": {
+    "oneSlat": {
+      "expanded": {
+        "matched": 120,
+        "startToSwapMs": {
+          "median": 837.27,
+          "p95": 917.0
+        },
+        "finishedMs": {
+          "median": 832.85,
+          "p95": 911.5
+        },
+        "cameraMs": {
+          "median": 7.2,
+          "p95": 9.7
+        },
+        "peakCountedMiB": 232.79832649230957,
+        "meanGpuApertures": 143723.79166666666,
+        "workerMs": {
+          "median": 397.75,
+          "p95": 450.7
+        },
+        "assemblyMs": {
+          "median": 7.4,
+          "p95": 9.1
+        },
+        "solveMs": {
+          "median": 319.45,
+          "p95": 332.7
+        },
+        "preparationMs": {
+          "median": 820.5,
+          "p95": 895.6
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 0.7
+        },
+        "markAndFinishMs": {
+          "median": 12.85,
+          "p95": 17.9
+        },
+        "syncToSwapMs": {
+          "median": 3.78,
+          "p95": 7.66
+        },
+        "beforeSync": 0,
+        "meanGeometricWork": {
+          "generatorSlices": 6910444.225,
+          "litEndpoints": 4127026.066666667,
+          "analyticLengthIntegrals": 2306797.8,
+          "sphericalEvaluations": 324710.5,
+          "roundedFeatures": 2642773.3,
+          "adaptiveSplits": 120384.19166666667,
+          "exhaustedEstimates": 5.225,
+          "gpuApertures": 143723.79166666666,
+          "reusedCylinderRoots": 0,
+          "regionalEvaluations": 200213.075,
+          "regionalDark": 4283359.566666666,
+          "facingFallback": 416415.75833333336,
+          "expansionFallback": 900766.7833333333,
+          "blockerFallback": 806738.8166666667,
+          "individualFallback": 171720,
+          "wallMoments": 527.1,
+          "lampMomentSlices": 46819.2,
+          "exactConicRefinements": 0.14166666666666666,
+          "lampSliceHits": 1395244.9583333333,
+          "lampSliceMisses": 677146.2583333333
+        }
+      },
+      "surfaceCoefficients": {
+        "matched": 120,
+        "startToSwapMs": {
+          "median": 620.99,
+          "p95": 669.75
+        },
+        "finishedMs": {
+          "median": 618.65,
+          "p95": 666.9
+        },
+        "cameraMs": {
+          "median": 6.9,
+          "p95": 8.8
+        },
+        "peakCountedMiB": 253.46230125427246,
+        "meanGpuApertures": 143723.79166666666,
+        "workerMs": {
+          "median": 379.8,
+          "p95": 397.4
+        },
+        "assemblyMs": {
+          "median": 7.2,
+          "p95": 8.7
+        },
+        "solveMs": {
+          "median": 131.6,
+          "p95": 149.4
+        },
+        "modalBuildMs": {
+          "median": 84.5,
+          "p95": 88.2
+        },
+        "modalEquilibriumMs": {
+          "median": 45.2,
+          "p95": 54.2
+        },
+        "meanModalWork": {
+          "fullLinks": 658511.0333333333,
+          "activeLinks": 644947.8666666667,
+          "activeModes": 2592.975,
+          "allModes": 2886,
+          "applications": 38.208333333333336,
+          "checks": 5.058333333333334,
+          "linkReads": 27794907.783333335,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1824573.4666666666
+        },
+        "preparationMs": {
+          "median": 606.9,
+          "p95": 656
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 1.5
+        },
+        "markAndFinishMs": {
+          "median": 11.8,
+          "p95": 13.3
+        },
+        "syncToSwapMs": {
+          "median": 2.11,
+          "p95": 3.09
+        },
+        "beforeSync": 0,
+        "meanGeometricWork": {
+          "generatorSlices": 6910444.225,
+          "litEndpoints": 4127026.066666667,
+          "analyticLengthIntegrals": 2306797.8,
+          "sphericalEvaluations": 324710.5,
+          "roundedFeatures": 1245768.8,
+          "adaptiveSplits": 120384.19166666667,
+          "exhaustedEstimates": 5.225,
+          "gpuApertures": 143723.79166666666,
+          "reusedCylinderRoots": 448337.13333333336,
+          "regionalEvaluations": 200213.075,
+          "regionalDark": 4283359.566666666,
+          "facingFallback": 416415.75833333336,
+          "expansionFallback": 900766.7833333333,
+          "blockerFallback": 806738.8166666667,
+          "individualFallback": 171720,
+          "wallMoments": 527.1,
+          "lampMomentSlices": 46819.2,
+          "exactConicRefinements": 0.008333333333333333,
+          "lampSliceHits": 1395244.9583333333,
+          "lampSliceMisses": 677146.2583333333
+        }
+      },
+      "supplementary12PoseConstructionMs": {
+        "median": 568.6,
+        "p95": 612.1
+      },
+      "optionalOptics": {
+        "moduleRequests": [
+          [],
+          []
+        ],
+        "sameFrameDigests": true,
+        "frameDigests": [
+          "f17bee227e338d25aebe5a965b700941324b012614b964ecfa2033cd53715cd4",
+          "f9837751e3c86ffedfd946eb4046d57a75193b6382bdfc4590158f36a7431bdb",
+          "5c4ebde505ad44ca442a50f583e7fb5d727b71f81506f7f745de8de4e21467bc"
+        ],
+        "sameCountedPeak": true,
+        "sameMathematicalWork": true,
+        "swapAvailableMs": {
+          "median": 757.76,
+          "p95": 766.28
+        },
+        "swapBlockedMs": {
+          "median": 744.82,
+          "p95": 745.7
+        }
+      }
+    },
+    "twoSlats": {
+      "expanded": {
+        "matched": 120,
+        "startToSwapMs": {
+          "median": 892.68,
+          "p95": 1031.47
+        },
+        "finishedMs": {
+          "median": 888.1,
+          "p95": 1023.5
+        },
+        "cameraMs": {
+          "median": 10.3,
+          "p95": 14.6
+        },
+        "peakCountedMiB": 236.22186279296875,
+        "meanGpuApertures": 144604.76666666666,
+        "workerMs": {
+          "median": 452.7,
+          "p95": 579.8
+        },
+        "assemblyMs": {
+          "median": 7.8,
+          "p95": 10.9
+        },
+        "solveMs": {
+          "median": 319.25,
+          "p95": 332.4
+        },
+        "preparationMs": {
+          "median": 874.85,
+          "p95": 1002.5
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 1.7
+        },
+        "markAndFinishMs": {
+          "median": 13.55,
+          "p95": 20.2
+        },
+        "syncToSwapMs": {
+          "median": 4.08,
+          "p95": 8.68
+        },
+        "beforeSync": 0,
+        "meanGeometricWork": {
+          "generatorSlices": 7291848.716666667,
+          "litEndpoints": 4325567.966666667,
+          "analyticLengthIntegrals": 2401507.683333333,
+          "sphericalEvaluations": 429749.425,
+          "roundedFeatures": 3912411.1333333333,
+          "adaptiveSplits": 123709.55,
+          "exhaustedEstimates": 5.383333333333334,
+          "gpuApertures": 144604.76666666666,
+          "reusedCylinderRoots": 0,
+          "regionalEvaluations": 196674.5,
+          "regionalDark": 4335634.633333334,
+          "facingFallback": 420141.69166666665,
+          "expansionFallback": 910883.7166666667,
+          "blockerFallback": 817035.4583333334,
+          "individualFallback": 230880,
+          "wallMoments": 528.1333333333333,
+          "lampMomentSlices": 45321.175,
+          "exactConicRefinements": 0.14166666666666666,
+          "lampSliceHits": 1547382.7,
+          "lampSliceMisses": 794344.6416666667
+        }
+      },
+      "surfaceCoefficients": {
+        "matched": 120,
+        "startToSwapMs": {
+          "median": 671.41,
+          "p95": 718.81
+        },
+        "finishedMs": {
+          "median": 669.35,
+          "p95": 715.3
+        },
+        "cameraMs": {
+          "median": 9.7,
+          "p95": 12.8
+        },
+        "peakCountedMiB": 257.1463508605957,
+        "meanGpuApertures": 144604.76666666666,
+        "workerMs": {
+          "median": 423.9,
+          "p95": 438.4
+        },
+        "assemblyMs": {
+          "median": 7.3,
+          "p95": 8.8
+        },
+        "solveMs": {
+          "median": 134.5,
+          "p95": 152.9
+        },
+        "modalBuildMs": {
+          "median": 85.75,
+          "p95": 89.9
+        },
+        "modalEquilibriumMs": {
+          "median": 46.5,
+          "p95": 54.3
+        },
+        "meanModalWork": {
+          "fullLinks": 686608.4166666666,
+          "activeLinks": 672816.4416666667,
+          "activeModes": 2614.991666666667,
+          "allModes": 2910,
+          "applications": 36.325,
+          "checks": 4.983333333333333,
+          "linkReads": 27699010.408333335,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1865592.65
+        },
+        "preparationMs": {
+          "median": 657.5,
+          "p95": 702.3
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 1.4
+        },
+        "markAndFinishMs": {
+          "median": 12.1,
+          "p95": 14.7
+        },
+        "syncToSwapMs": {
+          "median": 2.23,
+          "p95": 3.51
+        },
+        "beforeSync": 0,
+        "meanGeometricWork": {
+          "generatorSlices": 7291848.716666667,
+          "litEndpoints": 4325567.966666667,
+          "analyticLengthIntegrals": 2401507.683333333,
+          "sphericalEvaluations": 429749.425,
+          "roundedFeatures": 1852993.5,
+          "adaptiveSplits": 123709.55,
+          "exhaustedEstimates": 5.383333333333334,
+          "gpuApertures": 144604.76666666666,
+          "reusedCylinderRoots": 631593.5583333333,
+          "regionalEvaluations": 196674.5,
+          "regionalDark": 4335634.633333334,
+          "facingFallback": 420141.69166666665,
+          "expansionFallback": 910883.7166666667,
+          "blockerFallback": 817035.4583333334,
+          "individualFallback": 230880,
+          "wallMoments": 528.1333333333333,
+          "lampMomentSlices": 45321.175,
+          "exactConicRefinements": 0.008333333333333333,
+          "lampSliceHits": 1547382.7,
+          "lampSliceMisses": 794344.6416666667
+        }
+      },
+      "supplementary12PoseConstructionMs": {
+        "median": 624.2,
+        "p95": 682.9
+      },
+      "optionalOptics": {
+        "moduleRequests": [
+          [],
+          []
+        ],
+        "sameFrameDigests": true,
+        "frameDigests": [
+          "a5b6822db0bb87546415d368281b20fe579a36dd97e935b5965070a19a23e7be",
+          "7f50eefc6b5226253627745442e87562b4ac00f11259a86b448e23d6ed8d12ea",
+          "2729705c912cb0ac8dd6abb62f31b21892ca7bb5f156bc99323877bde085fa53"
+        ],
+        "sameCountedPeak": true,
+        "sameMathematicalWork": true,
+        "swapAvailableMs": {
+          "median": 799.36,
+          "p95": 801.51
+        },
+        "swapBlockedMs": {
+          "median": 796.15,
+          "p95": 803.13
+        }
+      }
+    },
+    "crowded": {
+      "expanded": {
+        "matched": 120,
+        "startToSwapMs": {
+          "median": 2839.38,
+          "p95": 3264.96
+        },
+        "finishedMs": {
+          "median": 2831.35,
+          "p95": 3246.0
+        },
+        "cameraMs": {
+          "median": 82.35,
+          "p95": 155.4
+        },
+        "peakCountedMiB": 315.4761428833008,
+        "meanGpuApertures": 157506.45,
+        "workerMs": {
+          "median": 2188.85,
+          "p95": 2571.3
+        },
+        "assemblyMs": {
+          "median": 10.9,
+          "p95": 17.7
+        },
+        "solveMs": {
+          "median": 451.75,
+          "p95": 464.2
+        },
+        "syncToSwapMs": {
+          "median": 10.48,
+          "p95": 18.96
+        },
+        "beforeSync": 0,
+        "meanGeometricWork": {
+          "generatorSlices": 15883504.008333333,
+          "litEndpoints": 9209700.916666666,
+          "analyticLengthIntegrals": 5025330.458333333,
+          "sphericalEvaluations": 2649115.775,
+          "roundedFeatures": 59799679.775,
+          "adaptiveSplits": 164086.70833333334,
+          "exhaustedEstimates": 888.0166666666667,
+          "gpuApertures": 157506.45,
+          "reusedCylinderRoots": 0,
+          "regionalEvaluations": 208151.75833333333,
+          "regionalDark": 5392599.341666667,
+          "facingFallback": 500508.1583333333,
+          "expansionFallback": 1100346.6916666667,
+          "blockerFallback": 996764.05,
+          "individualFallback": 1615680,
+          "wallMoments": 506.64166666666665,
+          "lampMomentSlices": 30821.925,
+          "exactConicRefinements": 28.025,
+          "lampSliceHits": 3483979.6083333334,
+          "lampSliceMisses": 3564809.775
+        }
+      },
+      "surfaceCoefficients": {
+        "matched": 120,
+        "startToSwapMs": {
+          "median": 2184.63,
+          "p95": 2415.12
+        },
+        "finishedMs": {
+          "median": 2182.0,
+          "p95": 2404.3
+        },
+        "cameraMs": {
+          "median": 80.95,
+          "p95": 150.8
+        },
+        "peakCountedMiB": 342.2439079284668,
+        "meanGpuApertures": 157506.45,
+        "workerMs": {
+          "median": 1843.15,
+          "p95": 2036.4
+        },
+        "assemblyMs": {
+          "median": 10.4,
+          "p95": 13.9
+        },
+        "solveMs": {
+          "median": 163.3,
+          "p95": 182.7
+        },
+        "modalBuildMs": {
+          "median": 107.8,
+          "p95": 114
+        },
+        "modalEquilibriumMs": {
+          "median": 50.8,
+          "p95": 60
+        },
+        "meanModalWork": {
+          "fullLinks": 951189.0583333333,
+          "activeLinks": 925611.9416666667,
+          "activeModes": 3015.25,
+          "allModes": 3390,
+          "applications": 34.49166666666667,
+          "checks": 5.083333333333333,
+          "linkReads": 36636020.075,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 2637205.8916666666
+        },
+        "preparationMs": {
+          "median": 2165.45,
+          "p95": 2377.8
+        },
+        "applyAndDrawMs": {
+          "median": 1.0,
+          "p95": 2.2
+        },
+        "markAndFinishMs": {
+          "median": 15.55,
+          "p95": 20.7
+        },
+        "syncToSwapMs": {
+          "median": 2.99,
+          "p95": 9.32
+        },
+        "beforeSync": 2,
+        "meanGeometricWork": {
+          "generatorSlices": 15883504.008333333,
+          "litEndpoints": 9209700.916666666,
+          "analyticLengthIntegrals": 5025330.458333333,
+          "sphericalEvaluations": 2649115.775,
+          "roundedFeatures": 28785122.275,
+          "adaptiveSplits": 164086.70833333334,
+          "exhaustedEstimates": 888.0166666666667,
+          "gpuApertures": 157506.45,
+          "reusedCylinderRoots": 9390763.791666666,
+          "regionalEvaluations": 208151.75833333333,
+          "regionalDark": 5392599.341666667,
+          "facingFallback": 500508.1583333333,
+          "expansionFallback": 1100346.6916666667,
+          "blockerFallback": 996764.05,
+          "individualFallback": 1615680,
+          "wallMoments": 506.64166666666665,
+          "lampMomentSlices": 30821.925,
+          "exactConicRefinements": 11.175,
+          "lampSliceHits": 3483979.6083333334,
+          "lampSliceMisses": 3564809.775
+        }
+      },
+      "supplementary12PoseConstructionMs": {
+        "median": 2138.95,
+        "p95": 3564.7
+      },
+      "optionalOptics": {
+        "moduleRequests": [
+          [],
+          []
+        ],
+        "sameFrameDigests": true,
+        "frameDigests": [
+          "8ec21172bd3a84c74281bc7c9cb27e0171af4339562bd7115b87ba334b77b9fd",
+          "07a6afac0bec4810d5ecfc4b7a4bbaabd0d9f7cb3e2b8e765c1f420766d58cca",
+          "9e2c43c97457fa810a3e95568c621e2818262b8b886a5b8c9290ca12f61e0d75"
+        ],
+        "sameCountedPeak": true,
+        "sameMathematicalWork": true,
+        "swapAvailableMs": {
+          "median": 2288.73,
+          "p95": 2301.33
+        },
+        "swapBlockedMs": {
+          "median": 2329.4,
+          "p95": 2348.43
+        }
+      }
+    }
+  },
+  "pathTrace": [
+    {
+      "radius": "0.001",
+      "two": false,
+      "edit": false,
+      "branches": {
+        "slat emission": [
+          {
+            "arrivedAt": "north-wall",
+            "activeModes": 426,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                8.32661191281791e-05,
+                3.590035794253483e-05,
+                1.0951201469561807e-05
+              ],
+              [
+                -2.861616109003928e-19,
+                -3.5219629946833807e-20,
+                -9.78323054078717e-21
+              ],
+              [
+                0.00012540639450621868,
+                5.406922405168748e-05,
+                1.6493511480880158e-05
+              ]
+            ]
+          },
+          {
+            "from": "north-wall",
+            "to": "floor",
+            "sourceModes": 251,
+            "receiverModes": 288,
+            "links": 20142,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                1.9079648414300915e-05,
+                7.47839047603606e-06,
+                1.7869719490467234e-06
+              ],
+              [
+                3.0302463066864448e-05,
+                1.1877244605294607e-05,
+                2.838084345774622e-06
+              ],
+              [
+                2.171567640254419e-05,
+                8.511598540135768e-06,
+                2.033858472823651e-06
+              ]
+            ],
+            "expandedRGB": [
+              [
+                1.9104255739230982e-05,
+                7.488035474748897e-06,
+                1.7892766350889486e-06
+              ],
+              [
+                3.033701210764505e-05,
+                1.1890786323250798e-05,
+                2.8413201583745583e-06
+              ],
+              [
+                2.1765586312956745e-05,
+                8.531161049390883e-06,
+                2.038532961993996e-06
+              ]
+            ]
+          },
+          {
+            "from": "floor",
+            "to": "ceiling",
+            "sourceModes": 239,
+            "receiverModes": 115,
+            "links": 9227,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                1.2623545649164706e-05,
+                4.646179643694136e-06,
+                9.516095804058008e-07
+              ],
+              [
+                1.122057174056389e-05,
+                4.129805797871629e-06,
+                8.458482159216269e-07
+              ],
+              [
+                9.298543402272381e-06,
+                3.4223905289638693e-06,
+                7.009586079333465e-07
+              ]
+            ],
+            "expandedRGB": [
+              [
+                1.2632076692702872e-05,
+                4.6493195508112065e-06,
+                9.522526820340904e-07
+              ],
+              [
+                1.122859923107046e-05,
+                4.132760368957933e-06,
+                8.464533578591597e-07
+              ],
+              [
+                9.306557731303162e-06,
+                3.425340255881775e-06,
+                7.015627577101343e-07
+              ]
+            ]
+          }
+        ],
+        "lit wall around slat": [
+          {
+            "arrivedAt": "floor",
+            "activeModes": 352,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                0.004734693879616583,
+                0.003354703834216142,
+                0.001736824291449594
+              ],
+              [
+                0.0018797062911782717,
+                0.0013318406770421757,
+                0.0006895312833980781
+              ],
+              [
+                0.0015094958390931999,
+                0.0010695330274550611,
+                0.0005537272541454071
+              ]
+            ]
+          },
+          {
+            "from": "floor",
+            "to": "ceiling",
+            "sourceModes": 239,
+            "receiverModes": 115,
+            "links": 9227,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                0.0036469657141951855,
+                0.0024264471320040158,
+                0.0010767769323434587
+              ],
+              [
+                0.0025653592214437203,
+                0.0017068184933035071,
+                0.0007574295590642157
+              ],
+              [
+                0.0017673781349876502,
+                0.0011758952353501289,
+                0.0005218233884337124
+              ]
+            ],
+            "expandedRGB": [
+              [
+                0.0036467740469629663,
+                0.0024263196094435192,
+                0.0010767203420515522
+              ],
+              [
+                0.0025661011278319597,
+                0.0017073121082066976,
+                0.0007576486090217487
+              ],
+              [
+                0.001767847020152141,
+                0.00117620720018659,
+                0.0005219618281034564
+              ]
+            ]
+          }
+        ]
+      },
+      "floorQueries": 1024,
+      "queryCountersUnchanged": true,
+      "maximumDifference": 4.996003610813204e-16,
+      "counts": {
+        "fullLinks": 578673,
+        "activeLinks": 565939,
+        "activeModes": 2536,
+        "allModes": 2838,
+        "applications": 36,
+        "checks": 5,
+        "linkReads": 23109971,
+        "receiverRowReads": 0,
+        "reconstructions": 1,
+        "finalAuditLinks": 1754316
+      },
+      "spatial": [
+        6404831,
+        3772088,
+        2118569,
+        93069,
+        223556,
+        115513,
+        0,
+        140400,
+        160963,
+        212420,
+        4180358,
+        409922,
+        886829,
+        773077,
+        56280,
+        525,
+        46749,
+        0,
+        1341433,
+        565154
+      ],
+      "geometry": {
+        "filletSurfaces": 26,
+        "cylinder": 12,
+        "sphere": 8
+      },
+      "modalResidual": 0.0001407817196532416,
+      "physicalResidual": 0.00023943507684040332,
+      "discreteSolutionBound": 0.0030002997731068508
+    },
+    {
+      "radius": "0.044",
+      "two": false,
+      "edit": false,
+      "branches": {
+        "slat emission": [
+          {
+            "arrivedAt": "north-wall",
+            "activeModes": 426,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                7.163489884094232e-05,
+                3.08855334738041e-05,
+                9.42145758290008e-06
+              ],
+              [
+                -5.000882520589389e-20,
+                -4.8263937334550037e-20,
+                1.6771252355635147e-21
+              ],
+              [
+                9.556342088660978e-05,
+                4.120236480291745e-05,
+                1.2568548723146005e-05
+              ]
+            ]
+          },
+          {
+            "from": "north-wall",
+            "to": "floor",
+            "sourceModes": 251,
+            "receiverModes": 286,
+            "links": 20137,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                1.6020742839803794e-05,
+                6.279432831813061e-06,
+                1.5004793293864964e-06
+              ],
+              [
+                2.527837564641125e-05,
+                9.908021341844523e-06,
+                2.367535670298026e-06
+              ],
+              [
+                1.801496821964969e-05,
+                7.061082250286146e-06,
+                1.6872555600842631e-06
+              ]
+            ],
+            "expandedRGB": [
+              [
+                1.6041776301146475e-05,
+                6.287677031788239e-06,
+                1.5024492925951811e-06
+              ],
+              [
+                2.5303794463103883e-05,
+                9.917984409954526e-06,
+                2.3699163594711944e-06
+              ],
+              [
+                1.804531026370578e-05,
+                7.07297500891384e-06,
+                1.6900973515275666e-06
+              ]
+            ]
+          },
+          {
+            "from": "floor",
+            "to": "ceiling",
+            "sourceModes": 240,
+            "receiverModes": 115,
+            "links": 9260,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                1.0509090060157146e-05,
+                3.867940249772962e-06,
+                7.922140942433742e-07
+              ],
+              [
+                9.322764704466167e-06,
+                3.4313053397725072e-06,
+                7.027844993158544e-07
+              ],
+              [
+                7.711978511774142e-06,
+                2.8384448054325022e-06,
+                5.813574759143479e-07
+              ]
+            ],
+            "expandedRGB": [
+              [
+                1.0516168117987934e-05,
+                3.870545375870206e-06,
+                7.927476644327372e-07
+              ],
+              [
+                9.3294919998333e-06,
+                3.4337813654201848e-06,
+                7.032916277328229e-07
+              ],
+              [
+                7.718233118900915e-06,
+                2.840746855040382e-06,
+                5.818289713427271e-07
+              ]
+            ]
+          }
+        ],
+        "lit wall around slat": [
+          {
+            "arrivedAt": "floor",
+            "activeModes": 351,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                0.004822404966800504,
+                0.0034168503484281573,
+                0.0017689992853824235
+              ],
+              [
+                0.0019007424895268806,
+                0.0013467455931891624,
+                0.0006972479766459547
+              ],
+              [
+                0.001518723472523251,
+                0.0010760711433365983,
+                0.000557112220164628
+              ]
+            ]
+          },
+          {
+            "from": "floor",
+            "to": "ceiling",
+            "sourceModes": 240,
+            "receiverModes": 115,
+            "links": 9260,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                0.0036965107554348606,
+                0.0024594110896176318,
+                0.0010914052457688464
+              ],
+              [
+                0.0025947471788198154,
+                0.0017263712751169277,
+                0.0007661064365210297
+              ],
+              [
+                0.0017844634265487748,
+                0.0011872626459475415,
+                0.000526867869045026
+              ]
+            ],
+            "expandedRGB": [
+              [
+                0.003696512789021593,
+                0.002459412442630265,
+                0.001091405846191076
+              ],
+              [
+                0.002595353806441048,
+                0.0017267748845739633,
+                0.0007662855450403473
+              ],
+              [
+                0.0017848647220688946,
+                0.0011875296411540152,
+                0.0005269863526812808
+              ]
+            ]
+          }
+        ]
+      },
+      "floorQueries": 1024,
+      "queryCountersUnchanged": true,
+      "maximumDifference": 5.551115123125783e-16,
+      "counts": {
+        "fullLinks": 581191,
+        "activeLinks": 568406,
+        "activeModes": 2536,
+        "allModes": 2838,
+        "applications": 41,
+        "checks": 5,
+        "linkReads": 26039637,
+        "receiverRowReads": 0,
+        "reconstructions": 1,
+        "finalAuditLinks": 1754402
+      },
+      "spatial": [
+        6417344,
+        3833552,
+        2154569,
+        94671,
+        408150,
+        118501,
+        0,
+        140601,
+        162828,
+        214049,
+        4180458,
+        409922,
+        886498,
+        771679,
+        56280,
+        525,
+        46953,
+        0,
+        1340226,
+        567602
+      ],
+      "geometry": {
+        "filletSurfaces": 26,
+        "cylinder": 12,
+        "sphere": 8
+      },
+      "modalResidual": 0.00014130352183686827,
+      "physicalResidual": 0.00024327353283834212,
+      "discreteSolutionBound": 0.0030569855775824085
+    },
+    {
+      "radius": "0.044",
+      "two": true,
+      "edit": false,
+      "branches": {
+        "slat emission": [
+          {
+            "arrivedAt": "north-wall",
+            "activeModes": 424,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                3.5235825146346194e-06,
+                1.519199823888917e-06,
+                4.634233277161757e-07
+              ],
+              [
+                0,
+                -1.6696713456276769e-19,
+                2.6834003769016235e-20
+              ],
+              [
+                5.739994174413769e-06,
+                2.4748102542440676e-06,
+                7.549268933905367e-07
+              ]
+            ]
+          },
+          {
+            "from": "north-wall",
+            "to": "floor",
+            "sourceModes": 252,
+            "receiverModes": 281,
+            "links": 19940,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                3.648895246734203e-05,
+                1.4302078774563237e-05,
+                3.417501889624217e-06
+              ],
+              [
+                4.2025669801513005e-05,
+                1.6472230618102093e-05,
+                3.936062732629506e-06
+              ],
+              [
+                2.694378661424482e-05,
+                1.0560789844182189e-05,
+                2.5235156243585346e-06
+              ]
+            ],
+            "expandedRGB": [
+              [
+                3.657831095897314e-05,
+                1.433710340805002e-05,
+                3.4258710751818744e-06
+              ],
+              [
+                4.206773624954522e-05,
+                1.648871883200909e-05,
+                3.940002614591553e-06
+              ],
+              [
+                2.7058643370197494e-05,
+                1.0605808685786281e-05,
+                2.5342729400380086e-06
+              ]
+            ]
+          },
+          {
+            "from": "floor",
+            "to": "ceiling",
+            "sourceModes": 240,
+            "receiverModes": 115,
+            "links": 9201,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                1.6864575623628027e-05,
+                6.20711883489134e-06,
+                1.2713141124486244e-06
+              ],
+              [
+                1.4336889854437785e-05,
+                5.276787334308208e-06,
+                1.0807678062786156e-06
+              ],
+              [
+                1.1445645030106662e-05,
+                4.212645513849692e-06,
+                8.628150732986995e-07
+              ]
+            ],
+            "expandedRGB": [
+              [
+                1.687129102104016e-05,
+                6.2095904814178264e-06,
+                1.271820343953724e-06
+              ],
+              [
+                1.4338456986295717e-05,
+                5.2773641275753154e-06,
+                1.0808859424767363e-06
+              ],
+              [
+                1.1445202385352151e-05,
+                4.212482595514001e-06,
+                8.627817050992418e-07
+              ]
+            ]
+          }
+        ],
+        "lit wall around slat": [
+          {
+            "arrivedAt": "floor",
+            "activeModes": 347,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                0.004088407262244091,
+                0.0028967861211753845,
+                0.001499747444491487
+              ],
+              [
+                0.0016099238352668191,
+                0.0011406899369390446,
+                0.0005905671824978752
+              ],
+              [
+                0.001428351626172028,
+                0.001012039383909695,
+                0.000523961181893349
+              ]
+            ]
+          },
+          {
+            "from": "floor",
+            "to": "ceiling",
+            "sourceModes": 240,
+            "receiverModes": 115,
+            "links": 9201,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                0.0030703904392880127,
+                0.002042832496764244,
+                0.0009065414531989454
+              ],
+              [
+                0.002194037767280929,
+                0.0014597660260982585,
+                0.0006477958504799942
+              ],
+              [
+                0.001539128482846279,
+                0.001024033178719423,
+                0.0004544320336741619
+              ]
+            ],
+            "expandedRGB": [
+              [
+                0.0030703050397749405,
+                0.0020427756776384815,
+                0.000906516238751397
+              ],
+              [
+                0.0021949493308540046,
+                0.0014603725195481213,
+                0.0006480649922007507
+              ],
+              [
+                0.0015402034418788915,
+                0.0010247483845826286,
+                0.0004547494183660508
+              ]
+            ]
+          }
+        ]
+      },
+      "floorQueries": 1024,
+      "queryCountersUnchanged": true,
+      "maximumDifference": 4.440892098500626e-16,
+      "counts": {
+        "fullLinks": 606896,
+        "activeLinks": 591438,
+        "activeModes": 2548,
+        "allModes": 2862,
+        "applications": 37,
+        "checks": 5,
+        "linkReads": 24735346,
+        "receiverRowReads": 0,
+        "reconstructions": 1,
+        "finalAuditLinks": 1790003
+      },
+      "spatial": [
+        6783990,
+        3812270,
+        2139550,
+        260931,
+        1009594,
+        120763,
+        0,
+        141210,
+        321771,
+        210217,
+        4232741,
+        412798,
+        897091,
+        782059,
+        113520,
+        526,
+        44763,
+        0,
+        1490281,
+        669409
+      ],
+      "geometry": {
+        "filletSurfaces": 52,
+        "cylinder": 24,
+        "sphere": 16
+      },
+      "modalResidual": 0.00014243644635409162,
+      "physicalResidual": 0.00021091034424064348,
+      "discreteSolutionBound": 0.0026454831993927477
+    },
+    {
+      "radius": "0.044",
+      "two": true,
+      "edit": true,
+      "branches": {
+        "slat emission": [
+          {
+            "arrivedAt": "north-wall",
+            "activeModes": 415,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                -9.334980705100193e-19,
+                1.9827347229328663e-19,
+                3.130633773051894e-20
+              ],
+              [
+                8.912215217684354e-06,
+                3.8425198595272545e-06,
+                1.1721389853501537e-06
+              ],
+              [
+                1.656951349025262e-05,
+                7.143979705815539e-06,
+                2.179230668899639e-06
+              ]
+            ]
+          },
+          {
+            "from": "north-wall",
+            "to": "floor",
+            "sourceModes": 258,
+            "receiverModes": 267,
+            "links": 17320,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                4.543839709790126e-06,
+                5.110658621535979e-06,
+                9.613694915236722e-06
+              ],
+              [
+                2.206513635608079e-06,
+                2.481764026812028e-06,
+                4.668463298417206e-06
+              ],
+              [
+                6.189419133339564e-07,
+                6.961514990933254e-07,
+                1.3095353500751871e-06
+              ]
+            ],
+            "expandedRGB": [
+              [
+                4.5588556571213485e-06,
+                5.127547725375506e-06,
+                9.645465124074562e-06
+              ],
+              [
+                2.224828633568837e-06,
+                2.5023637196290657e-06,
+                4.70721352157947e-06
+              ],
+              [
+                6.314659988472723e-07,
+                7.102378951137556e-07,
+                1.3360333660500765e-06
+              ]
+            ]
+          },
+          {
+            "from": "floor",
+            "to": "ceiling",
+            "sourceModes": 235,
+            "receiverModes": 115,
+            "links": 8825,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                1.261997337126445e-06,
+                1.3328742593347594e-06,
+                2.149096193750248e-06
+              ],
+              [
+                1.0371881722784912e-06,
+                1.0954392503428508e-06,
+                1.7662613760516576e-06
+              ],
+              [
+                7.527157225002252e-07,
+                7.949901173338163e-07,
+                1.2818240154805666e-06
+              ]
+            ],
+            "expandedRGB": [
+              [
+                1.2647613781909746e-06,
+                1.3357935358484809e-06,
+                2.153803168920797e-06
+              ],
+              [
+                1.0398853866184536e-06,
+                1.0982879469762587e-06,
+                1.770854549825654e-06
+              ],
+              [
+                7.549786106085278e-07,
+                7.97380094889694e-07,
+                1.2856775610288553e-06
+              ]
+            ]
+          }
+        ],
+        "lit wall around slat": [
+          {
+            "arrivedAt": "floor",
+            "activeModes": 337,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                0.0003140489252610877,
+                0.0006385217437996651,
+                0.0026024431829907184
+              ],
+              [
+                0.00013792921737517186,
+                0.000280436573142541,
+                0.001142984174185094
+              ],
+              [
+                5.103910412004796e-05,
+                0.00010377229515309445,
+                0.0004229480119148512
+              ]
+            ]
+          },
+          {
+            "from": "floor",
+            "to": "ceiling",
+            "sourceModes": 235,
+            "receiverModes": 115,
+            "links": 8825,
+            "samples": [
+              [
+                0.29,
+                0.4
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.69,
+                0.57
+              ]
+            ],
+            "rgb": [
+              [
+                0.00019653298984597878,
+                0.00037522409034788473,
+                0.0013108394088179856
+              ],
+              [
+                0.00014531528507575437,
+                0.0002774383868017519,
+                0.0009692266042978336
+              ],
+              [
+                9.993995454208722e-05,
+                0.00019080704243013816,
+                0.0006665813766529148
+              ]
+            ],
+            "expandedRGB": [
+              [
+                0.00019652510207001332,
+                0.00037520903087332125,
+                0.0013107867987824304
+              ],
+              [
+                0.0001452940924274511,
+                0.00027739792544110306,
+                0.0009690852531760986
+              ],
+              [
+                9.992099998721904e-05,
+                0.00019077085407512547,
+                0.0006664549532086014
+              ]
+            ]
+          }
+        ]
+      },
+      "floorQueries": 1024,
+      "queryCountersUnchanged": true,
+      "maximumDifference": 2.498001805406602e-16,
+      "counts": {
+        "fullLinks": 583299,
+        "activeLinks": 567580,
+        "activeModes": 2525,
+        "allModes": 2862,
+        "applications": 28,
+        "checks": 4,
+        "linkReads": 18173398,
+        "receiverRowReads": 0,
+        "reconstructions": 1,
+        "finalAuditLinks": 1813547
+      },
+      "spatial": [
+        7087811,
+        4019806,
+        2233632,
+        260907,
+        1086458,
+        122233,
+        0,
+        141696,
+        235712,
+        213653,
+        4238526,
+        410942,
+        852799,
+        818986,
+        113520,
+        563,
+        43926,
+        0,
+        1728310,
+        769458
+      ],
+      "geometry": {
+        "filletSurfaces": 52,
+        "cylinder": 24,
+        "sphere": 16
+      },
+      "modalResidual": 0.00014679380648090283,
+      "physicalResidual": 0.00018874956933756474,
+      "discreteSolutionBound": 0.002374597911992529
+    }
+  ],
+  "conditionalReference": [
+    {
+      "path": {
+        "via": [
+          "floor",
+          "north-wall"
+        ],
+        "point": [
+          0.5,
+          0.5
+        ]
+      },
+      "paths": 2097152,
+      "arrivals": 85947,
+      "fromLamp": {
+        "mean": [
+          0.0025739368015040803,
+          0.0017125254415361311,
+          0.0007599621138146966
+        ],
+        "standardError": [
+          1.440422821499773e-05,
+          9.58361031609684e-06,
+          4.252889082491187e-06
+        ]
+      },
+      "fromRoundedSurfaces": {
+        "mean": [
+          1.2116268888912425e-05,
+          4.45947306990684e-06,
+          9.133691812034445e-07
+        ],
+        "standardError": [
+          1.222370546512229e-07,
+          4.4990158138590795e-08,
+          9.214681478526437e-09
+        ]
+      },
+      "edits": {
+        "slats": 1,
+        "radius": 0.001,
+        "secondBlind": false,
+        "secondRadius": 0.033,
+        "secondAngle": -0.4,
+        "floor": "limestone",
+        "layout": "studio"
+      }
+    },
+    {
+      "path": {
+        "via": [
+          "floor",
+          "north-wall"
+        ],
+        "point": [
+          0.5,
+          0.5
+        ]
+      },
+      "paths": 2097152,
+      "arrivals": 85957,
+      "fromLamp": {
+        "mean": [
+          0.002613196882100379,
+          0.001738646474041139,
+          0.0007715537635479248
+        ],
+        "standardError": [
+          1.4523266514824695e-05,
+          9.662810441310397e-06,
+          4.288035476881493e-06
+        ]
+      },
+      "fromRoundedSurfaces": {
+        "mean": [
+          1.0020483470401724e-05,
+          3.6881053559809204e-06,
+          7.553811215760284e-07
+        ],
+        "standardError": [
+          1.0577860009938513e-07,
+          3.89325148558992e-08,
+          7.973982275189838e-09
+        ]
+      },
+      "edits": {
+        "slats": 1,
+        "radius": 0.044,
+        "secondBlind": false,
+        "secondRadius": 0.033,
+        "secondAngle": -0.4,
+        "floor": "limestone",
+        "layout": "studio"
+      }
+    },
+    {
+      "path": {
+        "via": [
+          "floor",
+          "north-wall"
+        ],
+        "point": [
+          0.5,
+          0.5
+        ]
+      },
+      "paths": 2097152,
+      "arrivals": 85833,
+      "fromLamp": {
+        "mean": [
+          0.0021808632910472556,
+          0.0014510006105232284,
+          0.0006439060491448978
+        ],
+        "standardError": [
+          1.3338847292334147e-05,
+          8.87477708681072e-06,
+          3.938332354628945e-06
+        ]
+      },
+      "fromRoundedSurfaces": {
+        "mean": [
+          1.5165317566325141e-05,
+          5.581695644399205e-06,
+          1.1432177525310693e-06
+        ],
+        "standardError": [
+          2.366043497846636e-07,
+          8.708379912673205e-08,
+          1.7836111365087768e-08
+        ]
+      },
+      "edits": {
+        "slats": 1,
+        "radius": 0.044,
+        "secondBlind": true,
+        "secondRadius": 0.033,
+        "secondAngle": -0.4,
+        "floor": "limestone",
+        "layout": "studio"
+      }
+    },
+    {
+      "path": {
+        "via": [
+          "floor",
+          "north-wall"
+        ],
+        "point": [
+          0.5,
+          0.5
+        ]
+      },
+      "paths": 2097152,
+      "arrivals": 91358,
+      "fromLamp": {
+        "mean": [
+          0.0001408331013590774,
+          0.0002688809262493011,
+          0.0009393312515736635
+        ],
+        "standardError": [
+          8.7892600318664e-07,
+          1.6780603108275422e-06,
+          5.862277082920491e-06
+        ]
+      },
+      "fromRoundedSurfaces": {
+        "mean": [
+          1.1008520882667774e-06,
+          1.1626786908494748e-06,
+          1.8746767232988986e-06
+        ],
+        "standardError": [
+          1.688967912296027e-08,
+          1.7838245683367725e-08,
+          2.8761982334658503e-08
+        ]
+      },
+      "edits": {
+        "slats": 1,
+        "radius": 0.044,
+        "secondBlind": true,
+        "secondRadius": 0.033,
+        "secondAngle": -0.4,
+        "floor": "blue",
+        "layout": "alternate"
+      }
+    }
+  ],
+  "imageAgainstExpanded": [
+    {
+      "pop": 1,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 319101,
+        "large": 0,
+        "mean": 0.012823953510802469
+      },
+      "total": {
+        "max": 1,
+        "changed": 255244,
+        "large": 0,
+        "mean": 0.010257683899176955
+      },
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 59,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 286330,
+        "large": 0,
+        "mean": 0.011506960519547325
+      },
+      "total": {
+        "max": 1,
+        "changed": 224597,
+        "large": 0,
+        "mean": 0.009026049704218107
+      },
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 119,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 267570,
+        "large": 0,
+        "mean": 0.010753038194444444
+      },
+      "total": {
+        "max": 1,
+        "changed": 215901,
+        "large": 0,
+        "mean": 0.008676576967592593
+      },
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 319101,
+        "large": 0,
+        "mean": 0.012823953510802469
+      },
+      "total": {
+        "max": 1,
+        "changed": 255244,
+        "large": 0,
+        "mean": 0.010257683899176955
+      },
+      "repeat": true,
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 287257,
+        "large": 0,
+        "mean": 0.01154421457047325
+      },
+      "total": {
+        "max": 1,
+        "changed": 233487,
+        "large": 0,
+        "mean": 0.009383318865740741
+      },
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 59,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 267811,
+        "large": 0,
+        "mean": 0.01076272344393004
+      },
+      "total": {
+        "max": 1,
+        "changed": 211146,
+        "large": 0,
+        "mean": 0.008485484182098765
+      },
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 119,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 256714,
+        "large": 0,
+        "mean": 0.010316759902263375
+      },
+      "total": {
+        "max": 1,
+        "changed": 208912,
+        "large": 0,
+        "mean": 0.008395704732510289
+      },
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 287257,
+        "large": 0,
+        "mean": 0.01154421457047325
+      },
+      "total": {
+        "max": 1,
+        "changed": 233487,
+        "large": 0,
+        "mean": 0.009383318865740741
+      },
+      "repeat": true,
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 579345,
+        "large": 0,
+        "mean": 0.023282576195987656
+      },
+      "total": {
+        "max": 1,
+        "changed": 548553,
+        "large": 0,
+        "mean": 0.022045114776234567
+      },
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 59,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 382466,
+        "large": 0,
+        "mean": 0.015370450745884773
+      },
+      "total": {
+        "max": 1,
+        "changed": 344073,
+        "large": 0,
+        "mean": 0.013827522183641975
+      },
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 119,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 653253,
+        "large": 0,
+        "mean": 0.026252772955246913
+      },
+      "total": {
+        "max": 1,
+        "changed": 614303,
+        "large": 0,
+        "mean": 0.0246874598122428
+      },
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 579345,
+        "large": 0,
+        "mean": 0.023282576195987656
+      },
+      "total": {
+        "max": 1,
+        "changed": 548553,
+        "large": 0,
+        "mean": 0.022045114776234567
+      },
+      "repeat": true,
+      "gl": 0
+    }
+  ],
+  "subpixelMotion": [
+    {
+      "delta": 0
+    },
+    {
+      "delta": 1e-06,
+      "direct": {
+        "max": 1,
+        "changed": 19,
+        "big": 0,
+        "returned": 19
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 59,
+        "big": 0,
+        "returned": 59
+      }
+    },
+    {
+      "delta": 2e-06,
+      "direct": {
+        "max": 1,
+        "changed": 38,
+        "big": 0,
+        "returned": 31
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 38,
+        "big": 0,
+        "returned": 81
+      }
+    },
+    {
+      "delta": 3e-06,
+      "direct": {
+        "max": 148,
+        "changed": 19,
+        "big": 3,
+        "returned": 38
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 35,
+        "big": 0,
+        "returned": 108
+      }
+    },
+    {
+      "delta": 4e-06,
+      "direct": {
+        "max": 1,
+        "changed": 25,
+        "big": 0,
+        "returned": 63
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 38,
+        "big": 0,
+        "returned": 142
+      }
+    },
+    {
+      "delta": 0,
+      "direct": {
+        "max": 148,
+        "changed": 63,
+        "big": 3,
+        "returned": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 142,
+        "big": 0,
+        "returned": 0
+      }
+    }
+  ],
+  "isolatedObserverMs": {
+    "3840 clear": [
+      0.5,
+      0.6999998092651367
+    ],
+    "3840 settled room": [
+      3.8000001907348633,
+      4
+    ],
+    "1920 clear": [
+      0.40000009536743164,
+      0.5
+    ],
+    "1920 settled room": [
+      1.3000001907348633,
+      1.4000000953674316
+    ]
+  },
+  "physicalReferenceAreas": [
+    {
+      "editIndex": 0,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.1352618408916361,
+        0.09231496981761343,
+        0.04082198178390169
+      ],
+      "reference": [
+        0.13626427721034712,
+        0.09251017293802735,
+        0.0405473224343759
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0011580210174344727,
+        0.0009357860916813741,
+        0.0005194991569553928
+      ]
+    },
+    {
+      "editIndex": 0,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.18237147391331762,
+        0.1279465335700388,
+        0.062402825377649004
+      ],
+      "reference": [
+        0.18538983347106397,
+        0.13081553517434108,
+        0.06425280014189219
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0014142366202338928,
+        0.0011656036724803462,
+        0.0006999275705363403
+      ]
+    },
+    {
+      "editIndex": 1,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.1358740486596299,
+        0.09285843338901643,
+        0.04107263192947391
+      ],
+      "reference": [
+        0.13734700106476533,
+        0.09332425053687868,
+        0.04089423258197503
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0011620392680547738,
+        0.0009382333338818397,
+        0.0005208317663452137
+      ]
+    },
+    {
+      "editIndex": 1,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.18333657048336427,
+        0.12888477845214205,
+        0.06291368202108105
+      ],
+      "reference": [
+        0.1869446298143092,
+        0.13203566660034766,
+        0.06482143031427046
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0014161064674029528,
+        0.0011648254408375847,
+        0.0006983806500770322
+      ]
+    },
+    {
+      "editIndex": 2,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.12120917883738373,
+        0.08110951024041689,
+        0.03518423086669603
+      ],
+      "reference": [
+        0.1233994384634713,
+        0.08213051304921129,
+        0.035303875768324416
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0010848125638211333,
+        0.000859903870086542,
+        0.00046937897614731376
+      ]
+    },
+    {
+      "editIndex": 2,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.17124415264990647,
+        0.12001590937313054,
+        0.059041700680487114
+      ],
+      "reference": [
+        0.17343719353695528,
+        0.12233172124129438,
+        0.06054350090325766
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0013961161121126232,
+        0.0011505240304387704,
+        0.000693032781530485
+      ]
+    },
+    {
+      "editIndex": 3,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.003425581304958979,
+        0.007975564730304991,
+        0.04906368149013686
+      ],
+      "reference": [
+        0.0036451869333426995,
+        0.008496198176834655,
+        0.05202002677079449
+      ],
+      "paths": 131072,
+      "standardError": [
+        5.732899290620622e-05,
+        0.0001408811029104701,
+        0.0006965336755433732
+      ]
+    },
+    {
+      "editIndex": 3,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.047369745673508296,
+        0.03649562962946055,
+        0.032095854608265445
+      ],
+      "reference": [
+        0.04562187704887825,
+        0.036374680301681894,
+        0.03466783886192994
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0007009626061376506,
+        0.0005724109583159177,
+        0.0004143795704772845
+      ]
+    }
+  ],
+  "contactAreas": [
+    {
+      "angle": 24,
+      "areas": {
+        "north-wall-covered": [
+          0.023319359615543437,
+          0.010189700464757208,
+          0.002281402778413849
+        ],
+        "north-wall-exposed": [
+          0.11561613183576529,
+          0.06944921165959604,
+          0.027690389272104036
+        ],
+        "bench-seat-bottom-all": [
+          0.09170230168774146,
+          0.03518998250563078,
+          0.008633285523794288
+        ]
+      },
+      "changed": 21523838,
+      "max": 6,
+      "channels": 24883200,
+      "equilibriumError": 0.0024000612484311686
+    },
+    {
+      "angle": -46,
+      "areas": {
+        "north-wall-covered": [
+          0.006546216572884423,
+          0.002592857395137515,
+          0.0005820383830426705
+        ],
+        "north-wall-exposed": [
+          0.038671263417138224,
+          0.022462359521915824,
+          0.009960723216275662
+        ],
+        "bench-seat-bottom-all": [
+          0.011778400143632496,
+          0.002819162159730454,
+          0.00037970509869131113
+        ]
+      },
+      "changed": 23751100,
+      "max": 12,
+      "channels": 24883200,
+      "equilibriumError": 0.0027111530311451615
+    }
+  ],
+  "interiorEvaluation40x40": [
+    {
+      "angle": 24,
+      "name": "north-wall",
+      "mask": "covered",
+      "n": 598,
+      "projectedFirst": [
+        0.00022075958121281375,
+        0.00016703607058100113,
+        9.336086085063642e-05
+      ],
+      "projectedTotal": [
+        0.02280073183425169,
+        0.009873062301284454,
+        0.0021603016721249853
+      ],
+      "evaluatedFirst": [
+        0.00016050457565557142,
+        0.0001164915693141007,
+        6.138859414870334e-05
+      ],
+      "evaluatedTotal": [
+        0.02150187842052552,
+        0.00917304034703582,
+        0.0019485792297918125
+      ],
+      "fieldBound": 0.0024000612484311686,
+      "residual": 0.00019160601672774772
+    },
+    {
+      "angle": 24,
+      "name": "north-wall",
+      "mask": "exposed",
+      "n": 1002,
+      "projectedFirst": [
+        0.019062410245082765,
+        0.014113913470060621,
+        0.008189686549081704
+      ],
+      "projectedTotal": [
+        0.11547544809232965,
+        0.06934723713411023,
+        0.027636537424240337
+      ],
+      "evaluatedFirst": [
+        0.02438603896068649,
+        0.018463256168797147,
+        0.010915333952995168
+      ],
+      "evaluatedTotal": [
+        0.1255732640165787,
+        0.07699932963521129,
+        0.0319614151522486
+      ],
+      "fieldBound": 0.0024000612484311686,
+      "residual": 0.00019160601672774772
+    },
+    {
+      "angle": 24,
+      "name": "bench-seat-bottom",
+      "mask": "all",
+      "n": 1600,
+      "projectedFirst": [
+        0.04057164466168191,
+        0.01698589014029994,
+        0.004748989830908939
+      ],
+      "projectedTotal": [
+        0.09170167999444119,
+        0.03518968683369728,
+        0.008633198542150942
+      ],
+      "evaluatedFirst": [
+        0.030813717676514734,
+        0.012899824284794428,
+        0.003606757198040912
+      ],
+      "evaluatedTotal": [
+        0.07163241704719969,
+        0.027268768339897508,
+        0.006636265872369576
+      ],
+      "fieldBound": 0.0024000612484311686,
+      "residual": 0.00019160601672774772
+    },
+    {
+      "angle": -46,
+      "name": "north-wall",
+      "mask": "covered",
+      "n": 598,
+      "projectedFirst": [
+        1.7100916874792173e-05,
+        1.5544267579121165e-05,
+        1.0522135372460373e-05
+      ],
+      "projectedTotal": [
+        0.0063810739144066235,
+        0.0025018337649158847,
+        0.0005469008490427644
+      ],
+      "evaluatedFirst": [
+        1.728052101511907e-06,
+        1.3077884864081504e-06,
+        7.095458892387922e-07
+      ],
+      "evaluatedTotal": [
+        0.005971606454032153,
+        0.0023093857830266706,
+        0.0004894634019713787
+      ],
+      "fieldBound": 0.0027111530311451615,
+      "residual": 0.00021656652758214446
+    },
+    {
+      "angle": -46,
+      "name": "north-wall",
+      "mask": "exposed",
+      "n": 1002,
+      "projectedFirst": [
+        0.006219721866789968,
+        0.005756224861481661,
+        0.003963753538060039
+      ],
+      "projectedTotal": [
+        0.03860694861656185,
+        0.0224155818664264,
+        0.009933566293684314
+      ],
+      "evaluatedFirst": [
+        0.007834316701077924,
+        0.007253022010043247,
+        0.004995859283101404
+      ],
+      "evaluatedTotal": [
+        0.04205595895592088,
+        0.024896374860365424,
+        0.011393547036283994
+      ],
+      "fieldBound": 0.0027111530311451615,
+      "residual": 0.00021656652758214446
+    },
+    {
+      "angle": -46,
+      "name": "bench-seat-bottom",
+      "mask": "all",
+      "n": 1600,
+      "projectedFirst": [
+        1.281132124222409e-05,
+        5.374236105380638e-06,
+        1.5049003759847092e-06
+      ],
+      "projectedTotal": [
+        0.011778344332195,
+        0.0028191468447677902,
+        0.0003797030635989884
+      ],
+      "evaluatedFirst": [
+        1.0238742606808366e-05,
+        4.29163213200375e-06,
+        1.2010062560074902e-06
+      ],
+      "evaluatedTotal": [
+        0.009055133991369311,
+        0.0021605020123795908,
+        0.00029086372371883154
+      ],
+      "fieldBound": 0.0027111530311451615,
+      "residual": 0.00021656652758214446
+    }
+  ],
+  "contactReferences": [
+    {
+      "id": "north-wall",
+      "iu": 2,
+      "iv": 1,
+      "side": "front",
+      "angle": 24,
+      "paths": 131072,
+      "reference": [
+        0.016815161810322207,
+        0.00796362275751689,
+        0.0019990134983287632
+      ],
+      "standardError": [
+        0.00042660721985213635,
+        0.00023547871665506457,
+        7.809727057914467e-05
+      ],
+      "firstReflected": [
+        0.00019802973505574897,
+        0.00014336326974475502,
+        7.541128981599684e-05
+      ],
+      "laterReflected": [
+        0.01661713207526646,
+        0.007820259487772135,
+        0.0019236022085127662
+      ]
+    },
+    {
+      "id": "north-wall",
+      "iu": 2,
+      "iv": 1,
+      "side": "front",
+      "angle": 24,
+      "paths": 131072,
+      "reference": [
+        0.1232695861605753,
+        0.07708812436945825,
+        0.03229095437487041
+      ],
+      "standardError": [
+        0.0010471530830593486,
+        0.0007769298448064762,
+        0.0004011234088570313
+      ],
+      "firstReflected": [
+        0.024025144306462794,
+        0.0181284812915202,
+        0.010683538601570189
+      ],
+      "laterReflected": [
+        0.0992444418541125,
+        0.05895964307793806,
+        0.021607415773300224
+      ]
+    },
+    {
+      "id": "bench-seat-bottom",
+      "iu": 0,
+      "iv": 0,
+      "side": "front",
+      "angle": 24,
+      "paths": 131072,
+      "reference": [
+        0.0731005168238782,
+        0.028178103610041763,
+        0.006873778957726978
+      ],
+      "standardError": [
+        0.0005352306503557137,
+        0.0002293653186317005,
+        5.957103214754829e-05
+      ],
+      "firstReflected": [
+        0.030099684428402818,
+        0.012601387965579174,
+        0.0035234737104504034
+      ],
+      "laterReflected": [
+        0.04300083239547539,
+        0.015576715644462589,
+        0.0033503052472765743
+      ]
+    },
+    {
+      "id": "north-wall",
+      "iu": 2,
+      "iv": 1,
+      "side": "front",
+      "angle": -46,
+      "paths": 131072,
+      "reference": [
+        0.004127453446703964,
+        0.0020101717877196667,
+        0.0005315402094622555
+      ],
+      "standardError": [
+        0.00025125313671217674,
+        0.0001368984321776208,
+        4.3393792939972305e-05
+      ],
+      "firstReflected": [
+        3.737919901422758e-06,
+        2.828854874566138e-06,
+        1.5348065597358348e-06
+      ],
+      "laterReflected": [
+        0.004123715526802542,
+        0.0020073429328451007,
+        0.0005300054029025197
+      ]
+    },
+    {
+      "id": "north-wall",
+      "iu": 2,
+      "iv": 1,
+      "side": "front",
+      "angle": -46,
+      "paths": 131072,
+      "reference": [
+        0.03495463691014113,
+        0.022925294363419453,
+        0.011358030182452516
+      ],
+      "standardError": [
+        0.0006619053330198123,
+        0.0004886214243605248,
+        0.0002774742250781735
+      ],
+      "firstReflected": [
+        0.008169779994304552,
+        0.007559357809387531,
+        0.005203955205220512
+      ],
+      "laterReflected": [
+        0.026784856915836583,
+        0.015365936554031923,
+        0.006154074977232004
+      ]
+    },
+    {
+      "id": "bench-seat-bottom",
+      "iu": 0,
+      "iv": 0,
+      "side": "front",
+      "angle": -46,
+      "paths": 131072,
+      "reference": [
+        0.007220557732542804,
+        0.0018615286281365928,
+        0.0002790380263259424
+      ],
+      "standardError": [
+        0.0002122245530184415,
+        6.248537990372756e-05,
+        1.139068186312474e-05
+      ],
+      "firstReflected": [
+        1.294846963640216e-05,
+        5.472266634578646e-06,
+        1.5396831616166547e-06
+      ],
+      "laterReflected": [
+        0.007207609262906402,
+        0.0018560563615020141,
+        0.0002774983431643258
+      ]
+    }
+  ],
+  "decimal110Visibility": {
+    "floor": {
+      "rays": 294,
+      "floatDisagreements": 66,
+      "nativeDisagreements": 0,
+      "conicDisagreements": 0
+    },
+    "northWall": {
+      "rays": 450,
+      "cylinder": 420,
+      "sphere": 30,
+      "floatDisagreements": 103,
+      "nativeDisagreements": 0,
+      "conicDisagreements": 0
+    },
+    "twoNearCoincidentEdges": 42
+  },
+  "allEndpointRefinementExperiment": {
+    "productionOneTwoCrowdedWorkerMs": [
+      381.4,
+      422.5,
+      1796.4
+    ],
+    "exactFallbackRows": [
+      {
+        "n": 1,
+        "sum": 1052.9700737742621,
+        "worker": 422.19999980926514,
+        "refinements": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "n": 2,
+        "sum": 1010.9346973084388,
+        "worker": 463.09999990463257,
+        "refinements": [
+          15,
+          10,
+          30,
+          24,
+          40,
+          26
+        ]
+      },
+      {
+        "n": 0,
+        "sum": 879.3311608761779,
+        "worker": 3927.4000000953674,
+        "refinements": [
+          1067,
+          1640,
+          989,
+          1662,
+          1635,
+          2856
+        ]
+      }
+    ],
+    "distanceFilterRows": [
+      {
+        "n": 1,
+        "sum": 1052.9700737742621,
+        "worker": 424.40000009536743,
+        "refinements": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "n": 2,
+        "sum": 1010.9346973084388,
+        "worker": 474.40000009536743,
+        "refinements": [
+          15,
+          10,
+          30,
+          24,
+          40,
+          26
+        ]
+      },
+      {
+        "n": 0,
+        "sum": 879.3311608761779,
+        "worker": 3945.5999999046326,
+        "refinements": [
+          1067,
+          1640,
+          989,
+          1662,
+          1635,
+          2856
+        ]
+      }
+    ]
+  }
+}

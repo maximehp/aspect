@@ -84,6 +84,13 @@ function random() {
   state ^= state << 13; state ^= state >>> 17; state ^= state << 5;
   return ((state >>> 0) + 0.5)/4294967296;
 }
+if (process.argv[9]) {
+  const { referencePath } = await import('./reference-path.js');
+  const path = JSON.parse(process.argv[9]);
+  console.log(JSON.stringify(referencePath({room,faces,target,side,path,paths,trace,random,dot,scale,advance})));
+  process.exit(0);
+}
+
 const first = [0,0,0], later = [0,0,0], sumSquares = [0,0,0];
 for (let sample=0; sample<paths; sample++) {
   let i = target, f = faces[i], sign = side === 'front' ? 1 : -1;
