@@ -938,8 +938,14 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
     float *weights = output + 5 * count;
     int gpu = 0;
     int mode = modes && y.pad ? modes[(y.pad - 1) * nt + k] : 0;
+    int twoSided = mode & 128;
+    if (twoSided) {
+      if(lampIds && lampIds[k*(ns+1)]<0)continue;
+      mode &= 127;
+    }
     if (mode == 1) {
       evaluatePlane(c, y, moments + k, weights);
+      if (twoSided) for(int j=0;j<4;j++)weights[j]=0;
       tileIds[count++] = k;
       stats->regional++;
       continue;
@@ -996,7 +1002,7 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
     double a = c->type ? 0 : -c->height, b = c->type ? PI / 2 : c->height;
     // Certified clear planar tiles use the GPU's projected angular measure
     // as the constant coefficient of their partition of unity.
-    if (!c->type && !w.count[0] && dp(d, y.n) - ext > 1e-8 &&
+    if (!twoSided && !c->type && !w.count[0] && dp(d, y.n) - ext > 1e-8 &&
         absd(dp(d, c->n)) < .8 * high(c->width, c->height)) {
       gpu = 1;
       stats->gpu++;
@@ -1033,7 +1039,7 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
       a = hi;
     }
     for (int j = 0; j < 5; j++)
-      weights[j] = j == 4 && hidden ? 0 : value.w[j];
+      weights[j] = (j < 4 && twoSided) || (j == 4 && hidden) ? 0 : value.w[j];
     tileIds[count++] = gpu ? ~k : k;
   }
   return count;

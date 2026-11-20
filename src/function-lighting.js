@@ -1,3 +1,4 @@
+import { selectPairs, markPairs, weakPairs, projectedRows, mergeParts } from './weak.js';
 import { equilibriumSolve } from './krylov.js';
 import { modalEquilibrium } from './modal-equilibrium.js';
 import { ReceiverRegions } from './receiver-regions.js';
@@ -28,8 +29,10 @@ export class FunctionLighting {
         worker: new Worker(new URL('./function-worker.js', import.meta.url), { type: 'module' }),
       });
     const flags = this.regions ? await this.regions.build(packet, integrationTolerance) : Array(20).fill(0);
+    const selected = selectPairs(geometry);
+    markPairs(geometry, selected);
     const prepared = performance.now();
-    const parts = await Promise.all(
+    const pending = Promise.all(
       this.pool.slice(0, count).map(
         (slot, first) =>
           new Promise((resolve, reject) => {
@@ -43,6 +46,9 @@ export class FunctionLighting {
           }),
       ),
     );
+    const pairs = weakPairs(geometry, selected);
+    const extra = projectedRows(geometry, pairs, 'positive');
+    let parts = await pending;
     const received = performance.now();
     const angular = this.angular;
     let links = 0,
@@ -78,6 +84,10 @@ export class FunctionLighting {
         const weight = angular.values[job++];
         part.weights[part.jobs[j + 2]] += weight;
       }
+    mergeParts(parts, extra);
+    bytes +=
+      2 * (extra.col.byteLength + extra.weights.byteLength + extra.starts.byteLength) +
+      pairs.reduce((n, p) => n + 3 * p.weights.byteLength + p.massA.byteLength + p.massB.byteLength, 0);
     const assembled = performance.now(),
       direct = new Float64Array(3 * n),
       color = new Float64Array(3 * n);
