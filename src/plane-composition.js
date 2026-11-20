@@ -13,7 +13,7 @@ import {
   apertureBands,
   boundedBand,
 } from './weighted-aperture.js';
-import { parallelObserver } from './parallel-observer.js';
+import { planarObserver } from './parallel-observer.js';
 import { AngularMeasure } from './angular-measure.js';
 
 const compiled = WebAssembly.compileStreaming(fetch(new URL('./function-transport.wasm', import.meta.url)));
@@ -384,11 +384,11 @@ export class PlaneComposition {
       ),
     );
     if (family.records.length) return null;
-    const field = parallelObserver(floor, target, tolerance, queries);
+    const field = planarObserver(floor, target, tolerance, queries);
     if (!field) return null;
     const observers = field.nodes.map((p) => ({ p, n: target.n, object }));
     this.clearQueries ??= new WeakMap();
-    this.clearQueries.set(observers, dot(sub(target.center, floor.center), floor.n));
+    this.clearQueries.set(observers, field.minimumDistance);
     return {
       orders: field.orders,
       relativeBound: field.relativeBound,
@@ -420,7 +420,7 @@ export class PlaneComposition {
     }
     return weights;
   }
-  // With a verified parallel observer domain, the gap bounds the second
+  // For a verified planar observer domain, the separation bounds the second
   // distance at every integration point. The incoming visibility and band
   // geometry can be generated once for all samples of the output function.
   composeBundle(points, observers, gap) {

@@ -12,11 +12,11 @@ const dot = (a, b) => a.reduce((s, x, i) => addQ(s, mulQ(x, b[i])), zero);
 export function exactRoundedHit(box, origin, vector, tMin, tMax, endpoint = false) {
   const def = box.definition ?? {},
     r = exact(def.radius ?? box.radius),
-    eye = origin.map(exact),
-    p = vector.map(exact);
-  const center = (def.center ?? box.center).map(exact),
-    axes = (def.axes ?? box.axes).map((a) => a.map(exact));
-  const H = (def.halfSize ?? box.halfSize).map((h) => subQ(exact(h), r));
+    eye = Array.from(origin, exact),
+    p = Array.from(vector, exact);
+  const center = Array.from(def.center ?? box.center, exact),
+    axes = Array.from(def.axes ?? box.axes, (a) => Array.from(a, exact));
+  const H = Array.from(def.halfSize ?? box.halfSize, (h) => subQ(exact(h), r));
   const O = axes.map((a) =>
     dot(
       a,

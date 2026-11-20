@@ -1,0 +1,3453 @@
+{
+  "baselineCommit": "94ab054c447fc633cf7b56255617c80174140379",
+  "kernelSHA256": "2f65cd01a99155ca1e5dde3b1b3f816287e3218093dd4859f161a66fdc44651e",
+  "device": "M1 Pro, Chrome 136, ANGLE Metal",
+  "framebuffer": [
+    3840,
+    2160
+  ],
+  "measurement": "120 fresh moving poses per population and revision. Each pose rebuilds geometry-dependent lighting, visibility, coefficients and the equilibrium from the current state. Median and p95 throughBothMs use the later of frame GPU completion and the matching compositor swap. Camera visibility overlaps construction. 4K framebuffer scaled by compositor. Peak counts instrumented engine and GPU payloads only. Runtime, driver, swap buffers and physical scanout unmeasured. Populations 1 and 2 mean individual slats. Population 0 uses two full blinds and four extra objects.",
+  "workCountsOrder": [
+    "strips",
+    "lit ends",
+    "length primitives",
+    "sphere evaluations",
+    "rounded feature evaluations",
+    "splits",
+    "refinement limits",
+    "GPU apertures",
+    "axial reuse",
+    "regional",
+    "whole domain dark",
+    "facing",
+    "expansion",
+    "obstruction",
+    "individual",
+    "moment tiles",
+    "moment strips",
+    "exact conics",
+    "lamp slice reuse",
+    "new lamp slices",
+    "individual receiver using common lamp field",
+    "individual rounded full occlusion proof"
+  ],
+  "rectangleRules": [
+    "corner primitives",
+    "integrated quadratic field",
+    "Y transverse 2",
+    "Y transverse 4",
+    "Y transverse 8",
+    "X transverse 2",
+    "X transverse 4",
+    "X transverse 8"
+  ],
+  "roundedVisibility": [
+    "outside a tangent half-space",
+    "whole interval certified by its extremes",
+    "only spherical boundaries remain"
+  ],
+  "replays": [
+    {
+      "population": 1,
+      "prior": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 1,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 542.62,
+          "p95": 577.19
+        },
+        "throughBothMs": {
+          "median": 542.62,
+          "p95": 577.19
+        },
+        "finishedMs": {
+          "median": 538.7,
+          "p95": 573.8
+        },
+        "cameraMs": {
+          "median": 6.9,
+          "p95": 8.4
+        },
+        "peakCountedMiB": 126.83981132507324,
+        "meanWorkCounts": [
+          5274343.85,
+          3940061.7,
+          2213315.6166666667,
+          247798.825,
+          166519,
+          59625.5,
+          5.225,
+          459169.80833333335,
+          0,
+          200213.075,
+          4735535.283333333,
+          413768.4583333333,
+          707259.0166666667,
+          636915.0833333334,
+          85523.08333333333,
+          527.1,
+          46819.2,
+          0,
+          1395562.05,
+          676829.2166666667
+        ],
+        "meanRectangleRules": [
+          27570.416666666668,
+          56374.09166666667,
+          1340.2833333333333,
+          82196.53333333334,
+          70296.70833333333,
+          1130.5916666666667,
+          78056.49166666667,
+          81652.54166666667
+        ],
+        "meanRoundedVisibility": [
+          47528.75,
+          509108.85,
+          67315.25
+        ],
+        "meanCurvedFacing": [
+          6944.883333333333,
+          74137.93333333333
+        ],
+        "overFrameBudget": {
+          "1": 120,
+          "16.666666666666668": 120
+        },
+        "meanGpuApertures": 459169.80833333335,
+        "workerMs": {
+          "median": 283.05,
+          "p95": 290.7
+        },
+        "assemblyMs": {
+          "median": 25.2,
+          "p95": 26.6
+        },
+        "solveMs": {
+          "median": 131.1,
+          "p95": 146.5
+        },
+        "operatorConstructionMs": {
+          "median": 484.5,
+          "p95": 502.8
+        },
+        "modalBuildMs": {
+          "median": 83.7,
+          "p95": 87.3
+        },
+        "modalEquilibriumMs": {
+          "median": 45.05,
+          "p95": 55.2
+        },
+        "meanModalWork": {
+          "fullLinks": 658483.6916666667,
+          "activeLinks": 644921.775,
+          "activeModes": 2592.975,
+          "allModes": 2886,
+          "applications": 38.208333333333336,
+          "checks": 5.058333333333334,
+          "linkReads": 27794221.408333335,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1824573.45
+        },
+        "preparationMs": {
+          "median": 526.4,
+          "p95": 561
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 1.2
+        },
+        "markAndFinishMs": {
+          "median": 12.0,
+          "p95": 13.6
+        },
+        "syncToSwapMs": {
+          "median": 4.01,
+          "p95": 5.07
+        },
+        "beforeSync": 0
+      },
+      "shipping": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 1,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 530.09,
+          "p95": 558.97
+        },
+        "throughBothMs": {
+          "median": 530.09,
+          "p95": 558.97
+        },
+        "finishedMs": {
+          "median": 526.1,
+          "p95": 555.6
+        },
+        "cameraMs": {
+          "median": 6.9,
+          "p95": 8.6
+        },
+        "peakCountedMiB": 127.63961601257324,
+        "meanWorkCounts": [
+          4054423.325,
+          2494207.9166666665,
+          1490259.35,
+          245493,
+          168033.60833333334,
+          59544.458333333336,
+          5.45,
+          464263.63333333336,
+          0,
+          221651.79166666666,
+          4736091.375,
+          413758.625,
+          587934.375,
+          734302.375,
+          85475.45833333333,
+          822,
+          130283.475,
+          0,
+          662942.5916666667,
+          530747.075,
+          205388.95833333334,
+          11869.916666666666
+        ],
+        "meanRectangleRules": [
+          27592.25,
+          56404.183333333334,
+          1340.2833333333333,
+          82649.71666666666,
+          70550.5,
+          1130.5916666666667,
+          80594.28333333334,
+          83490.49166666667
+        ],
+        "meanRoundedVisibility": [
+          45856.683333333334,
+          399198.275,
+          66027.89166666666
+        ],
+        "meanCurvedFacing": [
+          6944.358333333334,
+          74137.93333333333
+        ],
+        "overFrameBudget": {
+          "1": 120,
+          "16.666666666666668": 120
+        },
+        "meanGpuApertures": 464263.63333333336,
+        "workerMs": {
+          "median": 250.55,
+          "p95": 257.9
+        },
+        "assemblyMs": {
+          "median": 25.45,
+          "p95": 26.7
+        },
+        "solveMs": {
+          "median": 131.95,
+          "p95": 146.3
+        },
+        "operatorConstructionMs": {
+          "median": 471.75,
+          "p95": 491
+        },
+        "modalBuildMs": {
+          "median": 83.8,
+          "p95": 89.7
+        },
+        "modalEquilibriumMs": {
+          "median": 45.75,
+          "p95": 51.5
+        },
+        "meanModalWork": {
+          "fullLinks": 658485.2333333333,
+          "activeLinks": 644920.7166666667,
+          "activeModes": 2592.9583333333335,
+          "allModes": 2886,
+          "applications": 38.208333333333336,
+          "checks": 5.058333333333334,
+          "linkReads": 27793914.258333333,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1824573.1333333333
+        },
+        "preparationMs": {
+          "median": 514.25,
+          "p95": 543.7
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 1.3
+        },
+        "markAndFinishMs": {
+          "median": 12.0,
+          "p95": 13.4
+        },
+        "syncToSwapMs": {
+          "median": 3.88,
+          "p95": 4.53
+        },
+        "beforeSync": 0
+      },
+      "repeatBeforeCloseLampGuard": {
+        "matched": 120,
+        "throughBothMs": {
+          "median": 533.54,
+          "p95": 555.15
+        },
+        "finishedMs": {
+          "median": 529.7,
+          "p95": 551.6
+        },
+        "cameraMs": {
+          "median": 6.9,
+          "p95": 8.6
+        },
+        "peakCountedMiB": 127.63961601257324
+      },
+      "meanStripsEliminated": 1219920.5249999994,
+      "medianSavedMs": 12.53
+    },
+    {
+      "population": 2,
+      "prior": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 2,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 565.78,
+          "p95": 587.27
+        },
+        "throughBothMs": {
+          "median": 565.78,
+          "p95": 587.27
+        },
+        "finishedMs": {
+          "median": 561.65,
+          "p95": 583.8
+        },
+        "cameraMs": {
+          "median": 9.6,
+          "p95": 13.2
+        },
+        "peakCountedMiB": 128.41667556762695,
+        "meanWorkCounts": [
+          5642567.333333333,
+          4138520.966666667,
+          2307984.183333333,
+          326323.2,
+          230878.44166666668,
+          62372.75833333333,
+          5.383333333333334,
+          462305.60833333334,
+          0,
+          196674.5,
+          4818502.483333333,
+          417112.39166666666,
+          716741.2833333333,
+          647211.725,
+          115007.61666666667,
+          528.1333333333333,
+          45321.175,
+          0,
+          1548111.7,
+          793615.6916666667
+        ],
+        "meanRectangleRules": [
+          27827.166666666668,
+          57319.666666666664,
+          1345.8,
+          83540.50833333333,
+          70111.13333333333,
+          1130.65,
+          78768.66666666667,
+          81414.225
+        ],
+        "meanRoundedVisibility": [
+          64242.96666666667,
+          787374.675,
+          95691.08333333333
+        ],
+        "meanCurvedFacing": [
+          9448.716666666667,
+          100224.1
+        ],
+        "overFrameBudget": {
+          "1": 120,
+          "16.666666666666668": 120
+        },
+        "meanGpuApertures": 462305.60833333334,
+        "workerMs": {
+          "median": 304.8,
+          "p95": 314.7
+        },
+        "assemblyMs": {
+          "median": 25.7,
+          "p95": 26.9
+        },
+        "solveMs": {
+          "median": 125.05,
+          "p95": 141.5
+        },
+        "operatorConstructionMs": {
+          "median": 512.85,
+          "p95": 529.7
+        },
+        "modalBuildMs": {
+          "median": 85.45,
+          "p95": 89.5
+        },
+        "modalEquilibriumMs": {
+          "median": 37.05,
+          "p95": 49.9
+        },
+        "meanModalWork": {
+          "fullLinks": 686588.7083333334,
+          "activeLinks": 672797.3333333334,
+          "activeModes": 2614.991666666667,
+          "allModes": 2910,
+          "applications": 36.325,
+          "checks": 4.983333333333333,
+          "linkReads": 27698411.333333332,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1865592.6
+        },
+        "preparationMs": {
+          "median": 549.6,
+          "p95": 574.7
+        },
+        "applyAndDrawMs": {
+          "median": 0.45,
+          "p95": 1.2
+        },
+        "markAndFinishMs": {
+          "median": 11.9,
+          "p95": 13.3
+        },
+        "syncToSwapMs": {
+          "median": 3.97,
+          "p95": 4.64
+        },
+        "beforeSync": 0
+      },
+      "shipping": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 2,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 549.86,
+          "p95": 587.28
+        },
+        "throughBothMs": {
+          "median": 549.86,
+          "p95": 587.28
+        },
+        "finishedMs": {
+          "median": 545.6,
+          "p95": 584.0
+        },
+        "cameraMs": {
+          "median": 9.8,
+          "p95": 13
+        },
+        "peakCountedMiB": 129.27798080444336,
+        "meanWorkCounts": [
+          4353607.325,
+          2653638.3666666667,
+          1565408.5833333333,
+          321661.525,
+          232387.49166666667,
+          62289.791666666664,
+          5.608333333333333,
+          471918.88333333336,
+          0,
+          217142.53333333333,
+          4819397.55,
+          417094.55833333335,
+          596258.8166666667,
+          746658.025,
+          114698.51666666666,
+          815.9583333333334,
+          129141,
+          0,
+          751210.3833333333,
+          616215.0166666667,
+          203767.19166666668,
+          15935.416666666666
+        ],
+        "meanRectangleRules": [
+          27849.025,
+          57804.40833333333,
+          1345.8,
+          84004.33333333333,
+          70365.65833333334,
+          1164.875,
+          85321.79166666667,
+          83290.85
+        ],
+        "meanRoundedVisibility": [
+          60989.425,
+          631848.5166666667,
+          93514.81666666667
+        ],
+        "meanCurvedFacing": [
+          9448.191666666668,
+          100224.1
+        ],
+        "overFrameBudget": {
+          "1": 120,
+          "16.666666666666668": 120
+        },
+        "meanGpuApertures": 471918.88333333336,
+        "workerMs": {
+          "median": 268.2,
+          "p95": 275.4
+        },
+        "assemblyMs": {
+          "median": 25.6,
+          "p95": 26.9
+        },
+        "solveMs": {
+          "median": 124.25,
+          "p95": 151.3
+        },
+        "operatorConstructionMs": {
+          "median": 496.1,
+          "p95": 516.5
+        },
+        "modalBuildMs": {
+          "median": 85.45,
+          "p95": 92.7
+        },
+        "modalEquilibriumMs": {
+          "median": 37.2,
+          "p95": 54.5
+        },
+        "meanModalWork": {
+          "fullLinks": 686622.2333333333,
+          "activeLinks": 672824.6083333333,
+          "activeModes": 2614.9083333333333,
+          "allModes": 2910,
+          "applications": 36.31666666666667,
+          "checks": 4.983333333333333,
+          "linkReads": 27694128.241666667,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1865591.8
+        },
+        "preparationMs": {
+          "median": 533.6,
+          "p95": 572.3
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 1.4
+        },
+        "markAndFinishMs": {
+          "median": 11.65,
+          "p95": 13.4
+        },
+        "syncToSwapMs": {
+          "median": 3.98,
+          "p95": 4.55
+        },
+        "beforeSync": 0
+      },
+      "repeatBeforeCloseLampGuard": {
+        "matched": 120,
+        "throughBothMs": {
+          "median": 550.28,
+          "p95": 599.8
+        },
+        "finishedMs": {
+          "median": 546.35,
+          "p95": 595.1
+        },
+        "cameraMs": {
+          "median": 9.6,
+          "p95": 13.4
+        },
+        "peakCountedMiB": 129.27798080444336
+      },
+      "meanStripsEliminated": 1288960.0083333328,
+      "medianSavedMs": 15.92
+    },
+    {
+      "population": 0,
+      "prior": {
+        "mode": "function",
+        "extra": 4,
+        "slats": 0,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 1469.87,
+          "p95": 1608.4
+        },
+        "throughBothMs": {
+          "median": 1469.87,
+          "p95": 1608.4
+        },
+        "finishedMs": {
+          "median": 1462.45,
+          "p95": 1601.5
+        },
+        "cameraMs": {
+          "median": 80.0,
+          "p95": 145.9
+        },
+        "peakCountedMiB": 157.43341064453125,
+        "meanWorkCounts": [
+          14027298.483333332,
+          8579959.083333334,
+          4710459.733333333,
+          2110946.8,
+          3607393.075,
+          99555.60833333334,
+          887.2083333333334,
+          515057.125,
+          15478.025,
+          208151.75833333333,
+          6692567.491666666,
+          494036,
+          891741.9083333333,
+          788611.175,
+          738941.6666666666,
+          506.64166666666665,
+          30821.925,
+          10.625,
+          3486122.1,
+          3562667.691666667
+        ],
+        "meanRectangleRules": [
+          31372.266666666666,
+          65100.066666666666,
+          1435.8583333333333,
+          95846.375,
+          75871.625,
+          1170.15,
+          92113.53333333334,
+          85682.28333333334
+        ],
+        "meanRoundedVisibility": [
+          628889.7,
+          12963134.258333333,
+          1018772.7833333333
+        ],
+        "meanCurvedFacing": [
+          60639.15833333333,
+          751844.8416666667
+        ],
+        "overFrameBudget": {
+          "1": 120,
+          "16.666666666666668": 120
+        },
+        "meanGpuApertures": 515057.125,
+        "workerMs": {
+          "median": 1085.7,
+          "p95": 1212.8
+        },
+        "assemblyMs": {
+          "median": 28.2,
+          "p95": 32.4
+        },
+        "solveMs": {
+          "median": 167.5,
+          "p95": 184.6
+        },
+        "operatorConstructionMs": {
+          "median": 1389.1,
+          "p95": 1522.4
+        },
+        "modalBuildMs": {
+          "median": 106.9,
+          "p95": 112.4
+        },
+        "modalEquilibriumMs": {
+          "median": 57.55,
+          "p95": 68.7
+        },
+        "meanModalWork": {
+          "fullLinks": 951199.15,
+          "activeLinks": 925624.2,
+          "activeModes": 3015.258333333333,
+          "allModes": 3390,
+          "applications": 34.49166666666667,
+          "checks": 5.083333333333333,
+          "linkReads": 36636455.30833333,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 2637199.4916666667
+        },
+        "preparationMs": {
+          "median": 1447.0,
+          "p95": 1583.1
+        },
+        "applyAndDrawMs": {
+          "median": 1.5,
+          "p95": 1.9
+        },
+        "markAndFinishMs": {
+          "median": 13.35,
+          "p95": 16.8
+        },
+        "syncToSwapMs": {
+          "median": 7.66,
+          "p95": 10.01
+        },
+        "beforeSync": 0
+      },
+      "shipping": {
+        "mode": "function",
+        "extra": 4,
+        "slats": 0,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 1349.59,
+          "p95": 1487.1
+        },
+        "throughBothMs": {
+          "median": 1349.59,
+          "p95": 1487.1
+        },
+        "finishedMs": {
+          "median": 1343.05,
+          "p95": 1477.8
+        },
+        "cameraMs": {
+          "median": 80.1,
+          "p95": 145.7
+        },
+        "peakCountedMiB": 159.7109603881836,
+        "meanWorkCounts": [
+          11114923.308333334,
+          6206201.866666666,
+          3523437.058333333,
+          2049904.5,
+          3485730.2666666666,
+          98138.40833333334,
+          887.85,
+          549068.4916666667,
+          14375.5,
+          225538.71666666667,
+          6726313.308333334,
+          491388.25,
+          742744.9833333333,
+          912131.6166666667,
+          715933.125,
+          805.9083333333333,
+          127958.275,
+          12.041666666666666,
+          2014002.4333333333,
+          2677049.4166666665,
+          201697.58333333334,
+          96953.08333333333
+        ],
+        "meanRectangleRules": [
+          31763.775,
+          74432.66666666667,
+          1459.8916666666667,
+          98518.28333333334,
+          77321.38333333333,
+          1225.6416666666667,
+          109040.10833333334,
+          90317.59166666666
+        ],
+        "meanRoundedVisibility": [
+          514690.9166666667,
+          10627150.375,
+          957906.2833333333
+        ],
+        "meanCurvedFacing": [
+          59379.45,
+          734598.0083333333
+        ],
+        "overFrameBudget": {
+          "1": 120,
+          "16.666666666666668": 120
+        },
+        "meanGpuApertures": 549068.4916666667,
+        "workerMs": {
+          "median": 921.85,
+          "p95": 1047.3
+        },
+        "assemblyMs": {
+          "median": 28.5,
+          "p95": 32.4
+        },
+        "solveMs": {
+          "median": 167.0,
+          "p95": 192
+        },
+        "operatorConstructionMs": {
+          "median": 1270.1,
+          "p95": 1399.9
+        },
+        "modalBuildMs": {
+          "median": 106.6,
+          "p95": 112.6
+        },
+        "modalEquilibriumMs": {
+          "median": 57.45,
+          "p95": 68.5
+        },
+        "meanModalWork": {
+          "fullLinks": 951208.2666666667,
+          "activeLinks": 925640.3583333333,
+          "activeModes": 3015.266666666667,
+          "allModes": 3390,
+          "applications": 34.49166666666667,
+          "checks": 5.083333333333333,
+          "linkReads": 36637172.75833333,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 2637180.2583333333
+        },
+        "preparationMs": {
+          "median": 1328.4,
+          "p95": 1458.9
+        },
+        "applyAndDrawMs": {
+          "median": 1.45,
+          "p95": 1.9
+        },
+        "markAndFinishMs": {
+          "median": 12.9,
+          "p95": 16.7
+        },
+        "syncToSwapMs": {
+          "median": 6.7,
+          "p95": 9.57
+        },
+        "beforeSync": 0
+      },
+      "repeatBeforeCloseLampGuard": {
+        "matched": 120,
+        "throughBothMs": {
+          "median": 1345.29,
+          "p95": 1456.23
+        },
+        "finishedMs": {
+          "median": 1339.4,
+          "p95": 1448.4
+        },
+        "cameraMs": {
+          "median": 79.7,
+          "p95": 147.7
+        },
+        "peakCountedMiB": 159.7109603881836
+      },
+      "meanStripsEliminated": 2912375.174999999,
+      "medianSavedMs": 120.28
+    }
+  ],
+  "qa4K": [
+    {
+      "pop": 1,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 8329,
+        "large": 0,
+        "mean": 0.0003347238297325103
+      },
+      "total": {
+        "max": 1,
+        "changed": 7131,
+        "large": 0,
+        "mean": 0.00028657889660493825
+      },
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 59,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 7289,
+        "large": 0,
+        "mean": 0.00029292856224279835
+      },
+      "total": {
+        "max": 1,
+        "changed": 6166,
+        "large": 0,
+        "mean": 0.0002477977109053498
+      },
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 119,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 5056,
+        "large": 0,
+        "mean": 0.00020318930041152264
+      },
+      "total": {
+        "max": 1,
+        "changed": 4293,
+        "large": 0,
+        "mean": 0.00017252604166666667
+      },
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 8329,
+        "large": 0,
+        "mean": 0.0003347238297325103
+      },
+      "total": {
+        "max": 1,
+        "changed": 7131,
+        "large": 0,
+        "mean": 0.00028657889660493825
+      },
+      "repeat": true,
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 27089,
+        "large": 0,
+        "mean": 0.001088646154835391
+      },
+      "total": {
+        "max": 1,
+        "changed": 24192,
+        "large": 0,
+        "mean": 0.0009722222222222222
+      },
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 59,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 19065,
+        "large": 0,
+        "mean": 0.0007661795910493827
+      },
+      "total": {
+        "max": 1,
+        "changed": 16352,
+        "large": 0,
+        "mean": 0.0006571502057613168
+      },
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 119,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 8000,
+        "large": 0,
+        "mean": 0.0003215020576131687
+      },
+      "total": {
+        "max": 1,
+        "changed": 6720,
+        "large": 0,
+        "mean": 0.0002700617283950617
+      },
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 27089,
+        "large": 0,
+        "mean": 0.001088646154835391
+      },
+      "total": {
+        "max": 1,
+        "changed": 24192,
+        "large": 0,
+        "mean": 0.0009722222222222222
+      },
+      "repeat": true,
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 32744,
+        "large": 0,
+        "mean": 0.0013159079218106997
+      },
+      "total": {
+        "max": 1,
+        "changed": 31559,
+        "large": 0,
+        "mean": 0.0012682854295267489
+      },
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 59,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 176928,
+        "large": 0,
+        "mean": 0.007110339506172839
+      },
+      "total": {
+        "max": 1,
+        "changed": 164983,
+        "large": 0,
+        "mean": 0.006630296746399177
+      },
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 119,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 59690,
+        "large": 0,
+        "mean": 0.0023988072273662554
+      },
+      "total": {
+        "max": 1,
+        "changed": 56690,
+        "large": 0,
+        "mean": 0.002278243955761317
+      },
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 1,
+        "changed": 32744,
+        "large": 0,
+        "mean": 0.0013159079218106997
+      },
+      "total": {
+        "max": 1,
+        "changed": 31559,
+        "large": 0,
+        "mean": 0.0012682854295267489
+      },
+      "repeat": true,
+      "gl": 0
+    }
+  ],
+  "qualityNotes": "Direct, indirect and total before/after across three distinct poses and one revisit per population. The revisits check exact pixel and work repeatability. A one-code difference from the previous playable solver measures change, not physical error.",
+  "editSequence": [
+    "1 mm fillet",
+    "44 mm fillet",
+    "second independently posed slat",
+    "alternate bench and blue floor",
+    "restore 1 mm scene"
+  ],
+  "edits768x432": [
+    {
+      "i": 0,
+      "diff": {
+        "total": {
+          "changed": 0,
+          "max": 0,
+          "repeat": 0,
+          "mae": 0
+        },
+        "indirect": {
+          "changed": 0,
+          "max": 0,
+          "repeat": 0,
+          "mae": 0
+        },
+        "direct": {
+          "changed": 0,
+          "max": 0,
+          "repeat": 0,
+          "mae": 0
+        }
+      },
+      "probes": {
+        "floor": [
+          0.13526192767386663,
+          0.09231499254472578,
+          0.040821994696292094
+        ],
+        "north-wall": [
+          0.18237177308150157,
+          0.12794671947321568,
+          0.06240290892713618
+        ]
+      },
+      "dark": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "iterations": 28,
+      "residual": 0.0002394105987196298,
+      "error": 0
+    },
+    {
+      "i": 1,
+      "diff": {
+        "total": {
+          "changed": 230533,
+          "max": 174,
+          "repeat": 230533,
+          "mae": 0.465601289223251
+        },
+        "indirect": {
+          "changed": 262552,
+          "max": 95,
+          "repeat": 262552,
+          "mae": 0.3084108957047325
+        },
+        "direct": {
+          "changed": 5179,
+          "max": 197,
+          "repeat": 5179,
+          "mae": 0.529734921553498
+        }
+      },
+      "probes": {
+        "floor": [
+          0.13587366455140712,
+          0.09285820145931535,
+          0.04107256618094027
+        ],
+        "north-wall": [
+          0.18333689195632663,
+          0.12888509144717536,
+          0.06291387510893158
+        ]
+      },
+      "dark": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "iterations": 32,
+      "residual": 0.00024327420563215665,
+      "error": 0
+    },
+    {
+      "i": 2,
+      "diff": {
+        "total": {
+          "changed": 861151,
+          "max": 183,
+          "repeat": 854264,
+          "mae": 4.355064863040123
+        },
+        "indirect": {
+          "changed": 890666,
+          "max": 99,
+          "repeat": 891937,
+          "mae": 3.1893918386702675
+        },
+        "direct": {
+          "changed": 41057,
+          "max": 203,
+          "repeat": 41831,
+          "mae": 4.338084530928498
+        }
+      },
+      "probes": {
+        "floor": [
+          0.12121094284644235,
+          0.08111057774766149,
+          0.03518462951111205
+        ],
+        "north-wall": [
+          0.171246265086357,
+          0.12001721586424328,
+          0.059042240172868916
+        ]
+      },
+      "dark": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "iterations": 29,
+      "residual": 0.00021108443683925558,
+      "error": 0
+    },
+    {
+      "i": 3,
+      "diff": {
+        "total": {
+          "changed": 929065,
+          "max": 132,
+          "repeat": 930046,
+          "mae": 27.059175467785494
+        },
+        "indirect": {
+          "changed": 975295,
+          "max": 101,
+          "repeat": 970568,
+          "mae": 26.433002989969136
+        },
+        "direct": {
+          "changed": 119097,
+          "max": 148,
+          "repeat": 150890,
+          "mae": 6.95434871720679
+        }
+      },
+      "probes": {
+        "floor": [
+          0.0034257647645588667,
+          0.007975901796396371,
+          0.04906487574266506
+        ],
+        "north-wall": [
+          0.04737127163585684,
+          0.03649658863285707,
+          0.03209622845770692
+        ]
+      },
+      "dark": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "iterations": 23,
+      "residual": 0.00018873145996525144,
+      "error": 0
+    },
+    {
+      "i": 4,
+      "diff": {
+        "total": {
+          "changed": 930046,
+          "max": 180,
+          "repeat": 0,
+          "mae": 29.268714433834877
+        },
+        "indirect": {
+          "changed": 970568,
+          "max": 106,
+          "repeat": 0,
+          "mae": 27.644879878793724
+        },
+        "direct": {
+          "changed": 150890,
+          "max": 203,
+          "repeat": 0,
+          "mae": 10.444013430748457
+        }
+      },
+      "probes": {
+        "floor": [
+          0.13526192767386663,
+          0.09231499254472578,
+          0.040821994696292094
+        ],
+        "north-wall": [
+          0.18237177308150157,
+          0.12794671947321568,
+          0.06240290892713618
+        ]
+      },
+      "dark": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "iterations": 28,
+      "residual": 0.0002394105987196298,
+      "error": 0
+    }
+  ],
+  "rgbAtEdits": [
+    {
+      "editIndex": 0,
+      "surface": "floor",
+      "paths": 131072,
+      "reference": [
+        0.13626427721034712,
+        0.09251017293802735,
+        0.0405473224343759
+      ],
+      "standardError": [
+        0.0011580210174344727,
+        0.0009357860916813741,
+        0.0005194991569553928
+      ],
+      "shipping": [
+        0.13526192767386663,
+        0.09231499254472578,
+        0.040821994696292094
+      ],
+      "errorPercent": [
+        -0.7355923041614143,
+        -0.21098262721044314,
+        0.6774115907671518
+      ]
+    },
+    {
+      "editIndex": 0,
+      "surface": "north-wall",
+      "paths": 131072,
+      "reference": [
+        0.18538983347106397,
+        0.13081553517434108,
+        0.06425280014189219
+      ],
+      "standardError": [
+        0.0014142366202338928,
+        0.0011656036724803462,
+        0.0006999275705363403
+      ],
+      "shipping": [
+        0.18237177308150157,
+        0.12794671947321568,
+        0.06240290892713618
+      ],
+      "errorPercent": [
+        -1.6279535576763204,
+        -2.1930237087682714,
+        -2.8790826402441905
+      ]
+    },
+    {
+      "editIndex": 1,
+      "surface": "floor",
+      "paths": 131072,
+      "reference": [
+        0.13734700106476533,
+        0.09332425053687868,
+        0.04089423258197503
+      ],
+      "standardError": [
+        0.0011620392680547738,
+        0.0009382333338818397,
+        0.0005208317663452137
+      ],
+      "shipping": [
+        0.13587366455140712,
+        0.09285820145931535,
+        0.04107256618094027
+      ],
+      "errorPercent": [
+        -1.0727110908402504,
+        -0.49938689556275895,
+        0.4360849628557206
+      ]
+    },
+    {
+      "editIndex": 1,
+      "surface": "north-wall",
+      "paths": 131072,
+      "reference": [
+        0.1869446298143092,
+        0.13203566660034766,
+        0.06482143031427046
+      ],
+      "standardError": [
+        0.0014161064674029528,
+        0.0011648254408375847,
+        0.0006983806500770322
+      ],
+      "shipping": [
+        0.18333689195632663,
+        0.12888509144717536,
+        0.06291387510893158
+      ],
+      "errorPercent": [
+        -1.9298430030143754,
+        -2.3861546158649882,
+        -2.942784810656862
+      ]
+    },
+    {
+      "editIndex": 2,
+      "surface": "floor",
+      "paths": 131072,
+      "reference": [
+        0.1233994384634713,
+        0.08213051304921129,
+        0.035303875768324416
+      ],
+      "standardError": [
+        0.0010848125638211333,
+        0.000859903870086542,
+        0.00046937897614731376
+      ],
+      "shipping": [
+        0.12121094284644235,
+        0.08111057774766149,
+        0.03518462951111205
+      ],
+      "errorPercent": [
+        -1.7735053289377745,
+        -1.241846986805828,
+        -0.3377710084719876
+      ]
+    },
+    {
+      "editIndex": 2,
+      "surface": "north-wall",
+      "paths": 131072,
+      "reference": [
+        0.17343719353695528,
+        0.12233172124129438,
+        0.06054350090325766
+      ],
+      "standardError": [
+        0.0013961161121126232,
+        0.0011505240304387704,
+        0.000693032781530485
+      ],
+      "shipping": [
+        0.171246265086357,
+        0.12001721586424328,
+        0.059042240172868916
+      ],
+      "errorPercent": [
+        -1.2632402577082869,
+        -1.8919911806732692,
+        -2.479639776344633
+      ]
+    },
+    {
+      "editIndex": 3,
+      "surface": "floor",
+      "paths": 131072,
+      "reference": [
+        0.0036451869333426995,
+        0.008496198176834655,
+        0.05202002677079449
+      ],
+      "standardError": [
+        5.732899290620622e-05,
+        0.0001408811029104701,
+        0.0006965336755433732
+      ],
+      "shipping": [
+        0.0034257647645588667,
+        0.007975901796396371,
+        0.04906487574266506
+      ],
+      "errorPercent": [
+        -6.019503877202226,
+        -6.123872932447593,
+        -5.6807949006833836
+      ]
+    },
+    {
+      "editIndex": 3,
+      "surface": "north-wall",
+      "paths": 131072,
+      "reference": [
+        0.04562187704887825,
+        0.036374680301681894,
+        0.03466783886192994
+      ],
+      "standardError": [
+        0.0007009626061376506,
+        0.0005724109583159177,
+        0.0004143795704772845
+      ],
+      "shipping": [
+        0.04737127163585684,
+        0.03649658863285707,
+        0.03209622845770692
+      ],
+      "errorPercent": [
+        3.8345519740547562,
+        0.3351461240733933,
+        -7.417856112879884
+      ]
+    }
+  ],
+  "legacyContactQuadratureAgainst131072PathReference": [
+    {
+      "angle": 24,
+      "region": "north-wall-covered",
+      "paths": 131072,
+      "reference": [
+        0.016815161810322207,
+        0.00796362275751689,
+        0.0019990134983287632
+      ],
+      "standardError": [
+        0.00042660721985213635,
+        0.00023547871665506457,
+        7.809727057914467e-05
+      ],
+      "shipping": [
+        0.023317791236585228,
+        0.010189126159720346,
+        0.0022812820776001645
+      ],
+      "errorPercent": [
+        38.671227191351186,
+        27.945866723819847,
+        14.12039385964059
+      ]
+    },
+    {
+      "angle": 24,
+      "region": "north-wall-exposed",
+      "paths": 131072,
+      "reference": [
+        0.1232695861605753,
+        0.07708812436945825,
+        0.03229095437487041
+      ],
+      "standardError": [
+        0.0010471530830593486,
+        0.0007769298448064762,
+        0.0004011234088570313
+      ],
+      "shipping": [
+        0.11560781621686772,
+        0.06944562309090672,
+        0.027689442979406124
+      ],
+      "errorPercent": [
+        -6.215458477914493,
+        -9.913980059916238,
+        -14.250156071711807
+      ]
+    },
+    {
+      "angle": 24,
+      "region": "bench-seat-bottom-all",
+      "paths": 131072,
+      "reference": [
+        0.0731005168238782,
+        0.028178103610041763,
+        0.006873778957726978
+      ],
+      "standardError": [
+        0.0005352306503557137,
+        0.0002293653186317005,
+        5.957103214754829e-05
+      ],
+      "shipping": [
+        0.09169840990316763,
+        0.03518875633750145,
+        0.008633027676776206
+      ],
+      "errorPercent": [
+        25.44153432471279,
+        24.879789018027875,
+        25.593617860981908
+      ]
+    },
+    {
+      "angle": -46,
+      "region": "north-wall-covered",
+      "paths": 131072,
+      "reference": [
+        0.004127453446703964,
+        0.0020101717877196667,
+        0.0005315402094622555
+      ],
+      "standardError": [
+        0.00025125313671217674,
+        0.0001368984321776208,
+        4.3393792939972305e-05
+      ],
+      "shipping": [
+        0.006546015389130213,
+        0.002592784431326103,
+        0.0005820223338281051
+      ],
+      "errorPercent": [
+        58.596952664787175,
+        28.983226566290178,
+        9.49732935856742
+      ]
+    },
+    {
+      "angle": -46,
+      "region": "north-wall-exposed",
+      "paths": 131072,
+      "reference": [
+        0.03495463691014113,
+        0.022925294363419453,
+        0.011358030182452516
+      ],
+      "standardError": [
+        0.0006619053330198123,
+        0.0004886214243605248,
+        0.0002774742250781735
+      ],
+      "shipping": [
+        0.03867022720193273,
+        0.022461774085297273,
+        0.009960496254929339
+      ],
+      "errorPercent": [
+        10.629749355839024,
+        -2.021872743591868,
+        -12.304368848062097
+      ]
+    },
+    {
+      "angle": -46,
+      "region": "bench-seat-bottom-all",
+      "paths": 131072,
+      "reference": [
+        0.007220557732542804,
+        0.0018615286281365928,
+        0.0002790380263259424
+      ],
+      "standardError": [
+        0.0002122245530184415,
+        6.248537990372756e-05,
+        1.139068186312474e-05
+      ],
+      "shipping": [
+        0.01177764854595,
+        0.0028189662170476806,
+        0.00037967511977027383
+      ],
+      "errorPercent": [
+        63.11272594454229,
+        51.43286944071828,
+        36.06572723058825
+      ]
+    }
+  ],
+  "discreteDisplayBound": [
+    {
+      "angle": 24,
+      "areas": {
+        "north-wall-covered": [
+          0.023317791236585228,
+          0.010189126159720346,
+          0.0022812820776001645
+        ],
+        "north-wall-exposed": [
+          0.11560781621686772,
+          0.06944562309090672,
+          0.027689442979406124
+        ],
+        "bench-seat-bottom-all": [
+          0.09169840990316763,
+          0.03518875633750145,
+          0.008633027676776206
+        ]
+      },
+      "changed": 21520144,
+      "max": 6,
+      "channels": 24883200,
+      "equilibriumError": 0.0023973088621964903
+    },
+    {
+      "angle": -46,
+      "areas": {
+        "north-wall-covered": [
+          0.006546015389130213,
+          0.002592784431326103,
+          0.0005820223338281051
+        ],
+        "north-wall-exposed": [
+          0.03867022720193273,
+          0.022461774085297273,
+          0.009960496254929339
+        ],
+        "bench-seat-bottom-all": [
+          0.01177764854595,
+          0.0028189662170476806,
+          0.00037967511977027383
+        ]
+      },
+      "changed": 23751725,
+      "max": 12,
+      "channels": 24883200,
+      "equilibriumError": 0.002712617650757543
+    }
+  ],
+  "reflectedOrderComparison": [
+    {
+      "surface": "north-wall",
+      "angle": -46,
+      "region": [
+        0.5,
+        0.663235294117647,
+        0.5,
+        0.7891891891891891
+      ],
+      "side": "front",
+      "paths": 2097152,
+      "shipping": [
+        0.006594596194610507,
+        0.002618623608780356,
+        0.0005909919172326808
+      ],
+      "reference": [
+        0.003947482671950242,
+        0.0018736382515487518,
+        0.0005017840253843829
+      ],
+      "standardError": [
+        6.037703420591955e-05,
+        3.27192627927074e-05,
+        1.1080387834597544e-05
+      ],
+      "errorPercent": [
+        67.05826833566482,
+        39.76142975389183,
+        17.778145045562542
+      ],
+      "byOrder": [
+        {
+          "order": "1",
+          "shipping": [
+            2.678974961864009e-05,
+            2.448509351641147e-05,
+            1.6662865324814384e-05
+          ],
+          "reference": [
+            1.1254400806226537e-05,
+            9.70450493139395e-06,
+            6.218190733245875e-06
+          ],
+          "standardError": [
+            3.4005360752558484e-06,
+            3.1409760780428797e-06,
+            2.1599275368594193e-06
+          ],
+          "shareOfTotalRedExcessPercent": 0.5868788278033888
+        },
+        {
+          "order": "2",
+          "shipping": [
+            0.0001970984097844461,
+            0.00015392461411889067,
+            8.360029284244895e-05
+          ],
+          "reference": [
+            0.00015262895751846675,
+            0.00013215956650064424,
+            7.524603233104083e-05
+          ],
+          "standardError": [
+            8.192680675335654e-06,
+            7.270598500285111e-06,
+            4.141403472177335e-06
+          ],
+          "shareOfTotalRedExcessPercent": 1.6799223714927412
+        },
+        {
+          "order": "3",
+          "shipping": [
+            0.00034577081205627326,
+            0.00023390092242421418,
+            0.00010283738330969248
+          ],
+          "reference": [
+            0.00030942805823481204,
+            0.0002339932451092799,
+            0.00010953878997662602
+          ],
+          "standardError": [
+            1.4008205525932463e-05,
+            1.1199454405042686e-05,
+            5.387811652258818e-06
+          ],
+          "shareOfTotalRedExcessPercent": 1.3729201075191486
+        },
+        {
+          "order": "4 and higher including playable residual",
+          "shipping": [
+            0.006024937223151147,
+            0.00220631297872084,
+            0.00038789137575572495
+          ],
+          "reference": [
+            0.003474171255390731,
+            0.0014977809350074285,
+            0.0003107810123434704
+          ],
+          "standardError": [
+            5.720847267657803e-05,
+            2.866599749736395e-05,
+            7.643626147452145e-06
+          ],
+          "shareOfTotalRedExcessPercent": 96.36027869318494
+        }
+      ]
+    },
+    {
+      "surface": "bench-seat-bottom",
+      "angle": -46,
+      "region": [
+        0,
+        0.5,
+        0,
+        1
+      ],
+      "side": "front",
+      "paths": 2097152,
+      "shipping": [
+        0.011777648545949933,
+        0.0028189662170476724,
+        0.0003796751197702731
+      ],
+      "reference": [
+        0.006973952879810847,
+        0.001800308492254295,
+        0.0002713171617695839
+      ],
+      "standardError": [
+        5.0960296716203914e-05,
+        1.48128485601269e-05,
+        2.7235098770961607e-06
+      ],
+      "errorPercent": [
+        68.88052943468377,
+        56.582398470933335,
+        39.93774566045041
+      ],
+      "byOrder": [
+        {
+          "order": "1",
+          "shipping": [
+            1.2805940088577703e-05,
+            5.371990321712419e-06,
+            1.5042743684104513e-06
+          ],
+          "reference": [
+            1.0265829021132546e-05,
+            4.319503729762732e-06,
+            1.2121999013652298e-06
+          ],
+          "standardError": [
+            7.783642204757014e-07,
+            3.265087101045151e-07,
+            9.140518257207029e-08
+          ],
+          "shareOfTotalRedExcessPercent": 0.052878267983340874
+        },
+        {
+          "order": "2",
+          "shipping": [
+            0.0001227387933028527,
+            5.514483895347175e-05,
+            1.5154367204810061e-05
+          ],
+          "reference": [
+            0.00013030039762817444,
+            6.019540551156734e-05,
+            1.6900198796186192e-05
+          ],
+          "standardError": [
+            5.144753504938966e-06,
+            2.5276668704824935e-06,
+            7.405724766943579e-07
+          ],
+          "shareOfTotalRedExcessPercent": -0.1574122269781362
+        },
+        {
+          "order": "3",
+          "shipping": [
+            0.003548727149080466,
+            0.0009298256919389022,
+            0.00015368273551551794
+          ],
+          "reference": [
+            0.0017711456525673645,
+            0.000520409626298105,
+            0.0001011545062781998
+          ],
+          "standardError": [
+            1.7573345863581643e-05,
+            6.018719007250341e-06,
+            1.3900656481512097e-06
+          ],
+          "shareOfTotalRedExcessPercent": 37.00445698596497
+        },
+        {
+          "order": "4 and higher including playable residual",
+          "shipping": [
+            0.008093376663478036,
+            0.001828623695833586,
+            0.00020933374268153468
+          ],
+          "reference": [
+            0.0050622410005941925,
+            0.0012153839567148504,
+            0.00015205025679383455
+          ],
+          "standardError": [
+            4.525910033296546e-05,
+            1.2445730472838171e-05,
+            1.9839598209667893e-06
+          ],
+          "shareOfTotalRedExcessPercent": 63.10007697302945
+        }
+      ]
+    }
+  ],
+  "orderNotes": "Exact area mean of the playable bilinear reconstruction. The independent reference samples the selected area directly, with 2097152 paths and standard errors on per-path order contributions. The older 192 by 192 midpoint masked area average and 131072-path references are included separately. These estimators have different numerical and sampling errors.",
+  "scopedReceiverFunction": {
+    "scene": "Two slats, angle 0.3 and -0.4 rad, radii 0.044 and 0.033 m. North wall to finite floor to south wall. 16 upstream wall panels per axis. Separate composed-path probe.",
+    "result": [
+      {
+        "edit": false,
+        "qualified": true,
+        "sharedBands": 26529,
+        "orders": [
+          5,
+          5
+        ],
+        "relativeBound": 0.0002850529721227975,
+        "tolerance": 0.001,
+        "observations": 289,
+        "buildMs": 469.09999990463257,
+        "observerEvaluationMs": 1.1999998092651367,
+        "individualMs": 4886.5,
+        "worstRelative": 6.783298989176956e-08,
+        "worstAbsolute": 1.0433904513496885e-12,
+        "center": [
+          1.6953884640736196e-05,
+          1.127998121910493e-05,
+          5.005682346752047e-06,
+          3.63569348956117e-07,
+          1.3381410858230742e-07,
+          2.740720279578775e-08
+        ],
+        "moments": [
+          [
+            4.156282133997582e-06,
+            2.7653122223178136e-06,
+            1.2271540444650086e-06,
+            8.912650709264455e-08,
+            3.2803601656465406e-08,
+            6.71868588862576e-09
+          ],
+          [
+            4.238593502044442e-06,
+            2.8200767028697515e-06,
+            1.2514567084679932e-06,
+            9.087931270974384e-08,
+            3.3448733381248194e-08,
+            6.850818861736302e-09
+          ],
+          [
+            4.222101025362951e-06,
+            2.809103711654704e-06,
+            1.246587258125008e-06,
+            9.055790982870483e-08,
+            3.33304389206576e-08,
+            6.826590323315563e-09
+          ],
+          [
+            4.3046038534379945e-06,
+            2.8639955769074277e-06,
+            1.2709464512423224e-06,
+            9.231574957919566e-08,
+            3.397742349160084e-08,
+            6.9591027880283475e-09
+          ]
+        ]
+      },
+      {
+        "edit": true,
+        "qualified": false
+      }
+    ],
+    "areaAverage": [
+      1.692158051484297e-05,
+      1.1258488213749697e-05,
+      4.9961444623003325e-06,
+      3.628794792102889e-07,
+      1.3356019744997205e-07,
+      2.7355197861705972e-08
+    ],
+    "pathReference": {
+      "path": {
+        "via": [
+          "north-wall"
+        ],
+        "region": [
+          0.5,
+          0.75,
+          0.4,
+          0.6
+        ],
+        "observers": [
+          {
+            "id": "south-wall",
+            "side": 1,
+            "region": [
+              0.46875,
+              0.53125,
+              0.46875,
+              0.53125
+            ]
+          }
+        ]
+      },
+      "paths": 8388608,
+      "arrivals": 416114,
+      "followingReflection": [
+        [
+          {
+            "mean": [
+              1.7001978465695113e-05,
+              1.131197963444067e-05,
+              5.019882184469761e-06
+            ],
+            "standardError": [
+              7.731147520459915e-08,
+              5.1437886172340054e-08,
+              2.282643151311527e-08
+            ]
+          },
+          {
+            "mean": [
+              3.6243304331915267e-07,
+              1.3339588376130867e-07,
+              2.7321543872339292e-08
+            ],
+            "standardError": [
+              2.216733206833014e-09,
+              8.158833490470099e-10,
+              1.671055514395472e-10
+            ]
+          }
+        ]
+      ],
+      "fromLamp": {
+        "mean": [
+          0.0014102662801443765,
+          0.000999225254590118,
+          0.0005173269476432055
+        ],
+        "standardError": [
+          5.969157386262986e-06,
+          4.229366391974163e-06,
+          2.1896616363267346e-06
+        ]
+      },
+      "fromRoundedSurfaces": {
+        "mean": [
+          3.017502115612766e-05,
+          1.1827292931615671e-05,
+          2.826148322915372e-06
+        ],
+        "standardError": [
+          1.7696077061531568e-07,
+          6.936090817112008e-08,
+          1.6573886808849056e-08
+        ]
+      }
+    },
+    "pathErrorPercent": [
+      [
+        -0.4728740894147321,
+        -0.4728740894132444,
+        -0.4728740894132333
+      ],
+      [
+        0.12317748046584143,
+        0.12317748046664079,
+        0.1231774804671737
+      ]
+    ],
+    "rejectedAfterEditIndependentReference": {
+      "path": {
+        "via": [
+          "north-wall"
+        ],
+        "region": [
+          0.5,
+          0.75,
+          0.4,
+          0.6
+        ],
+        "observers": [
+          {
+            "id": "south-wall",
+            "side": 1,
+            "region": [
+              0.46875,
+              0.53125,
+              0.46875,
+              0.53125
+            ]
+          }
+        ]
+      },
+      "paths": 8388608,
+      "arrivals": 317045,
+      "followingReflection": [
+        [
+          {
+            "mean": [
+              1.171411901073791e-06,
+              2.2364793073547883e-06,
+              7.8131049911229e-06
+            ],
+            "standardError": [
+              4.825500978272517e-09,
+              9.212927643669983e-09,
+              3.2185216612063595e-08
+            ]
+          },
+          {
+            "mean": [
+              1.3575032180295953e-08,
+              1.4337439890290811e-08,
+              2.3117362557309428e-08
+            ],
+            "standardError": [
+              1.1863663195867125e-10,
+              1.2529956149664996e-10,
+              2.0203016811610193e-10
+            ]
+          }
+        ]
+      ],
+      "fromLamp": {
+        "mean": [
+          0.00010852175278456487,
+          0.00022064555314299652,
+          0.0008992920307101792
+        ],
+        "standardError": [
+          4.234131418187685e-07,
+          8.608801874964272e-07,
+          3.508716495682498e-06
+        ]
+      },
+      "fromRoundedSurfaces": {
+        "mean": [
+          1.1795474664646204e-06,
+          1.3266894991937927e-06,
+          2.4956446980729977e-06
+        ],
+        "standardError": [
+          9.540446826083084e-09,
+          1.0730564883257956e-08,
+          2.0185339052208173e-08
+        ]
+      }
+    },
+    "analyticMomentCheck": {
+      "orders": [
+        6,
+        6
+      ],
+      "checkedMoments": 144,
+      "maxMomentError": 1.249000902703301e-16,
+      "maxPointError": 2.220446049250313e-16
+    }
+  },
+  "sourceFieldAudit": {
+    "tolerances": [
+      2e-07,
+      1e-08
+    ],
+    "nativeComparison": "Independent refinements of the existing strip quadrature in 1200 qualifying actual source/receiver pairs. Not an independent physical reference. Error bound 0.00005 applies to the truncated kernel times source amplitude, before quadrature, rounding and equilibrium.",
+    "samples": 1200,
+    "shadowCandidates": 1043,
+    "highPrecisionLimitHits": 0,
+    "worstCoefficientAbsolute": 3.106280928477645e-06,
+    "worstLampAbsolute": 1.478200868376689e-07,
+    "largestReferenceRefinement": 1.478208133676162e-07,
+    "negativeWeights": 0,
+    "worstSumOfAbsoluteHatErrors": 1.0578340152278543e-05
+  },
+  "minimumLampSeparation": {
+    "poses": 360,
+    "small": 0,
+    "nearest": 0.39611597735256776
+  },
+  "rationalRoundedShadowAudit": {
+    "tries": 33043,
+    "cases": [
+      150,
+      84
+    ],
+    "segmentChecks": [
+      856,
+      2128
+    ],
+    "missingIntersection": [
+      0,
+      0
+    ]
+  },
+  "grazingRoundedShadowAudit": {
+    "segmentsPerDecision": 4,
+    "decisions": 150,
+    "certified": 20,
+    "exactCrossings": 320,
+    "wrong": 0,
+    "retainedMixedOrMiss": 105,
+    "conservative": 25,
+    "acceptedNear1e12": 0
+  },
+  "movingFilletArithmetic": {
+    "queries": 294,
+    "floatDisagreements": 66,
+    "exactDisagreements": 0,
+    "axialCancellations": 294,
+    "planeDisagreements": 0,
+    "edges": [
+      [
+        -1.5023344199105821,
+        -0.9029859958874931
+      ],
+      [
+        -1.5023019347062472,
+        -0.9030220950467193
+      ],
+      [
+        -1.5022694473712586,
+        -0.9030581953594018
+      ],
+      [
+        -1.5022369579059196,
+        -0.9030942968251788
+      ],
+      [
+        -1.502204466310534,
+        -0.903130399443688
+      ],
+      [
+        -1.5021719725854055,
+        -0.903166503214566
+      ],
+      [
+        -1.5021394767308374,
+        -0.903202608137451
+      ],
+      [
+        -1.5021069787471326,
+        -0.9032387142119803
+      ],
+      [
+        -1.5020744786345965,
+        -0.9032748214377911
+      ],
+      [
+        -1.5020419763935318,
+        -0.903310929814521
+      ],
+      [
+        -1.502009472024242,
+        -0.9033470393418074
+      ],
+      [
+        -1.5019769655270316,
+        -0.9033831500192877
+      ],
+      [
+        -1.5019444569022038,
+        -0.9034192618465998
+      ],
+      [
+        -1.501911946150063,
+        -0.9034553748233806
+      ],
+      [
+        -1.5018794332709122,
+        -0.9034914889492677
+      ],
+      [
+        -1.5018469182650571,
+        -0.9035276042238991
+      ],
+      [
+        -1.5018144011327996,
+        -0.9035637206469113
+      ],
+      [
+        -1.5017818818744448,
+        -0.9035998382179428
+      ],
+      [
+        -1.5017493604902972,
+        -0.9036359569366303
+      ],
+      [
+        -1.5017168369806595,
+        -0.9036720768026116
+      ],
+      [
+        -1.5016843113458365,
+        -0.9037081978155247
+      ]
+    ],
+    "maxStep": 3.612101291305958e-05
+  },
+  "planarArithmetic": {
+    "sourceName": "print-paper",
+    "receiverName": "north-wall",
+    "gap": 0.040000000000000036,
+    "endpointEvaluations": 16,
+    "independentPoints": 360448,
+    "returnThroughReceiver": {
+      "unitDiffuseResponse": true,
+      "retainedFunction": 3.151747344984157,
+      "interpolatedFunction": 3.141504694305146,
+      "bilinearWeights": [
+        0.33895932494147113,
+        0.1783516741840623,
+        0.17721675933364522,
+        0.09340908265042873,
+        0.17835167418406236,
+        0.3389593249158887,
+        0.09340908265039354,
+        0.17721675930895228,
+        0.17721675933364522,
+        0.09340908265039354,
+        0.33895931977321825,
+        0.17835166967528843,
+        0.09340908265042873,
+        0.17721675930895225,
+        0.17835166967528843,
+        0.33895931974803867
+      ],
+      "largestChangeAfterHalvingPanels": 4.241051954068098e-13,
+      "interpolatedChangeAfterHalvingPanels": 3.5571545708990016e-13
+    },
+    "bilinearWeights": [
+      0.24012080032112715,
+      0.20006431038233147,
+      0.1649742679895482,
+      0.13745409458033833,
+      0.23499726672120896,
+      0.27505182105045384,
+      0.1614542252739988,
+      0.1889727644088885,
+      0.1856801034052332,
+      0.15470569496467676,
+      0.26080663678877986,
+      0.21729919777336063,
+      0.18171823735674056,
+      0.21269091476896107,
+      0.25524170129186996,
+      0.29874716012581365
+    ],
+    "maxAbsoluteMomentDifference": 8.881784197001252e-15,
+    "maxReciprocityDifference": 7.771561172376096e-16,
+    "integratedExchange": 3.369979197203331,
+    "integratedNodalInterpolant": 3.6069555712287014
+  },
+  "ui": {
+    "interactions": "Select 4K, change radius, enable second slat, change its angle, move furniture, change floor, cycle lamp power.",
+    "start": "1636 \u00d7 918",
+    "final": "3840 \u00d7 2160",
+    "scene": "1122.80 ms",
+    "build": "0.10 ms",
+    "updates": 2,
+    "error": 0,
+    "alert": null
+  },
+  "remainingStripsAtTick30": [
+    {
+      "population": 1,
+      "groups": [
+        {
+          "surface": "plane",
+          "view": "possible blockers",
+          "lamp": "dark",
+          "pairs": 179508,
+          "strips": 1140306,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 56690,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "possible blockers",
+          "lamp": "possible blockers",
+          "pairs": 101224,
+          "strips": 1054227,
+          "primitives": 466508,
+          "sphere": 0,
+          "features": 68051,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "possible blockers",
+          "lamp": "clear",
+          "pairs": 120006,
+          "strips": 816125,
+          "primitives": 377912,
+          "sphere": 0,
+          "features": 43951,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "clear",
+          "lamp": "possible blockers",
+          "pairs": 60704,
+          "strips": 438697,
+          "primitives": 293633,
+          "sphere": 0,
+          "features": 1775,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "clear",
+          "lamp": "dark",
+          "pairs": 36636,
+          "strips": 237982,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "clear",
+          "lamp": "clear",
+          "pairs": 49726,
+          "strips": 222225,
+          "primitives": 320536,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "clear",
+          "lamp": "clear",
+          "pairs": 8894,
+          "strips": 37351,
+          "primitives": 21441,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "clear",
+          "lamp": "dark",
+          "pairs": 8485,
+          "strips": 29626,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "clear",
+          "lamp": "possible blockers",
+          "pairs": 6458,
+          "strips": 28845,
+          "primitives": 8872,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "possible blockers",
+          "lamp": "clear",
+          "pairs": 3628,
+          "strips": 19894,
+          "primitives": 13399,
+          "sphere": 0,
+          "features": 350,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "possible blockers",
+          "lamp": "possible blockers",
+          "pairs": 2632,
+          "strips": 14082,
+          "primitives": 3914,
+          "sphere": 0,
+          "features": 760,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "possible blockers",
+          "lamp": "dark",
+          "pairs": 3219,
+          "strips": 12981,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 1044,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "clear",
+          "lamp": "dark",
+          "pairs": 6928,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 57501,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "clear",
+          "lamp": "clear",
+          "pairs": 13543,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 104322,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "clear",
+          "lamp": "possible blockers",
+          "pairs": 2074,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 18573,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "possible blockers",
+          "lamp": "dark",
+          "pairs": 1031,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 23598,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "possible blockers",
+          "lamp": "clear",
+          "pairs": 984,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 11802,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "possible blockers",
+          "lamp": "possible blockers",
+          "pairs": 189,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 3012,
+          "features": 0,
+          "refinementLimits": 0
+        }
+      ]
+    },
+    {
+      "population": 2,
+      "groups": [
+        {
+          "surface": "plane",
+          "view": "possible blockers",
+          "lamp": "possible blockers",
+          "pairs": 113933,
+          "strips": 1232448,
+          "primitives": 545293,
+          "sphere": 0,
+          "features": 84488,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "possible blockers",
+          "lamp": "dark",
+          "pairs": 188242,
+          "strips": 1219536,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 76111,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "possible blockers",
+          "lamp": "clear",
+          "pairs": 109818,
+          "strips": 767884,
+          "primitives": 349082,
+          "sphere": 0,
+          "features": 63425,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "clear",
+          "lamp": "possible blockers",
+          "pairs": 68623,
+          "strips": 508457,
+          "primitives": 357812,
+          "sphere": 0,
+          "features": 3110,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "clear",
+          "lamp": "dark",
+          "pairs": 37644,
+          "strips": 241892,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "clear",
+          "lamp": "clear",
+          "pairs": 42546,
+          "strips": 191694,
+          "primitives": 269405,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "clear",
+          "lamp": "clear",
+          "pairs": 12340,
+          "strips": 49390,
+          "primitives": 27022,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "clear",
+          "lamp": "dark",
+          "pairs": 10114,
+          "strips": 34954,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "clear",
+          "lamp": "possible blockers",
+          "pairs": 7239,
+          "strips": 32933,
+          "primitives": 16161,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "possible blockers",
+          "lamp": "clear",
+          "pairs": 5018,
+          "strips": 27061,
+          "primitives": 16914,
+          "sphere": 0,
+          "features": 935,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "possible blockers",
+          "lamp": "possible blockers",
+          "pairs": 4967,
+          "strips": 24612,
+          "primitives": 11519,
+          "sphere": 0,
+          "features": 3280,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "possible blockers",
+          "lamp": "dark",
+          "pairs": 5082,
+          "strips": 20352,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 2097,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "clear",
+          "lamp": "dark",
+          "pairs": 7873,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 67449,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "clear",
+          "lamp": "clear",
+          "pairs": 19289,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 156513,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "clear",
+          "lamp": "possible blockers",
+          "pairs": 2096,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 18795,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "possible blockers",
+          "lamp": "dark",
+          "pairs": 1262,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 25737,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "possible blockers",
+          "lamp": "clear",
+          "pairs": 2095,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 18648,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "possible blockers",
+          "lamp": "possible blockers",
+          "pairs": 191,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 3198,
+          "features": 0,
+          "refinementLimits": 0
+        }
+      ]
+    },
+    {
+      "population": 0,
+      "groups": [
+        {
+          "surface": "plane",
+          "view": "possible blockers",
+          "lamp": "possible blockers",
+          "pairs": 206736,
+          "strips": 4427195,
+          "primitives": 1692978,
+          "sphere": 0,
+          "features": 1359042,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "possible blockers",
+          "lamp": "dark",
+          "pairs": 298904,
+          "strips": 2524820,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 1260121,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "clear",
+          "lamp": "possible blockers",
+          "pairs": 104837,
+          "strips": 1366771,
+          "primitives": 1049189,
+          "sphere": 0,
+          "features": 43707,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "possible blockers",
+          "lamp": "clear",
+          "pairs": 84006,
+          "strips": 1224284,
+          "primitives": 362485,
+          "sphere": 0,
+          "features": 397165,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "possible blockers",
+          "lamp": "possible blockers",
+          "pairs": 81409,
+          "strips": 464442,
+          "primitives": 244387,
+          "sphere": 0,
+          "features": 128591,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "clear",
+          "lamp": "possible blockers",
+          "pairs": 61390,
+          "strips": 314867,
+          "primitives": 160504,
+          "sphere": 0,
+          "features": 5556,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "clear",
+          "lamp": "dark",
+          "pairs": 45232,
+          "strips": 287788,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "clear",
+          "lamp": "dark",
+          "pairs": 73560,
+          "strips": 248429,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "possible blockers",
+          "lamp": "dark",
+          "pairs": 37655,
+          "strips": 144483,
+          "primitives": 0,
+          "sphere": 0,
+          "features": 62952,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "plane",
+          "view": "clear",
+          "lamp": "clear",
+          "pairs": 21858,
+          "strips": 94419,
+          "primitives": 121674,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "clear",
+          "lamp": "clear",
+          "pairs": 6326,
+          "strips": 23034,
+          "primitives": 11850,
+          "sphere": 0,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "cylinder",
+          "view": "possible blockers",
+          "lamp": "clear",
+          "pairs": 1541,
+          "strips": 5847,
+          "primitives": 378,
+          "sphere": 0,
+          "features": 81,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "clear",
+          "lamp": "dark",
+          "pairs": 70494,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 550791,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "clear",
+          "lamp": "clear",
+          "pairs": 35047,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 266430,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "clear",
+          "lamp": "possible blockers",
+          "pairs": 41455,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 388860,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "possible blockers",
+          "lamp": "dark",
+          "pairs": 5969,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 91065,
+          "features": 0,
+          "refinementLimits": 2
+        },
+        {
+          "surface": "corner",
+          "view": "possible blockers",
+          "lamp": "clear",
+          "pairs": 6481,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 34482,
+          "features": 0,
+          "refinementLimits": 0
+        },
+        {
+          "surface": "corner",
+          "view": "possible blockers",
+          "lamp": "possible blockers",
+          "pairs": 9409,
+          "strips": 0,
+          "primitives": 0,
+          "sphere": 114915,
+          "features": 0,
+          "refinementLimits": 0
+        }
+      ]
+    }
+  ],
+  "sheetOpeningCensus": {
+    "scope": "Lamp-dark source on a planar chart, fully above receiver horizon, with sheet blockers only on outgoing leg. These are midpoint opening counts in the native transverse slabs, a candidate decomposition. Establish endpoint ordering and certify visibility between events before using this for arbitrary scene edits.",
+    "rows": [
+      {
+        "population": 1,
+        "fullyDark": {
+          "pairs": 12902,
+          "openBands": 0,
+          "strips": 88104,
+          "blockerIncidences": 34665,
+          "transverseSlabs": 29368
+        },
+        "fullyOpen": {
+          "pairs": 11081,
+          "openBands": 12363,
+          "strips": 61911,
+          "blockerIncidences": 18042,
+          "transverseSlabs": 12363
+        },
+        "partlyOpen": {
+          "pairs": 101012,
+          "openBands": 137046,
+          "strips": 593127,
+          "blockerIncidences": 154703,
+          "transverseSlabs": 195723
+        }
+      },
+      {
+        "population": 2,
+        "fullyDark": {
+          "pairs": 12984,
+          "openBands": 0,
+          "strips": 88902,
+          "blockerIncidences": 34887,
+          "transverseSlabs": 29634
+        },
+        "fullyOpen": {
+          "pairs": 11194,
+          "openBands": 12567,
+          "strips": 63105,
+          "blockerIncidences": 18342,
+          "transverseSlabs": 12567
+        },
+        "partlyOpen": {
+          "pairs": 102866,
+          "openBands": 139410,
+          "strips": 606912,
+          "blockerIncidences": 158304,
+          "transverseSlabs": 200318
+        }
+      },
+      {
+        "population": 0,
+        "fullyDark": {
+          "pairs": 12787,
+          "openBands": 0,
+          "strips": 85620,
+          "blockerIncidences": 33825,
+          "transverseSlabs": 28540
+        },
+        "fullyOpen": {
+          "pairs": 13874,
+          "openBands": 16453,
+          "strips": 77409,
+          "blockerIncidences": 27552,
+          "transverseSlabs": 16453
+        },
+        "partlyOpen": {
+          "pairs": 134209,
+          "openBands": 174501,
+          "strips": 756546,
+          "blockerIncidences": 196150,
+          "transverseSlabs": 250246
+        }
+      }
+    ]
+  },
+  "twoDimensionalReceiverCensus": {
+    "scope": "Tick 30 on already qualified clear regional pairs. Counts potential replacement of receiver point evaluations with coefficient nodes. No change in production, no timing credit.",
+    "rows": [
+      {
+        "pop": 1,
+        "tol": 0.001,
+        "all": {
+          "pairs": 20659,
+          "perPoint": 222326,
+          "qualified": 543,
+          "pointsCovered": 10620,
+          "nodes": 7242,
+          "eliminated": 3378
+        },
+        "parallel": {
+          "pairs": 11426,
+          "perPoint": 142881,
+          "qualified": 543,
+          "pointsCovered": 10620,
+          "nodes": 7242,
+          "eliminated": 3378
+        },
+        "oblique": {
+          "pairs": 9233,
+          "perPoint": 79445,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "wallFloor": {
+          "pairs": 316,
+          "perPoint": 4427,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "floorBench": {
+          "pairs": 133,
+          "perPoint": 576,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "censusMs": 220.20191600000004
+      },
+      {
+        "pop": 1,
+        "tol": 2e-05,
+        "all": {
+          "pairs": 20659,
+          "perPoint": 222326,
+          "qualified": 156,
+          "pointsCovered": 3900,
+          "nodes": 3032,
+          "eliminated": 868
+        },
+        "parallel": {
+          "pairs": 11426,
+          "perPoint": 142881,
+          "qualified": 156,
+          "pointsCovered": 3900,
+          "nodes": 3032,
+          "eliminated": 868
+        },
+        "oblique": {
+          "pairs": 9233,
+          "perPoint": 79445,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "wallFloor": {
+          "pairs": 316,
+          "perPoint": 4427,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "floorBench": {
+          "pairs": 133,
+          "perPoint": 576,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "censusMs": 179.42200000000003
+      },
+      {
+        "pop": 2,
+        "tol": 0.001,
+        "all": {
+          "pairs": 20596,
+          "perPoint": 216768,
+          "qualified": 544,
+          "pointsCovered": 10645,
+          "nodes": 7266,
+          "eliminated": 3379
+        },
+        "parallel": {
+          "pairs": 11593,
+          "perPoint": 142509,
+          "qualified": 544,
+          "pointsCovered": 10645,
+          "nodes": 7266,
+          "eliminated": 3379
+        },
+        "oblique": {
+          "pairs": 9003,
+          "perPoint": 74259,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "wallFloor": {
+          "pairs": 316,
+          "perPoint": 4427,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "floorBench": {
+          "pairs": 133,
+          "perPoint": 576,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "censusMs": 172.83695799999998
+      },
+      {
+        "pop": 2,
+        "tol": 2e-05,
+        "all": {
+          "pairs": 20596,
+          "perPoint": 216768,
+          "qualified": 156,
+          "pointsCovered": 3900,
+          "nodes": 3032,
+          "eliminated": 868
+        },
+        "parallel": {
+          "pairs": 11593,
+          "perPoint": 142509,
+          "qualified": 156,
+          "pointsCovered": 3900,
+          "nodes": 3032,
+          "eliminated": 868
+        },
+        "oblique": {
+          "pairs": 9003,
+          "perPoint": 74259,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "wallFloor": {
+          "pairs": 316,
+          "perPoint": 4427,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "floorBench": {
+          "pairs": 133,
+          "perPoint": 576,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "censusMs": 173.5367080000001
+      },
+      {
+        "pop": 0,
+        "tol": 0.001,
+        "all": {
+          "pairs": 25232,
+          "perPoint": 225109,
+          "qualified": 559,
+          "pointsCovered": 11020,
+          "nodes": 7594,
+          "eliminated": 3426
+        },
+        "parallel": {
+          "pairs": 13502,
+          "perPoint": 147226,
+          "qualified": 559,
+          "pointsCovered": 11020,
+          "nodes": 7594,
+          "eliminated": 3426
+        },
+        "oblique": {
+          "pairs": 11730,
+          "perPoint": 77883,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "wallFloor": {
+          "pairs": 229,
+          "perPoint": 2980,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "floorBench": {
+          "pairs": 81,
+          "perPoint": 336,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "censusMs": 198.6987079999999
+      },
+      {
+        "pop": 0,
+        "tol": 2e-05,
+        "all": {
+          "pairs": 25232,
+          "perPoint": 225109,
+          "qualified": 156,
+          "pointsCovered": 3900,
+          "nodes": 3032,
+          "eliminated": 868
+        },
+        "parallel": {
+          "pairs": 13502,
+          "perPoint": 147226,
+          "qualified": 156,
+          "pointsCovered": 3900,
+          "nodes": 3032,
+          "eliminated": 868
+        },
+        "oblique": {
+          "pairs": 11730,
+          "perPoint": 77883,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "wallFloor": {
+          "pairs": 229,
+          "perPoint": 2980,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "floorBench": {
+          "pairs": 81,
+          "perPoint": 336,
+          "qualified": 0,
+          "pointsCovered": 0,
+          "nodes": 0,
+          "eliminated": 0
+        },
+        "censusMs": 197.19704100000013
+      }
+    ]
+  },
+  "furtherFrustumExperiment": {
+    "scope": "Additional clearance proof on a detached candidate. Only 12 moving poses per population. Crowded median improved and p95 regressed. Inconclusive; excluded from production.",
+    "timing": [
+      {
+        "population": 1,
+        "without": {
+          "median": 555.46,
+          "p95": 589.79
+        },
+        "withProof": {
+          "median": 556.5,
+          "p95": 593.92
+        }
+      },
+      {
+        "population": 0,
+        "without": {
+          "median": 1412.15,
+          "p95": 2133.03
+        },
+        "withProof": {
+          "median": 1351.13,
+          "p95": 2246.97
+        }
+      }
+    ]
+  }
+}

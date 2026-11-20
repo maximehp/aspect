@@ -174,3 +174,37 @@ node scripts/probe-light.mjs floor 0 0 back 17.188733853924695 8388608 \
   '{"slats":1,"radius":0.044,"secondBlind":true,"secondAngle":-0.4,"secondRadius":0.033}' \
   '{"via":["north-wall"],"region":[0.5,0.75,0.4,0.6],"observers":[{"id":"ceiling","region":[0.46875,0.53125,0.46875,0.53125]}]}'
 ```
+
+## Reusing the same lit plane inside equilibrium
+
+For source displacement $S=A u+B v$, receiver displacement $D=y-c$ and $d=|D|$, the two distance poles in $|D-zS|^{-4}$ have modulus $d/|S|$ in the complex $z$ plane. Factor the denominator into two conjugate factors, each raised to power −2. The absolute coefficient at degree $j$, after removing $d^{-4}$, is at most $\binom{j+3}{3}(|S|/d)^j$ by multiplying their geometric series. Thus the quadratic expansion of the full kernel already used for distant planes has a second, independent error estimate. It stays valid with both receiver coordinates free.
+
+Let $r=\max |S|$, $t=r/d_{\min}$, $k$ bound the emitting cosine numerator over the receiver, $h$ be the receiving cosine numerator at the source centre, and $e$ its maximum change over the source. Define $R_m(t)=\sum_{j=m}^{\infty}\binom{j+3}{3}t^j$. The integrated error is bounded by
+
+$$
+\frac{\mathrm{area}\,L_{\max}\, k}{\pi d_{\min}^4}
+\frac{|A|^2+|B|^2}{3r^2}\left(hR_3(t)+eR_2(t)\right).
+$$
+
+The extra factor follows from the exact mean of $|S|^2$ over an affine rectangle. A separating projection between the source centre and receiver parallelogram supplies a lower bound on $d_{\min}$. The same formula with a single receiver applies when intervening geometry makes a whole-region clearance proof inconclusive. The implementation also checks the sign throughout the source. With $a=D\cdot S/d^2$ the quadratic factor obeys $1+4a+12a^2-2|S|^2/d^2\ge\max(2/3,1-4t)-2t^2$. Bounding the remaining affine-cosine terms gives a sufficient positivity test.
+
+Six integrals of the current lamp-visible source against $1,u,v,u^2,uv,v^2$ serve every qualifying receiver. Later bounces use the four bilinear source weights obtained from the same kernel. A receiver that sees only part of a source still needs its own visibility integral. The kernel bound scales with the maximum outgoing radiance. The numerical lamp moments, floating-point arithmetic and the equilibrium's surface representation have separate errors. [Region and kernel bounds](src/plane-transfer.h) · [Playable transport](src/function-transport.c)
+
+## Rounded blockers over a family of rays
+
+At a common fraction $t$ along rays from one eye to a chart, the set of points is a translated, scaled copy of the chart. In the blocker's local coordinates, each coordinate interval varies affinely with $t$. Intersect their allowable ranges of $t$ against the solid's outer box. At an interior fraction, bound the largest squared distance from that cross-section to the inner core box. A strict value below the fillet radius squared proves that every ray crosses the authored solid. This works for a planar face, a cylinder quadrant or a spherical octant by enclosing the chart's support. Failure to find a witness leaves the original curved intersection in place.
+
+When the receiving endpoint ranges across a whole plane region, each medial cross-section of a filleted box contains a rectangle with half-extents $h_i-r+r/\sqrt{2}$ and $h_j-r+r/\sqrt{2}$. The solver chooses a separated section by its projected area. Existing sheet-shadow inequalities can then place an entire source chart in its shadow for every receiver position. This rectangle is used only to prove full occlusion. The actual fillet determines unresolved shadow edges. [Current-pose visibility proofs](src/function-transport.c)
+
+## Receiver position on differently oriented planes
+
+For a planar source $x$ and planar receiver $y$, the cosine product factors into $[n_x\cdot(y-c_x)]_+ [n_y\cdot(x-c_y)]_+$. The first factor depends only on receiver position and is affine wherever positive. The second is independent of receiver position. Across a mutually visible, fully facing pair of domains, factor the first term out of the receiver interpolation. The remaining positive superposition of inverse fourth powers has the earlier Chebyshev error bound with the true parallel gap replaced by a separating lower bound on distance. This follows from the root modulus of the squared distance quadratic along each observer axis. The operator restores the affine factor analytically when queried or integrated on the receiver. Its weighted moments also need the integrals of $t T_k(t)$ and $t^2 T_k(t)$, which reduce to neighbouring Chebyshev modes by the cosine addition identity. A domain crossing a horizon or a potential occluder returns to the full kernel. [Receiver field](src/parallel-observer.js) · [Reference and timing](benchmarks/visible-plane-fields.json)
+
+The independent room reference can also separate the reflected energy in an arbitrary planar observation into the first, second, third and remaining orders. For the front half of the bench underside at the −46° pose, run
+
+```sh
+node scripts/probe-light.mjs bench-seat-bottom 0 0 front -46 2097152 '{}' \
+  '{"region":[0,0.5,0,1],"orders":true}'
+```
+
+The corresponding browser call is `reflectedOrders(renderer, scene, [{id:'bench-seat-bottom',side:0,region:[0,0.5,0,1]}])` from `scripts/probe-wall-floor.js`. It integrates the playable surface function exactly over the same bounds and includes the settled solver residual in the final order group. Each reference standard error uses one accumulated contribution per complete path. For the oblique receiver example above, repeat the finite-region ceiling procedure with the back side of the south wall as the observer and the same relative observation bounds.

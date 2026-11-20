@@ -24,7 +24,7 @@ export class ReceiverRegions {
       g = reserve(domains.byteLength),
       l = reserve(24);
     const m = reserve(nt * ng),
-      v = reserve(nt * 48),
+      v = reserve(nt * 64),
       counts = reserve(160),
       ids = reserve(4 * nt * (ns + 1));
     const memory = this.wasm.memory;
@@ -38,7 +38,7 @@ export class ReceiverRegions {
     new Uint8Array(buffer, counts, 160).fill(0);
     this.wasm.buildRegions(s, ns, t, nt, g, ng, l, tolerance, m, v, counts, ids);
     packet.regions = new Uint8Array(buffer, m, nt * ng).slice();
-    packet.moments = new Float64Array(buffer, v, nt * 6).slice();
+    packet.moments = new Float64Array(buffer, v, nt * 8).slice();
     packet.lampIds = new Int32Array(buffer, ids, nt * (ns + 1)).slice();
     const address = offset;
     let capacity = nt * 12;

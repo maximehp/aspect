@@ -124,20 +124,20 @@ export class FunctionLighting {
     const equilibriumError = contraction < 1 ? residual / (1 - contraction) : Infinity;
     const finished = performance.now();
     bytes += solveBytes + 2 * direct.byteLength;
-    const reuse = parts.reduce((s, p) => s.map((x, i) => x + p.lampReuse[i]), Array(9).fill(0));
+    const reuse = parts.reduce((s, p) => s.map((x, i) => x + p.lampReuse[i]), Array(11).fill(0));
     return {
       geometry,
       weighted,
       rectangleRules: rules,
       lampReuse: reuse.slice(0, 4),
       roundedVisibility: reuse.slice(4, 7),
-      curvedFacing: reuse.slice(7),
+      curvedFacing: reuse.slice(7, 9),
       rows: parts,
       modal,
       incident: H,
       bytes,
       workerBytes: parts.reduce((a, p) => a + p.bytes, 0),
-      counts: flags,
+      counts: [...flags, reuse[9], reuse[10]],
       maxMass,
       iterations,
       residual,

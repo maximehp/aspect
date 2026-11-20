@@ -2,6 +2,16 @@
 // Integrate the playable bilinear field over the same area as the path sampler.
 import { PlaneComposition } from '../src/plane-composition.js';
 
+function checkRegion(region) {
+  if (
+    !Array.isArray(region) ||
+    region.length !== 4 ||
+    !region.every((x) => Number.isFinite(x) && x >= 0 && x <= 1) ||
+    region[0] >= region[1] ||
+    region[2] >= region[3]
+  )
+    throw RangeError('Invalid receiver region');
+}
 function average(chart, bounds, field) {
   const [u, v] = chart.knots,
     mean = [0, 0, 0];
@@ -66,8 +76,7 @@ export async function comparePlanePath(
   if (chart?.type !== 0 || receiver?.type !== 0)
     throw RangeError('Choose populated sides of the intermediate sheet and receiver');
   const [l, h, b, t] = region;
-  if (![l, h, b, t].every((x) => Number.isFinite(x) && x >= 0 && x <= 1) || l >= h || b >= t)
-    throw RangeError('Invalid receiver region');
+  checkRegion(region);
   const target = {
     owner,
     n: receiver.n,
@@ -126,4 +135,31 @@ export async function comparePlanePath(
     composed,
     playable: { directWallRGB: observe(direct), reflectedWallRGB: observe(reflected) },
   };
+}
+
+// Isolate the first three reflected orders in the playable operator. The
+// remainder includes all later orders and the production solver's residual.
+export async function reflectedOrders(renderer, scene, observations) {
+  const { geometry, modal, firstBounce, incident } = await renderer.prepareScene(scene);
+  const orders = [firstBounce];
+  let coefficients = modal.firstCoefficients;
+  for (let order = 2; order <= 3; order++) {
+    const outgoing = coefficients.map(
+      (value, i) => value * geometry.shapes[geometry.receivers[Math.floor(i / 3)].object].color[i % 3],
+    );
+    coefficients = modal.transfer(outgoing, false);
+    orders.push(modal.basis.decode(coefficients));
+  }
+  return observations.map(({ id, side, region }) => {
+    const object = geometry.shapes.findIndex((s) => s.id === id),
+      chart = geometry.maps[object]?.[side];
+    checkRegion(region);
+    if (!chart?.n || chart.type !== 0) throw Error('Expected a planar receiver side');
+    const sample = (field) =>
+      average(chart, region, field).map((v, c) => v * geometry.shapes[object].color[c]);
+    const rgb = orders.map(sample),
+      total = sample(incident);
+    rgb.push(total.map((v, c) => v - rgb.reduce((sum, x) => sum + x[c], 0)));
+    return { id, side, region, orders: rgb, total };
+  });
 }

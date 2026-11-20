@@ -29,6 +29,7 @@ typedef struct {
 typedef struct {
   Plane p[12];
   int n, obj;
+  Vec localEye;
   unsigned tangentMask;
   int generators;
   CylinderEdge edges[6];
@@ -138,6 +139,7 @@ static Cone shadow(const Shape *s, int id, Vec eye) {
   // A tangent contact has n dot (eye - center) = radius. Bound that
   // quantity on each feature's orthant of unit normals for this entire eye.
   Vec O = local(s, minus(eye, s->c));
+  out.localEye = O;
   out.generators = outlines(out.edges, s, O);
   unsigned bit = 1;
   for (int feature = -1; feature < 3; feature++)
@@ -892,6 +894,40 @@ static int endpointPossible(const Chart *c, const Shape *s) {
   }
   return 1;
 }
+// Choose one fraction along all eye-to-chart segments. In the solid's local
+// coordinates their cross-section is a translated and scaled chart. When
+// its entire support is inside the fillet, the whole family is invisible.
+static int crossesRounded(const Chart *c, const Shape *b, const Cone *cone) {
+  Vec d = minus(c->c, b->c), eye = cone->localEye;
+  double lo = 0, hi = 1, limits[3][2];
+  double eps = 1e-11 * (1 + length(eye) + length(d) + length(b->h) + c->width + c->height + c->r);
+  if (b->r <= eps)
+    return 0;
+  for (int j = 0; j < 3; j++) {
+    Vec axis = b->ax[j];
+    double m = dp(d, axis), a = dp(c->ax, axis), v = dp(c->v, axis), u = dp(c->u, axis);
+    double extent = c->width * absd(a) + (c->type ? 0 : c->height * absd(v)), L = m - extent,
+           H = m + extent;
+    if (c->type) {
+      L += c->r * (low(0, u) + low(0, v) + (c->type == 2 ? low(0, a) : 0));
+      H += c->r * (high(0, u) + high(0, v) + (c->type == 2 ? high(0, a) : 0));
+    }
+    double o = ((double *)&eye)[j], h = ((const double *)&b->h)[j] - eps;
+    limits[j][0] = L - o;
+    limits[j][1] = H - o;
+    if (!clipPositive(h + o, L - o, &lo, &hi) || !clipPositive(h - o, o - H, &lo, &hi))
+      return 0;
+  }
+  double t = .5 * (lo + hi), square = 0;
+  if (!(t > 0 && t < 1))
+    return 0;
+  for (int j = 0; j < 3; j++) {
+    double o = ((double *)&eye)[j], core = ((const double *)&b->h)[j] - b->r;
+    double distance = high(0, high(-o - t * limits[j][0], o + t * limits[j][1]) - core);
+    square += distance * distance;
+  }
+  return square < (b->r - eps) * (b->r - eps);
+}
 static int chartBlockers(const Chart *c, const Shape *shapes, int skip, const Cone *all, int n,
                          int *out, int *hidden, const int *objects, const unsigned *unresolved) {
   int count = 0;
@@ -915,8 +951,8 @@ static int chartBlockers(const Chart *c, const Shape *shapes, int skip, const Co
       if (d - extent < 1e-9)
         full = 0;
     }
-    if (full && !shapes[j].r) {
-      *hidden = 1;
+    if (full && (!shapes[j].r || crossesRounded(c, shapes + j, k))) {
+      *hidden = shapes[j].r ? 2 : 1;
       return 0;
     }
     int flags = 0;
@@ -1182,14 +1218,14 @@ int compileLampEvents(const Shape *shapes, int ns, const Chart *tiles, int nt, c
 typedef struct {
   LampSlice slices[SLICE_SLOTS];
   Tangents tangents[TANGENT_SLOTS];
-  unsigned long long reuse[9];
+  unsigned long long reuse[11];
   Cone lamps[];
 } TransportWorkspace;
 
 unsigned transportBytes(int ns) { return sizeof(TransportWorkspace) + ns * sizeof(Cone); }
 
 void prepareTransport(TransportWorkspace *workspace, const Shape *s, int ns, const Vec *lamp) {
-  for (int i = 0; i < 9; i++)
+  for (int i = 0; i < 11; i++)
     workspace->reuse[i] = 0;
   for (int j = 0; j < SLICE_SLOTS; j++)
     workspace->slices[j].source = 0;
@@ -1245,7 +1281,7 @@ int lampIntervals(TransportWorkspace *ws, const Shape *shapes, const Chart *char
 // one receiver's contributions and can immediately be reused for the next.
 int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Chart *tiles, int nt,
                  const Receiver *receivers, int i, const Vec *lamp, double tolerance, float *output,
-                 int *tileIds, Counts *stats, const unsigned char *modes, const Moments *moments,
+                 int *tileIds, Counts *stats, const unsigned char *modes, const PlaneField *fields,
                  const int *lampIds, const double *planeField, const double *eventField,
                  int weightedGPU) {
   Cone eyes[ns];
@@ -1261,7 +1297,7 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
     int gpu = 0;
     int mode = modes && y.pad ? modes[(y.pad - 1) * nt + k] : 0;
     if (mode == 1) {
-      evaluatePlane(c, y, moments + k, weights);
+      evaluatePlane(c, y, &fields[k].lamp, weights);
       tileIds[count++] = k;
       stats->regional++;
       continue;
@@ -1318,8 +1354,11 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
     if (nearCount < 0)
       continue;
     w.count[0] = chartBlockers(c, s, y.object, eyes, nearCount, localEye, &hidden, near, faces);
-    if (hidden)
+    if (hidden) {
+      if (hidden == 2)
+        workspace->reuse[10]++;
       continue;
+    }
     if (lampIds) {
       const int *ids = lampIds + k * (ns + 1);
       w.lampDark = ids[0] < 0;
@@ -1330,6 +1369,17 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
       w.lampDark = hidden || (!c->type && dp(minus(*lamp, c->c), c->n) <= 0);
       if (w.lampDark)
         w.count[1] = 0;
+    }
+    if (modes && !c->type && !w.lampDark && !w.count[0] && dp(d, y.n) > ext + 1e-10 &&
+        -dp(d, c->n) > .8 * high(c->width, c->height)) {
+      double dist = length(d);
+      if (momentEnvelope(fields + k, dist - 1e-12 * (1 + dist), -dp(d, c->n), dp(d, y.n), ext,
+                         tolerance * .25)) {
+        evaluatePlane(c, y, &fields[k].lamp, weights);
+        tileIds[count++] = k;
+        workspace->reuse[9]++;
+        continue;
+      }
     }
     double a = c->type ? 0 : -c->height, b = c->type ? PI / 2 : c->height;
     // Certified clear planar tiles use the GPU's projected angular measure

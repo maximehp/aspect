@@ -84,17 +84,30 @@ function random() {
   state ^= state << 13; state ^= state >>> 17; state ^= state << 5;
   return ((state >>> 0) + 0.5)/4294967296;
 }
-if (process.argv[9]) {
+const measurement = process.argv[9] ? JSON.parse(process.argv[9]) : null;
+if (measurement?.via) {
   const { referencePath } = await import('./reference-path.js');
-  const path = JSON.parse(process.argv[9]);
-  console.log(JSON.stringify(referencePath({room,faces,target,side,path,paths,trace,random,dot,scale,advance})));
+  console.log(JSON.stringify(referencePath({room,faces,target,side,path:measurement,paths,trace,random,dot,scale,advance})));
   process.exit(0);
 }
 
+const region = measurement?.region;
+if (measurement && (!Array.isArray(region) || region.length !== 4 ||
+    !region.every(v => Number.isFinite(v) && v >= 0 && v <= 1) ||
+    region[0] >= region[1] || region[2] >= region[3])) {
+  throw RangeError('Expected observation bounds in the unit square');
+}
+// One value per complete path in each bin gives the sampling error of the
+// individual bounce orders, including covariance within the final tail.
+const binsByDepth = measurement?.orders && Array.from({ length: 4 }, () => ({
+  sum: [0, 0, 0], squares: [0, 0, 0], path: [0, 0, 0],
+}));
 const first = [0,0,0], later = [0,0,0], sumSquares = [0,0,0];
 for (let sample=0; sample<paths; sample++) {
   let i = target, f = faces[i], sign = side === 'front' ? 1 : -1;
-  const u = 2*(iu+random())/grid.nu-1, v = 2*(iv+random())/grid.nv-1;
+  const u = region ? 2 * (region[0] + random() * (region[1] - region[0])) - 1 : 2*(iu+random())/grid.nu-1;
+  const v = region ? 2 * (region[2] + random() * (region[3] - region[2])) - 1 : 2*(iv+random())/grid.nv-1;
+  if (binsByDepth) for (const bin of binsByDepth) bin.path.fill(0);
   let position = advance(advance(f.center,f.axisU,u),f.axisV,v);
   const weight = [1,1,1], energy = [0,0,0];
   for (let depth=0; ; depth++) {
@@ -106,6 +119,7 @@ for (let sample=0; sample<paths; sample++) {
           const value = weight[c]*f.color[c]*room.lampRGB[c]*cosine/r2;
           (depth === 1 ? first : later)[c] += value;
           energy[c] += value;
+          if (binsByDepth) binsByDepth[Math.min(3, depth - 1)].path[c] += value;
         }
       }
     }
@@ -125,10 +139,24 @@ for (let sample=0; sample<paths; sample++) {
     f = nextFace;
     sign = dot(f.normal,direction) < 0 ? 1 : -1;
   }
+  if (binsByDepth) {
+    for (const bin of binsByDepth) for (let c = 0; c < 3; c++) {
+      bin.sum[c] += bin.path[c];
+      bin.squares[c] += bin.path[c] * bin.path[c];
+    }
+  }
   for (let c=0; c<3; c++) sumSquares[c] += energy[c]*energy[c];
 }
 
 const reference = first.map((value,c) => (value+later[c])/paths);
 const standardError = reference.map((mean,c) => Math.sqrt(Math.max(0,sumSquares[c]/paths-mean*mean)/(paths-1)));
+const orders = binsByDepth && binsByDepth.map(bin => {
+  const mean = scale(bin.sum, 1 / paths);
+  return {
+    mean,
+    standardError: mean.map((v, c) => Math.sqrt(Math.max(0, bin.squares[c] / paths - v*v) / (paths-1))),
+  };
+});
 console.log(JSON.stringify({ id, iu, iv, side, angle, paths, ...(process.argv[8] ? { edits } : {}), reference, standardError,
+  ...(region && { region }), ...(orders && { orders }),
   firstReflected: scale(first,1/paths), laterReflected: scale(later,1/paths) }, null, 2));

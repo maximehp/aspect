@@ -13,6 +13,11 @@ typedef struct {
 typedef struct {
   double v[6];
 } Moments;
+typedef struct {
+  Moments lamp;
+  double radius, errorScale;
+} PlaneField;
+
 __attribute__((import_module("math"), import_name("asinh"))) double asinhValue(double);
 
 static double radiusOn(Vec a, Vec b, Vec n) { return absd(dp(a, n)) + absd(dp(b, n)); }
@@ -81,8 +86,26 @@ static int sheetCrossings(const Chart *s, Vec A, Vec B, const Domain *g, const S
     }
   return common ? 1 : any ? 0 : 2;
 }
+// The expansion in source displacement has conjugate distance poles at
+// |D|/|S|. A single error envelope applies to any nonnegative source field
+// bounded by the compiled amplitude and any point in the receiver domain.
+static int momentEnvelope(const PlaneField *field, double distance, double k, double h,
+                          double normalExtent, double tolerance) {
+  if (!(distance > field->radius && field->radius > 0))
+    return 0;
+  double t = field->radius / distance, t2 = t * t;
+  // Sufficient positivity of the degree-two kernel throughout the source.
+  // 1+4a+12a^2 >= max(2/3,1-4t), where |a| <= t.
+  if (h * (high(2. / 3, 1 - 4 * t) - 2 * t2) < normalExtent * (1 + 4 * t))
+    return 0;
+  double tail2 = t2 * (10 + t * (-20 + t * (15 - 4 * t)));
+  double tail3 = t * t2 * (20 + t * (-45 + t * (36 - 10 * t)));
+  double z = distance - field->radius, z2 = z * z;
+  return field->errorScale * k * (h * tail3 + normalExtent * tail2) <= tolerance * z2 * z2;
+}
+
 static int qualify(const Chart *s, const Domain *g, const Obstacle *obs, int ns, Vec lamp,
-                   double tol) {
+                   double tol, const PlaneField *field) {
   if (s->object == g->object)
     return 2;
   if (s->type)
@@ -108,15 +131,36 @@ static int qualify(const Chart *s, const Domain *g, const Obstacle *obs, int ns,
       2 * (absd(dp(D, A)) + absd(dp(D, B)) + radiusOn(g->a, g->b, A) + radiusOn(g->a, g->b, B)) /
       dd;
   double z2 = (dp(A, A) + dp(B, B) + 2 * absd(dp(A, B))) / dd, z = z1 + z2;
-  if (z >= 1)
-    return 4;
-  double tail = z * z * z * (4 - 3 * z) / ((1 - z) * (1 - z)) + 6 * z1 * z2 + 3 * z2 * z2;
-  double error = (k + dk) * ((h + dh) * tail + dh * (2 * z2 + 3 * z1 * z1)) / (PI * dd * dd);
+
+  double error = FAR;
+  if (z < 1) {
+    double tail = z * z * z * (4 - 3 * z) / ((1 - z) * (1 - z)) + 6 * z1 * z2 + 3 * z2 * z2;
+    error = (k + dk) * ((h + dh) * tail + dh * (2 * z2 + 3 * z1 * z1)) / (PI * dd * dd);
+  }
   double lampDist =
       high(0, length(minus(lamp, s->c)) - high(length(plus(A, B)), length(minus(A, B))));
-  double maxLamp = dp(s->n, minus(lamp, s->c)) > 0 ? 1 / high(1e-20, lampDist * lampDist) : 0;
-  if (error * 4 * length(cross3(A, B)) * high(1, maxLamp) > tol * .25)
-    return 4;
+  double lampHeight = dp(s->n, minus(lamp, s->c));
+  if (lampDist <= 1e-10)
+    lampDist = absd(lampHeight);
+  double maxLamp = lampHeight > 0 ? 1 / (lampDist * lampDist) : 0;
+  if (!(z < 1 && error * 4 * length(cross3(A, B)) * high(1, maxLamp) <= tol * .25)) {
+    // Preserve near-field angular work on the GPU. A partially occluded
+    // receiver can still qualify on its visible portion in transportRow.
+    if (!field || k - dk <= .8 * high(s->width, s->height))
+      return 4;
+    Vec q = D;
+    const Vec axes[] = {g->a, g->b};
+    for (int i = 0; i < 2; i++) {
+      double m = dp(axes[i], axes[i]);
+      if (m > 0)
+        q = minus(q, scale3(axes[i], low(1, high(-1, dp(q, axes[i]) / m))));
+    }
+    double size = length(q);
+    if (size > 0)
+      dmin = high(dmin, (dp(q, D) - radiusOn(g->a, g->b, q)) / size);
+    if (!momentEnvelope(field, dmin - 1e-12 * (1 + d + r), k + dk, h, dh, tol * .25))
+      return 4;
+  }
   for (int j = 0; j < ns; j++)
     if (j != s->object && j != g->object && !separated(s, A, B, g, obs + j)) {
       int test = obs[j].s->r ? 0 : sheetCrossings(s, A, B, g, obs[j].s);
@@ -185,9 +229,31 @@ typedef struct {
 } Umbra;
 static Umbra sharedShadow(const Domain *g, const Shape *b) {
   Umbra result = {0};
-  if (b->r)
-    return result;
-  Vec d = minus(b->c, g->c), z = b->ax[2];
+  Vec d = minus(b->c, g->c), z = b->ax[2], dual[2] = {b->ax[0], b->ax[1]};
+  if (b->r) {
+    // The rounded medial section contains a rectangle with two equal
+    // radial components r/sqrt(2). Choose the section presenting the
+    // largest fully separated projected area to this receiving region.
+    double inset = b->r * (1 - .70710678118654), score = 0;
+    int best = -1;
+    for (int i = 0; i < 3; i++) {
+      int a = (i + 1) % 3, k = (i + 2) % 3;
+      double h = absd(dp(d, b->ax[i])) - radiusOn(g->a, g->b, b->ax[i]);
+      double value =
+          h * (((const double *)&b->h)[a] - inset) * (((const double *)&b->h)[k] - inset);
+      if (value > score) {
+        score = value;
+        best = i;
+      }
+    }
+    if (best < 0)
+      return result;
+    z = b->ax[best];
+    for (int i = 0; i < 2; i++) {
+      int a = (best + i + 1) % 3;
+      dual[i] = scale3(b->ax[a], 1 / (((const double *)&b->h)[a] - inset));
+    }
+  }
   if (dp(d, z) < 0)
     z = scale3(z, -1);
   if (dp(d, z) - radiusOn(g->a, g->b, z) <= 1e-8)
@@ -197,7 +263,7 @@ static Umbra sharedShadow(const Domain *g, const Shape *b) {
   result.valid = 1;
   for (int axis = 0; axis < 2; axis++)
     for (int k = 0; k < 2; k++) {
-      Vec u = scale3(b->ax[axis], k ? 1 : -1);
+      Vec u = scale3(dual[axis], k ? 1 : -1);
       double slope = FAR;
       for (int i = 0; i < 4; i++) {
         Vec delta = plus(d, plus(scale3(g->a, i & 1 ? 1 : -1), scale3(g->b, i & 2 ? 1 : -1)));
@@ -236,7 +302,7 @@ static int coversChart(const Umbra *shadow, const Chart *c) {
   return 1;
 }
 void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Domain *groups, int ng,
-                  const Vec *lamp, double tol, unsigned char *modes, Moments *moments,
+                  const Vec *lamp, double tol, unsigned char *modes, PlaneField *fields,
                   Counts *stats, int *lampIds) {
   Cone lamps[ns];
   Obstacle obs[ns];
@@ -249,9 +315,52 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
       obs[j].b = scale3(v, 1 / dp(s[j].ax[1], v));
     }
   }
-  unsigned char needed[nt];
-  for (int k = 0; k < nt; k++)
-    needed[k] = 0;
+  for (int k = 0; k < nt; k++) {
+    const Chart *c = tiles + k;
+    PlaneField field = {0};
+    int hidden = 0;
+    int *ids = lampIds + k * (ns + 1);
+    Pair w = {.s = s,
+              .c = c,
+              .lamp = *lamp,
+              .cone = {0, lamps},
+              .blockers = {0, ids + 1},
+              .stats = stats};
+    w.count[1] = candidates(c, s, -1, lamps, ns, ids + 1, &hidden);
+    if (c->type && arcFacesAway(c, minus(*lamp, c->c), (Vec){0}, (Vec){0}, 0))
+      hidden = 1;
+    if (!c->type && dp(c->n, minus(*lamp, c->c)) <= 0)
+      hidden = 1;
+    ids[0] = hidden ? -1 : w.count[1];
+    if (!c->type && !hidden) {
+      stats->momentTiles++;
+      int cap = 32 + 32 * w.count[1];
+      double cuts[cap + 1];
+      int n = planarEvents(&w, cuts, cap, -c->height, c->height);
+      if (n == cap)
+        stats->limited++;
+      cuts[n++] = c->height;
+      double a = -c->height;
+      for (int j = 0; j < n; j++) {
+        double b = cuts[j];
+        Moments v = lampPanel(&w, a, b, 2e-6 * (b - a) / (2 * c->height), 20);
+        for (int i = 0; i < 6; i++)
+          field.lamp.v[i] += v.v[i];
+        a = b;
+      }
+      Vec A = scale3(c->ax, c->width), B = scale3(c->v, c->height);
+      double r2 = dp(A, A) + dp(B, B);
+      field.radius = ROOT(r2 + 2 * absd(dp(A, B)));
+      Vec toLamp = minus(*lamp, c->c);
+      double nearest = length(toLamp) - field.radius;
+      if (nearest <= 1e-10)
+        nearest = absd(dp(toLamp, c->n));
+      if (field.radius > 0)
+        field.errorScale = 4 * length(cross3(A, B)) * high(1, 1 / (nearest * nearest)) * r2 /
+                           (3 * PI * field.radius * field.radius);
+    }
+    fields[k] = field;
+  }
   for (int g = 0; g < ng; g++) {
     const Domain *domain = groups + g;
     Umbra shadows[ns];
@@ -279,7 +388,7 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
             }
       }
       if (n >= 0) {
-        mode = qualify(c, domain, obs, ns, *lamp, tol);
+        mode = qualify(c, domain, obs, ns, *lamp, tol, fields[k].radius > 0 ? fields + k : 0);
         if (mode != 1 && mode != 2 && mode != CURVED_DOMAIN_DARK)
           for (int i = 0; i < n; i++) {
             if (coversChart(shadows + nearby[i], c)) {
@@ -289,46 +398,7 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
           }
       }
       modes[g * nt + k] = mode;
-      needed[k] |= mode == 1;
     }
-  }
-  for (int k = 0; k < nt; k++) {
-    const Chart *c = tiles + k;
-    Moments M = {0};
-    {
-      int hidden = 0;
-      int *ids = lampIds + k * (ns + 1);
-      Pair w = {.s = s,
-                .c = c,
-                .lamp = *lamp,
-                .cone = {0, lamps},
-                .blockers = {0, ids + 1},
-                .stats = stats};
-      w.count[1] = candidates(c, s, -1, lamps, ns, ids + 1, &hidden);
-      if (c->type && arcFacesAway(c, minus(*lamp, c->c), (Vec){0}, (Vec){0}, 0))
-        hidden = 1;
-      if (!c->type && dp(c->n, minus(*lamp, c->c)) <= 0)
-        hidden = 1;
-      ids[0] = hidden ? -1 : w.count[1];
-      if (needed[k] && !hidden) {
-        stats->momentTiles++;
-        int cap = 32 + 32 * w.count[1];
-        double cuts[cap + 1];
-        int n = planarEvents(&w, cuts, cap, -c->height, c->height);
-        if (n == cap)
-          stats->limited++;
-        cuts[n++] = c->height;
-        double a = -c->height;
-        for (int j = 0; j < n; j++) {
-          double b = cuts[j];
-          Moments v = lampPanel(&w, a, b, 2e-6 * (b - a) / (2 * c->height), 20);
-          for (int i = 0; i < 6; i++)
-            M.v[i] += v.v[i];
-          a = b;
-        }
-      }
-    }
-    moments[k] = M;
   }
 }
 static void evaluatePlane(const Chart *s, Receiver y, const Moments *m, float *w) {
