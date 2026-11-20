@@ -1408,11 +1408,12 @@ int compileLampEvents(const Shape *shapes, int ns, const Chart *tiles, int nt, c
 
 #include "plane-transfer.h"
 #include "rectangle-rule.h"
+#include "shared-axis.h"
 // The lamp cones and both interval caches belong to a single fresh pose.
 typedef struct {
   LampSlice slices[SLICE_SLOTS];
   Tangents tangents[TANGENT_SLOTS];
-  unsigned long long reuse[13];
+  unsigned long long reuse[16];
   Cone lamps[];
 } TransportWorkspace;
 
@@ -1421,7 +1422,7 @@ unsigned transportBytes(int ns) { return sizeof(TransportWorkspace) + ns * sizeo
 void prepareTransport(TransportWorkspace *workspace, const Shape *s, int ns, const Vec *lamp) {
   predicateBase = s;
   predicateCount = ns;
-  for (int i = 0; i < 13; i++)
+  for (int i = 0; i < 16; i++)
     workspace->reuse[i] = 0;
   for (int j = 0; j < SLICE_SLOTS; j++)
     workspace->slices[j].source = 0;
@@ -1481,7 +1482,8 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
                  const Receiver *receivers, int i, const Vec *lamp, double tolerance, float *output,
                  int *tileIds, Counts *stats, const unsigned char *modes, const PlaneField *fields,
                  const int *lampIds, const double *planeField, const double *eventField,
-                 int weightedGPU, const double *sheetForms, const double *planePoints) {
+                 int weightedGPU, const double *sheetForms, const double *planePoints,
+                 const Domain *domains, const int *axisIds, double *axisCache, double *correction) {
   const double *uv = planePoints ? planePoints + 3 * i : 0;
   int receiverChart = uv ? (int)uv[0] : -1;
   SheetPosition observer[ns];
@@ -1503,11 +1505,56 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
   int count = 0;
   for (int j = 0; j < ns; j++)
     eyes[j] = shadow(s + j, j, y.p);
+  int group = y.pad - 1;
+  int axisCursor = group >= 0 && axisIds ? axisIds[group] : 0,
+      axisEnd = axisCursor ? axisIds[group + 1] : 0;
   for (int k = 0; k < nt; k++) {
     const Chart *c = tiles + k;
     float *weights = output + 5 * count;
     int gpu = 0;
     int mode = modes && y.pad ? modes[(y.pad - 1) * nt + k] : 0;
+    double *adjust = correction + 5 * count;
+    for (int j = 0; j < 5; j++)
+      adjust[j] = 0;
+    int axis = 0;
+    if (axisCursor < axisEnd && axisIds[axisCursor] == k) {
+      axis = axisCursor + 1;
+      axisCursor += 2 + axisIds[axis];
+    }
+    if (axis) {
+      int point = i % 3;
+      double *cache = axisCache + 31 * k;
+      if (!point) {
+        const int *lm = lampIds + k * (ns + 1);
+        Pair w = {.s = s,
+                  .c = c,
+                  .lamp = *lamp,
+                  .field = planeField,
+                  .source = k,
+                  .y = y,
+                  .cone = {0, workspace->lamps},
+                  .blockers = {0, lm + 1},
+                  .count = {0, lm[0] > 0 ? lm[0] : 0},
+                  .lampGeometry = eventField && eventField[k] ? eventField + (int)eventField[k] : 0,
+                  .lampDark = lm[0] < 0,
+                  .stats = stats,
+                  .reuse = workspace->reuse,
+                  .tangents = workspace->tangents,
+                  .cache = workspace->slices,
+                  .tolerance = tolerance};
+        cache[0] = jointAxis(&w, domains + group, axisIds + axis + 1, axisIds[axis],
+                             receivers[i + 1].p, cache + 1);
+        workspace->reuse[cache[0] ? 13 : 15]++;
+      }
+      if (cache[0]) {
+        for (int j = 0; j < 5; j++) {
+          weights[j] = cache[1 + 10 * point + j];
+          adjust[j] = cache[6 + 10 * point + j];
+        }
+        tileIds[count++] = k;
+        continue;
+      }
+    }
     if (mode == 1) {
       evaluatePlane(c, y, &fields[k].lamp, weights);
       tileIds[count++] = k;

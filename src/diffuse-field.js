@@ -40,7 +40,10 @@ function initialFunctions({ charts, shapes }, records) {
         return [c - h, c + h];
       });
       if (box.some(([a, b]) => b <= 0 || a >= 1)) continue;
-      features.push({ gap, box });
+      // Exchange is confined by both finite planes. A large opposing wall
+      // has no edge inside the smaller sheet, yet the return paths change
+      // within a gap length of the smaller sheet's own edge.
+      features.push({ gap, box: box.map(([lo, hi]) => [Math.max(0, lo), Math.min(1, hi)]) });
     }
     const covered = [];
     for (const { gap, box } of features.sort((a, b) => a.gap - b.gap)) {
@@ -143,6 +146,7 @@ export class DiffuseTransport {
         pointLinks: I.links,
         outlineSections: I.outlineSections,
         sheetSections: I.sheetSections,
+        axisWork: I.axisWork,
         failed: estimate.failed,
         maximum: estimate.maximum,
         rms: estimate.rms,
@@ -162,6 +166,7 @@ export class DiffuseTransport {
           bytes: peak,
           workerBytes: I.workerBytes,
           links: I.links,
+          axisCounts: I.axisCounts,
           counts,
           timings: {
             solve: solveMs,

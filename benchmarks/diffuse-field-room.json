@@ -1169,7 +1169,7 @@
       ]
     }
   ],
-  "contactMeasurement": "64 \u00d7 64 deterministic integration of the represented field across the stated receiver region. Independent physical references from projected-line-room.json. The four handoff poses instead integrate the represented bilinear field exactly over the observation rectangle.",
+  "contactMeasurement": "64 × 64 deterministic integration of the represented field across the stated receiver region. Independent physical references from projected-line-room.json. The four handoff poses instead integrate the represented bilinear field exactly over the observation rectangle.",
   "arithmetic": {
     "queries": 294,
     "floatDisagreements": 66,
@@ -2360,7 +2360,7 @@
       "gl": 0
     }
   ],
-  "replayMeasurement": "Frozen cutover d4d789b. On this M1 Pro the existing 120 consecutive moving poses render at 3840 \u00d7 2160. GPU-complete is a synchronous readback; swap is the matching Chrome compositor marker. The complete interval ends at the later of these two times. Camera visibility overlaps preparation. Counted memory includes named engine payloads and one framebuffer, excludes uninstrumented JavaScript, driver and compositor allocations. Short independent QA jobs overlapped portions of the one- and two-slat runs. No matched-quality speedup is established.",
+  "replayMeasurement": "Frozen cutover d4d789b. On this M1 Pro the existing 120 consecutive moving poses render at 3840 × 2160. GPU-complete is a synchronous readback; swap is the matching Chrome compositor marker. The complete interval ends at the later of these two times. Camera visibility overlaps preparation. Counted memory includes named engine payloads and one framebuffer, excludes uninstrumented JavaScript, driver and compositor allocations. Short independent QA jobs overlapped portions of the one- and two-slat runs. No matched-quality speedup is established.",
   "counters": [
     "generator strips",
     "lit endpoints",
@@ -2566,7 +2566,7 @@
     }
   },
   "scanlineMotionCheck": {
-    "camera": "START_CAMERA, 3840 \u00d7 2160",
+    "camera": "START_CAMERA, 3840 × 2160",
     "samples": "Across 21 nearby fresh angles, take run endpoints, exterior neighbors and midpoints on every 47th scanline starting at row 19. Use the union of pixels in every pose. Compare against independent nearest intersection and lamp-segment visibility; count temporal changes of visible surface and illuminated state. Only this sampled sweep is verified.",
     "poses": 21,
     "firstAngleRadians": "0.299 + 0.0001*k",
@@ -6136,6 +6136,1038 @@
     },
     "rejectedReciprocalTrial": {
       "criterion": "Select orientation by smaller basis support and share the coefficient in both directions. Artwork red at -46 degrees became 0.008922 versus a physical 0.003947. This trial was excluded from play."
+    },
+    "oneSlatReplay": {
+      "renderer": "diffuse-field",
+      "extra": 0,
+      "slats": 1,
+      "matched": 120,
+      "optionalOpticsRequests": [],
+      "missing": [],
+      "startToSwapMs": {
+        "median": 6213.26,
+        "p95": 6832.49
+      },
+      "throughBothMs": {
+        "median": 6213.26,
+        "p95": 6832.49
+      },
+      "finishedMs": {
+        "median": 6205.65,
+        "p95": 6820.6
+      },
+      "cameraMs": {
+        "median": 7.05,
+        "p95": 9
+      },
+      "peakCountedMiB": 415.04559803009033,
+      "meanWorkCounts": [
+        61188116.93333333,
+        46839814.333333336,
+        31738340.083333332,
+        14304828.8,
+        5463543.55,
+        1970418.7833333334,
+        41.575,
+        3130557.6083333334,
+        1613.15,
+        2402138.55,
+        39238965.45,
+        1489820.775,
+        2422325.475,
+        3823108.2,
+        19101897.9,
+        1372.7333333333333,
+        236127.9,
+        0.05,
+        15287272.825,
+        10632541.966666667
+      ],
+      "overFrameBudget": {
+        "1": 120,
+        "16.666666666666668": 120
+      },
+      "meanGpuApertures": 3130557.6083333334,
+      "worstSpatialResidual": 0.14627290743325436,
+      "framesExceedingSpatialTolerance": 120,
+      "worstEquilibriumClosure": 2.1704517162240977e-05,
+      "maximumUnitFieldGain": 1.004122822452842,
+      "workerMs": {
+        "median": 3830.65,
+        "p95": 4394.1
+      },
+      "assemblyMs": {
+        "median": 126.45,
+        "p95": 167.2
+      },
+      "solveMs": {
+        "median": 1172.2,
+        "p95": 1220
+      },
+      "operatorConstructionMs": {
+        "median": 5007.55,
+        "p95": 5566.4
+      },
+      "preparationMs": {
+        "median": 6183.85,
+        "p95": 6784.6
+      },
+      "applyAndDrawMs": {
+        "median": 2.4,
+        "p95": 4.7
+      },
+      "markAndFinishMs": {
+        "median": 18.8,
+        "p95": 27.2
+      },
+      "syncToSwapMs": {
+        "median": 8.05,
+        "p95": 17.79
+      },
+      "beforeSync": 0
     }
+  },
+  "jointGeneratorIntegration": {
+    "method": "Finite receiving axial mean and first moment for partial sheet visibility. Independent witness sampled the two wall coordinates and the axial floor coordinate uniformly. Point lamp visibility and every receiving segment were tested against the ordinary room shapes. Seed 123456789, xorshift32. No temporal state. Diagnostic frames overlap a historical replay on the same device.",
+    "witness": {
+      "cfg": {
+        "options": {
+          "angle": 0.3,
+          "radius": "0.044",
+          "slats": 1
+        },
+        "source": [
+          0.10110294117647059,
+          0.1516544117647059,
+          0.2594594594594594,
+          0.27027027027027023
+        ],
+        "receiver": [
+          0.325735294117647,
+          0.5566176470588236,
+          0.4243679775280899,
+          0.5066011235955057
+        ],
+        "blockers": [
+          "bench-left-leg-left",
+          "bench-left-leg-right",
+          "bench-left-leg-front",
+          "bench-left-leg-back"
+        ],
+        "score": 0.16312860613422403
+      },
+      "evals": [
+        {
+          "tol": 0.0002,
+          "ok": 1,
+          "moments": [
+            [
+              5.122402296444745e-06,
+              5.469584983297754e-06,
+              5.180750697038077e-06,
+              5.531704713239e-06,
+              2.1580215502363687e-07
+            ],
+            [
+              -9.964630303726501e-08,
+              1.3102731979754927e-07,
+              -9.994474215854083e-08,
+              1.3334286580985732e-07,
+              -4.692078281817065e-09
+            ]
+          ]
+        },
+        {
+          "tol": 2e-06,
+          "ok": 1,
+          "moments": [
+            [
+              5.122402296444745e-06,
+              5.469584983297754e-06,
+              5.180750697038077e-06,
+              5.531704713239e-06,
+              2.1580215502363687e-07
+            ],
+            [
+              -9.964630303726501e-08,
+              1.3102731979754927e-07,
+              -9.994474215854083e-08,
+              1.3334286580985732e-07,
+              -4.692078281817065e-09
+            ]
+          ]
+        },
+        {
+          "tol": 2e-08,
+          "ok": 1,
+          "moments": [
+            [
+              5.122402296444745e-06,
+              5.469584983297754e-06,
+              5.180750697038077e-06,
+              5.531704713239e-06,
+              2.1580215502363687e-07
+            ],
+            [
+              -9.964630303726501e-08,
+              1.3102731979754927e-07,
+              -9.994474215854083e-08,
+              1.3334286580985732e-07,
+              -4.692078281817065e-09
+            ]
+          ]
+        }
+      ],
+      "N": 1048576,
+      "visible": 671132,
+      "lit": 419007,
+      "mean": [
+        5.127761683646234e-06,
+        5.47473674315157e-06,
+        5.176571248756548e-06,
+        5.533559267872267e-06,
+        2.1580238965675927e-07,
+        -1.0349662301007667e-07,
+        1.3321582487839108e-07,
+        -9.541758509007624e-08,
+        1.3148904720572514e-07,
+        -4.7239407137642034e-09
+      ],
+      "se": [
+        6.828112969229322e-09,
+        7.3389430981900424e-09,
+        6.9460378753773125e-09,
+        7.484145575527815e-09,
+        2.674180879373181e-10,
+        6.062694151794652e-09,
+        6.222530855398692e-09,
+        6.149769104423617e-09,
+        6.3280677899130095e-09,
+        2.4275342382534027e-10
+      ],
+      "maxStandardErrors": 0.7849001950671978
+    },
+    "roomEdits": {
+      "0": {
+        "wallToFloorIntegratedLines": 34389,
+        "wallFromSlats": [
+          0.00010077050923240718,
+          4.3441966742847816e-05,
+          1.3255301874896468e-05
+        ],
+        "fromLampThroughWall": {
+          "floor": [
+            0.0016511635132598274,
+            0.0011700469365002481,
+            0.0006057661247836009
+          ],
+          "ceiling": [
+            0.0023128332601104595,
+            0.001538802839484627,
+            0.0006828697724863173
+          ]
+        },
+        "fromSlatsThroughWall": {
+          "floor": [
+            2.3026312407704482e-05,
+            9.025467814394969e-06,
+            2.1565241093779373e-06
+          ],
+          "ceiling": [
+            1.0570129579624088e-05,
+            3.890302357475931e-06,
+            7.967281703709986e-07
+          ]
+        },
+        "behindArtwork": [
+          0.022804821300030805,
+          0.011390661878882255,
+          0.0028054213075551756
+        ],
+        "bench": [
+          0.09468616148544942,
+          0.037380919485455265,
+          0.009145251710757973
+        ],
+        "closure": 2.491957342163134e-05,
+        "diagnosticThroughGpuMs": 10799.599999904633,
+        "peakCountedBytes": 469768733,
+        "cameraMs": 39.80000019073486,
+        "passes": [
+          {
+            "coefficients": 504,
+            "observations": 2466,
+            "cells": 274,
+            "receiverModeLinks": 77104,
+            "pointLinks": 319328,
+            "outlineSections": 180781,
+            "sheetSections": 2750914,
+            "axisWork": [
+              4489,
+              328442,
+              5
+            ],
+            "failed": 168,
+            "maximum": 0.24146722962572864,
+            "rms": 0.055940815875044216
+          },
+          {
+            "coefficients": 836,
+            "observations": 5454,
+            "cells": 606,
+            "receiverModeLinks": 228626,
+            "pointLinks": 1267609,
+            "outlineSections": 305179,
+            "sheetSections": 5673582,
+            "axisWork": [
+              27522,
+              1936480,
+              3
+            ],
+            "failed": 366,
+            "maximum": 0.26418794377008215,
+            "rms": 0.04817624611210537
+          },
+          {
+            "coefficients": 1501,
+            "observations": 12114,
+            "cells": 1346,
+            "receiverModeLinks": 718844,
+            "pointLinks": 4946265,
+            "outlineSections": 451812,
+            "sheetSections": 12420503,
+            "axisWork": [
+              90249,
+              5759928,
+              3
+            ],
+            "failed": 570,
+            "maximum": 0.18341023468838727,
+            "rms": 0.019547262786111567
+          },
+          {
+            "coefficients": 2405,
+            "observations": 22266,
+            "cells": 2474,
+            "receiverModeLinks": 1835534,
+            "pointLinks": 14671449,
+            "outlineSections": 589320,
+            "sheetSections": 23625466,
+            "axisWork": [
+              219282,
+              12963912,
+              0
+            ],
+            "failed": 723,
+            "maximum": 0.18602083689309218,
+            "rms": 0.02302018207067367
+          }
+        ],
+        "worstEmittingSide": {
+          "object": "bench-seat-left",
+          "side": 0,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            1.030601089609053,
+            1.030601089609053,
+            1.0306010896090538
+          ]
+        }
+      },
+      "1": {
+        "wallToFloorIntegratedLines": 34647,
+        "wallFromSlats": [
+          8.567122994566373e-05,
+          3.6932856829426276e-05,
+          1.1269077617725039e-05
+        ],
+        "fromLampThroughWall": {
+          "floor": [
+            0.0016593368227962445,
+            0.0011758376493212687,
+            0.0006087641392699425
+          ],
+          "ceiling": [
+            0.002334177268036925,
+            0.0015530037209835381,
+            0.000689171653708161
+          ]
+        },
+        "fromSlatsThroughWall": {
+          "floor": [
+            2.0380795482396254e-05,
+            7.988526903031077e-06,
+            1.908768165192808e-06
+          ],
+          "ceiling": [
+            9.366297832026543e-06,
+            3.447242549472972e-06,
+            7.05994615690184e-07
+          ]
+        },
+        "behindArtwork": [
+          0.02293920301892783,
+          0.011463497116938904,
+          0.0028240662103978195
+        ],
+        "bench": [
+          0.09713054566236211,
+          0.0383914949623604,
+          0.00941637028457424
+        ],
+        "closure": 2.0150812736572515e-05,
+        "diagnosticThroughGpuMs": 12556.799999713898,
+        "peakCountedBytes": 473012887,
+        "cameraMs": 95,
+        "passes": [
+          {
+            "coefficients": 504,
+            "observations": 2466,
+            "cells": 274,
+            "receiverModeLinks": 77101,
+            "pointLinks": 319345,
+            "outlineSections": 184619,
+            "sheetSections": 2996875,
+            "axisWork": [
+              4488,
+              326330,
+              6
+            ],
+            "failed": 169,
+            "maximum": 0.24151886943103307,
+            "rms": 0.055861743714920614
+          },
+          {
+            "coefficients": 834,
+            "observations": 5445,
+            "cells": 605,
+            "receiverModeLinks": 230541,
+            "pointLinks": 1288830,
+            "outlineSections": 312787,
+            "sheetSections": 6060636,
+            "axisWork": [
+              27537,
+              1941818,
+              3
+            ],
+            "failed": 373,
+            "maximum": 0.2637016986426822,
+            "rms": 0.048129961278757814
+          },
+          {
+            "coefficients": 1516,
+            "observations": 12294,
+            "cells": 1366,
+            "receiverModeLinks": 730788,
+            "pointLinks": 5067423,
+            "outlineSections": 472129,
+            "sheetSections": 13394058,
+            "axisWork": [
+              91713,
+              5861299,
+              3
+            ],
+            "failed": 569,
+            "maximum": 0.18435061285326484,
+            "rms": 0.019529948602265205
+          },
+          {
+            "coefficients": 2413,
+            "observations": 22329,
+            "cells": 2481,
+            "receiverModeLinks": 1841450,
+            "pointLinks": 14744872,
+            "outlineSections": 662377,
+            "sheetSections": 24279238,
+            "axisWork": [
+              221481,
+              13146335,
+              0
+            ],
+            "failed": 725,
+            "maximum": 0.18693473641704275,
+            "rms": 0.023027926015592018
+          }
+        ],
+        "worstEmittingSide": {
+          "object": "bench-seat-left",
+          "side": 0,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            1.0285496926591586,
+            1.0285496926591586,
+            1.028549692659159
+          ]
+        }
+      },
+      "2": {
+        "wallToFloorIntegratedLines": 36837,
+        "wallFromSlats": [
+          2.1104351660242443e-05,
+          9.377333590987751e-06,
+          2.860502660351516e-06
+        ],
+        "fromLampThroughWall": {
+          "floor": [
+            0.0014481165202030394,
+            0.001026180760936534,
+            0.0005312825695175675
+          ],
+          "ceiling": [
+            0.0020500356261550063,
+            0.0013639526974447936,
+            0.000605277066227773
+          ]
+        },
+        "fromSlatsThroughWall": {
+          "floor": [
+            2.950427617632105e-05,
+            1.1562803498518204e-05,
+            2.762948199937194e-06
+          ],
+          "ceiling": [
+            1.3899055350251543e-05,
+            5.114493490116717e-06,
+            1.0475275123560312e-06
+          ]
+        },
+        "behindArtwork": [
+          0.01760737133046355,
+          0.009250167036085508,
+          0.002723870784443126
+        ],
+        "bench": [
+          0.06659089135325649,
+          0.02585835478947462,
+          0.00608527189830421
+        ],
+        "closure": 2.3839839914385763e-05,
+        "diagnosticThroughGpuMs": 14835.799999713898,
+        "peakCountedBytes": 485896332,
+        "cameraMs": 22.59999990463257,
+        "passes": [
+          {
+            "coefficients": 528,
+            "observations": 2700,
+            "cells": 300,
+            "receiverModeLinks": 88960,
+            "pointLinks": 371613,
+            "outlineSections": 370755,
+            "sheetSections": 3253000,
+            "axisWork": [
+              4475,
+              367424,
+              4
+            ],
+            "failed": 196,
+            "maximum": 0.24152185419926717,
+            "rms": 0.05566797746534196
+          },
+          {
+            "coefficients": 905,
+            "observations": 6156,
+            "cells": 684,
+            "receiverModeLinks": 272758,
+            "pointLinks": 1517555,
+            "outlineSections": 714076,
+            "sheetSections": 6562789,
+            "axisWork": [
+              27340,
+              2057962,
+              5
+            ],
+            "failed": 416,
+            "maximum": 0.2631392260125395,
+            "rms": 0.04788672094373324
+          },
+          {
+            "coefficients": 1639,
+            "observations": 13752,
+            "cells": 1528,
+            "receiverModeLinks": 832579,
+            "pointLinks": 5682657,
+            "outlineSections": 1241661,
+            "sheetSections": 14345960,
+            "axisWork": [
+              92053,
+              6011775,
+              5
+            ],
+            "failed": 593,
+            "maximum": 0.16069421610763443,
+            "rms": 0.019435940584245526
+          },
+          {
+            "coefficients": 2544,
+            "observations": 24075,
+            "cells": 2675,
+            "receiverModeLinks": 1949266,
+            "pointLinks": 15249882,
+            "outlineSections": 1951165,
+            "sheetSections": 24323990,
+            "axisWork": [
+              220106,
+              13371284,
+              4
+            ],
+            "failed": 758,
+            "maximum": 0.1577744222557028,
+            "rms": 0.022986698587526413
+          }
+        ],
+        "worstEmittingSide": {
+          "object": "bench-seat-left",
+          "side": 0,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            1.0237838810631723,
+            1.0237838810631712,
+            1.0237838810631716
+          ]
+        }
+      },
+      "3": {
+        "wallToFloorIntegratedLines": 41502,
+        "wallFromSlats": [
+          2.3161038430197312e-05,
+          9.985929195101364e-06,
+          3.0461513127914605e-06
+        ],
+        "fromLampThroughWall": {
+          "floor": [
+            0.0001086488789891014,
+            0.00022090402511750092,
+            0.0009003454930778722
+          ],
+          "ceiling": [
+            0.0001300234902349362,
+            0.0002482430348487329,
+            0.0008672331052694366
+          ]
+        },
+        "fromSlatsThroughWall": {
+          "floor": [
+            1.3181323926697755e-06,
+            1.4825621296475636e-06,
+            2.7888577701618693e-06
+          ],
+          "ceiling": [
+            9.493090819576177e-07,
+            1.0026246508373105e-06,
+            1.6166092231011146e-06
+          ]
+        },
+        "behindArtwork": [
+          0.08930412259894571,
+          0.08013221018217716,
+          0.08378900710104978
+        ],
+        "bench": [
+          0.004359950922411774,
+          0.004384655737559765,
+          0.009291469078422815
+        ],
+        "closure": 1.777072389208545e-05,
+        "diagnosticThroughGpuMs": 17877.300000190735,
+        "peakCountedBytes": 648652089,
+        "cameraMs": 3400.199999809265,
+        "passes": [
+          {
+            "coefficients": 528,
+            "observations": 2700,
+            "cells": 300,
+            "receiverModeLinks": 91540,
+            "pointLinks": 383454,
+            "outlineSections": 433267,
+            "sheetSections": 3240511,
+            "axisWork": [
+              5516,
+              417125,
+              1
+            ],
+            "failed": 189,
+            "maximum": 0.27140043215400633,
+            "rms": 0.05429977704268961
+          },
+          {
+            "coefficients": 856,
+            "observations": 5895,
+            "cells": 655,
+            "receiverModeLinks": 271593,
+            "pointLinks": 1530463,
+            "outlineSections": 693414,
+            "sheetSections": 6315243,
+            "axisWork": [
+              25442,
+              2180666,
+              1
+            ],
+            "failed": 416,
+            "maximum": 0.25693298849625407,
+            "rms": 0.047176573026935446
+          },
+          {
+            "coefficients": 1598,
+            "observations": 13653,
+            "cells": 1517,
+            "receiverModeLinks": 913400,
+            "pointLinks": 6409727,
+            "outlineSections": 1314028,
+            "sheetSections": 13941682,
+            "axisWork": [
+              81011,
+              5840664,
+              1
+            ],
+            "failed": 660,
+            "maximum": 0.144014576842398,
+            "rms": 0.01914579061013649
+          },
+          {
+            "coefficients": 2695,
+            "observations": 25731,
+            "cells": 2859,
+            "receiverModeLinks": 2432319,
+            "pointLinks": 19520189,
+            "outlineSections": 2404806,
+            "sheetSections": 25593699,
+            "axisWork": [
+              206111,
+              12862303,
+              1
+            ],
+            "failed": 861,
+            "maximum": 0.14653624022658507,
+            "rms": 0.023002181114650425
+          }
+        ],
+        "worstEmittingSide": {
+          "object": "bench-seat-top",
+          "side": 0,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            1.0239674225346773,
+            1.0239674225346773,
+            1.0239674225346773
+          ]
+        }
+      },
+      "minus": {
+        "wallToFloorIntegratedLines": 11484,
+        "wallFromSlats": [
+          9.499208884421787e-08,
+          4.095603382173989e-08,
+          1.2493406848309936e-08
+        ],
+        "fromLampThroughWall": {
+          "floor": [
+            2.0611941590061824e-05,
+            1.4604314711982819e-05,
+            7.5610634515739106e-06
+          ],
+          "ceiling": [
+            2.079347863182283e-05,
+            1.3551372195101312e-05,
+            6.139333322157229e-06
+          ]
+        },
+        "fromSlatsThroughWall": {
+          "floor": [
+            4.206922230799072e-06,
+            1.6489301302140798e-06,
+            3.9401417966508295e-07
+          ],
+          "ceiling": [
+            3.942136982977067e-06,
+            1.423730307811823e-06,
+            2.971728723871823e-07
+          ]
+        },
+        "behindArtwork": [
+          0.0025675101214040464,
+          0.0012387726013707526,
+          0.00034825237144964563
+        ],
+        "bench": [
+          0.007307439036809991,
+          0.0018783175864890097,
+          0.00028152993178377983
+        ],
+        "closure": 2.364785279902141e-05,
+        "diagnosticThroughGpuMs": 87794.7000002861,
+        "peakCountedBytes": 769728514,
+        "cameraMs": 168.7000002861023,
+        "passes": [
+          {
+            "coefficients": 696,
+            "observations": 4338,
+            "cells": 482,
+            "receiverModeLinks": 178905,
+            "pointLinks": 760447,
+            "outlineSections": 4495295,
+            "sheetSections": 7862209,
+            "axisWork": [
+              4487,
+              510113,
+              7
+            ],
+            "failed": 333,
+            "maximum": 0.6792774628566625,
+            "rms": 0.06323700520412481
+          },
+          {
+            "coefficients": 1272,
+            "observations": 10359,
+            "cells": 1151,
+            "receiverModeLinks": 488857,
+            "pointLinks": 2655336,
+            "outlineSections": 10269528,
+            "sheetSections": 11411736,
+            "axisWork": [
+              15662,
+              1637465,
+              7
+            ],
+            "failed": 820,
+            "maximum": 0.6893266715790187,
+            "rms": 0.052252796446710215
+          },
+          {
+            "coefficients": 2688,
+            "observations": 25191,
+            "cells": 2799,
+            "receiverModeLinks": 1434602,
+            "pointLinks": 9429389,
+            "outlineSections": 23734370,
+            "sheetSections": 18846108,
+            "axisWork": [
+              34628,
+              3028911,
+              7
+            ],
+            "failed": 1511,
+            "maximum": 0.6837372005170111,
+            "rms": 0.021280037743281254
+          },
+          {
+            "coefficients": 5066,
+            "observations": 51192,
+            "cells": 5688,
+            "receiverModeLinks": 3612019,
+            "pointLinks": 26407949,
+            "outlineSections": 48127266,
+            "sheetSections": 27080950,
+            "axisWork": [
+              72089,
+              5581226,
+              7
+            ],
+            "failed": 1971,
+            "maximum": 0.7873412685156876,
+            "rms": 0.02283192590408567
+          }
+        ],
+        "worstEmittingSide": {
+          "object": "bench-seat-front",
+          "side": 0,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.1625090898569206,
+            1.1625090898569181,
+            1.1625090898569213
+          ]
+        }
+      },
+      "plus": {
+        "wallToFloorIntegratedLines": 39825,
+        "wallFromSlats": [
+          0.0007243329165380512,
+          0.0003122976217162993,
+          9.515730728958299e-05
+        ],
+        "fromLampThroughWall": {
+          "floor": [
+            0.0014070776356749208,
+            0.0009971042003318166,
+            0.0005162501013353281
+          ],
+          "ceiling": [
+            0.001789680625605099,
+            0.001190733174435747,
+            0.0005284045860240983
+          ]
+        },
+        "fromSlatsThroughWall": {
+          "floor": [
+            0.00010958382645493157,
+            4.2954686185680144e-05,
+            1.0262131782279956e-05
+          ],
+          "ceiling": [
+            6.046668308996602e-05,
+            2.2255151294402106e-05,
+            4.5567862900873886e-06
+          ]
+        },
+        "behindArtwork": [
+          0.015269560124368725,
+          0.007022537587291038,
+          0.0016610943926685644
+        ],
+        "bench": [
+          0.07227698054062691,
+          0.027926373259788168,
+          0.006851105220277957
+        ],
+        "closure": 2.285298635603273e-05,
+        "diagnosticThroughGpuMs": 81177.09999990463,
+        "peakCountedBytes": 1184577258,
+        "cameraMs": 72.2000002861023,
+        "passes": [
+          {
+            "coefficients": 696,
+            "observations": 4338,
+            "cells": 482,
+            "receiverModeLinks": 181562,
+            "pointLinks": 779993,
+            "outlineSections": 7563075,
+            "sheetSections": 6613024,
+            "axisWork": [
+              4495,
+              971317,
+              5
+            ],
+            "failed": 368,
+            "maximum": 0.668223864618925,
+            "rms": 0.0552885560770157
+          },
+          {
+            "coefficients": 1383,
+            "observations": 11394,
+            "cells": 1266,
+            "receiverModeLinks": 642295,
+            "pointLinks": 3665795,
+            "outlineSections": 13368733,
+            "sheetSections": 12619822,
+            "axisWork": [
+              28345,
+              3876156,
+              8
+            ],
+            "failed": 944,
+            "maximum": 0.7096181493592204,
+            "rms": 0.04772476757682242
+          },
+          {
+            "coefficients": 2954,
+            "observations": 28098,
+            "cells": 3122,
+            "receiverModeLinks": 2210832,
+            "pointLinks": 15434316,
+            "outlineSections": 14852368,
+            "sheetSections": 25114311,
+            "axisWork": [
+              94969,
+              10411541,
+              5
+            ],
+            "failed": 1528,
+            "maximum": 0.6296063652559406,
+            "rms": 0.019403500681118502
+          },
+          {
+            "coefficients": 5262,
+            "observations": 54144,
+            "cells": 6016,
+            "receiverModeLinks": 5783987,
+            "pointLinks": 45141888,
+            "outlineSections": 22830431,
+            "sheetSections": 40334119,
+            "axisWork": [
+              218565,
+              19064851,
+              3
+            ],
+            "failed": 1957,
+            "maximum": 0.6647236288533583,
+            "rms": 0.022878530841025615
+          }
+        ],
+        "worstEmittingSide": {
+          "object": "bench-seat-left",
+          "side": 0,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            1.0469995891205761,
+            1.0469995891205746,
+            1.0469995891205721
+          ]
+        }
+      }
+    },
+    "revisit4K": [
+      {
+        "options": {
+          "angle": 0.3,
+          "slats": 1,
+          "radius": "0.044"
+        },
+        "ms": 11618.699999809265,
+        "field": "7a38ac4b9f00cbeca9370f4354a24163f44006f6457afe7406b4cd03b9336d89",
+        "pixels": "2fe7a5951487083c7916a93377e3bebe9b2bd50f9d42d04724d758017ee9d08e",
+        "memory": 473004005,
+        "camera": 31.700000286102295,
+        "gl": 0,
+        "gpuApertures": 3246401
+      },
+      {
+        "options": {
+          "angle": 0.3,
+          "slats": 1,
+          "radius": "0.044",
+          "split": true
+        },
+        "ms": 14187.699999809265,
+        "field": "7a38ac4b9f00cbeca9370f4354a24163f44006f6457afe7406b4cd03b9336d89",
+        "pixels": "2fe7a5951487083c7916a93377e3bebe9b2bd50f9d42d04724d758017ee9d08e",
+        "memory": 473004005,
+        "camera": 7.200000286102295,
+        "gl": 0,
+        "gpuApertures": 3246401
+      },
+      {
+        "options": {
+          "angle": 0.3,
+          "slats": 1,
+          "radius": "0.044",
+          "secondBlind": true,
+          "secondRadius": "0.033",
+          "secondAngle": -0.4,
+          "layout": "alternate",
+          "floor": "blue"
+        },
+        "ms": 19008.60000038147,
+        "field": "4c696be8a5a080bcb7069542bd9357e1f4b00d30b1315832ce4f9eed61faba79",
+        "pixels": "4fe4926c824c461b1c268cd5bc7127454ce64aab98c373dff6a3343409acc403",
+        "memory": 586252699,
+        "camera": 1775.1999998092651,
+        "gl": 0,
+        "gpuApertures": 4130926
+      },
+      {
+        "options": {
+          "angle": 0.3,
+          "slats": 1,
+          "radius": "0.044"
+        },
+        "ms": 12633.199999809265,
+        "field": "7a38ac4b9f00cbeca9370f4354a24163f44006f6457afe7406b4cd03b9336d89",
+        "pixels": "2fe7a5951487083c7916a93377e3bebe9b2bd50f9d42d04724d758017ee9d08e",
+        "memory": 511068853,
+        "camera": 9.199999809265137,
+        "gl": 0,
+        "gpuApertures": 3246401
+      }
+    ]
   }
 }

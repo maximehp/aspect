@@ -174,6 +174,7 @@ export async function traceRoom(renderer, scene) {
   return {
     region,
     wallFloorDomainPairs: domainPairs,
+    wallToFloorIntegratedLines: solution.axisCounts.get(floor * g.shapes.length + wall) || 0,
     wallSections: await shadowSections(illumination, chart, [0.2, 0.35, 0.45, 0.5, 0.55, 0.65, 0.8]),
     wallToFloorVisibility: sheetShadowSection(
       g,

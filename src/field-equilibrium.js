@@ -138,15 +138,16 @@ function integrateReceiverModes(g, parts, count) {
   const samples = g.supports.map(() => []);
   parts.forEach((p, part) => {
     for (let row = 0; row < p.starts.length - 1; row++) {
-      const q = g.receivers[p.first + row * p.stride];
+      const q = g.receivers[p.rowIds[row]];
       for (const [i, w] of q.test) samples[i].push([part, row, q.area * w]);
     }
   });
-  const buffer = new Float64Array(count),
+  const active = new Uint8Array(count),
+    buffer = new Float64Array(count),
     ids = new Uint32Array(count);
   const weights = [],
     columns = [];
-  let bytes = buffer.byteLength + ids.byteLength,
+  let bytes = active.byteLength + buffer.byteLength + ids.byteLength,
     links = 0;
   for (const samplesOfMode of samples) {
     let used = 0;
@@ -156,8 +157,19 @@ function integrateReceiverModes(g, parts, count) {
         const k = p.col[j],
           v = w * p.weights[j];
         if (v === 0) continue;
-        if (buffer[k] === 0) ids[used++] = k;
+        if (!active[k]) {
+          active[k] = 1;
+          ids[used++] = k;
+        }
         buffer[k] += v;
+      }
+      for (let j = p.deltaStarts[row]; j < p.deltaStarts[row + 1]; j++) {
+        const k = p.deltaCols[j];
+        if (!active[k]) {
+          active[k] = 1;
+          ids[used++] = k;
+        }
+        buffer[k] += w * p.deltaWeights[j];
       }
     }
     const source = ids.slice(0, used),
@@ -166,6 +178,7 @@ function integrateReceiverModes(g, parts, count) {
       const k = source[j];
       weight[j] = buffer[k];
       buffer[k] = 0;
+      active[k] = 0;
     }
     columns.push(source);
     weights.push(weight);
@@ -196,11 +209,12 @@ export function fieldEquilibrium(g, I, tolerance = 0.000025) {
     const result = new Float64Array(3 * n);
     for (const part of parts)
       for (let row = 0; row < part.starts.length - 1; row++) {
-        const q = g.receivers[part.first + part.stride * row];
+        const q = g.receivers[part.rowIds[row]];
         for (const [i, t] of q.test) {
           const w = q.area * t;
           if (source < 0) {
-            for (let c = 0; c < 3; c++) result[3 * i + c] += w * part.direct[3 * row + c];
+            for (let c = 0; c < 3; c++)
+              result[3 * i + c] += w * (part.direct[3 * row + c] + part.weakDirect[3 * row + c]);
           } else {
             const flux = w * part.lamp[row * g.shapes.length + source];
             for (let c = 0; c < 3; c++)
@@ -251,7 +265,7 @@ export function fieldEquilibrium(g, I, tolerance = 0.000025) {
     emit(incident, -1);
     for (const part of parts)
       for (let row = 0; row < part.starts.length - 1; row++) {
-        const i = 3 * (part.first + part.stride * row);
+        const i = 3 * part.rowIds[row];
         let a = 0,
           b = 0,
           c = 0;

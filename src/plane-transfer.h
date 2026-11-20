@@ -301,9 +301,50 @@ static int coversChart(const Umbra *shadow, const Chart *c) {
   }
   return 1;
 }
-void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Domain *groups, int ng,
-                  const Vec *lamp, double tol, unsigned char *modes, PlaneField *fields,
-                  Counts *stats, int *lampIds, const double *planeField) {
+// Find partial visibility that genuinely depends on the receiver's axial
+// position. The finite-sheet formula is valid for any number of sheets. Its
+// endpoint arrangement grows quadratically, so long lists keep the general
+// finite-segment integral. A rounded obstruction must be separated from the
+// complete bundle before using the sheet-only reduction.
+#define AXIS_BLOCKERS 6
+static int axisCandidates(const Chart *c, const Domain *g, const Obstacle *obs, int ns, int *ids) {
+  if (c->type || dp(cross3(c->ax, g->a), cross3(c->ax, g->a)) != 0)
+    return 0;
+  Vec A = scale3(c->ax, c->width), B = scale3(c->v, c->height), D = minus(g->c, c->c);
+  if (dp(D, c->n) <= radiusOn(g->a, g->b, c->n) || -dp(D, g->n) <= radiusOn(A, B, g->n))
+    return 0;
+  // Reserve the finite-axis reduction for a footprint varying appreciably
+  // across the receiver: certify a partly covered receiver for a source point.
+  int n = 0, partial = 0;
+  for (int j = 0; j < ns; j++)
+    if (j != c->object && j != g->object && !separated(c, A, B, g, obs + j)) {
+      const Shape *s = obs[j].s;
+      if (s->r)
+        return 0;
+      int scope = sheetCrossings(c, A, B, g, s);
+      if (scope == 1)
+        continue;
+      if (scope == 2 || n == AXIS_BLOCKERS)
+        return 0;
+      ids[n++] = j;
+      if (!partial) {
+        Cone cone = shadow(s, j, c->c);
+        int inside = cone.n > 0, outside = !cone.n, axial = 0;
+        for (int k = 0; k < cone.n; k++) {
+          double v = dp(cone.p[k].n, g->c) - cone.p[k].b, ext = radiusOn(g->a, g->b, cone.p[k].n);
+          inside &= v - ext > 0;
+          outside |= v + ext < 0;
+          axial |= absd(v) < absd(dp(cone.p[k].n, g->a));
+        }
+        partial = !inside && !outside && axial;
+      }
+    }
+  return partial ? n : 0;
+}
+int buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Domain *groups, int ng,
+                 const Vec *lamp, double tol, unsigned char *modes, PlaneField *fields,
+                 Counts *stats, int *lampIds, const double *planeField, int *axisIds,
+                 int axisCapacity) {
   predicateBase = s;
   predicateCount = ns;
   Cone lamps[ns];
@@ -365,7 +406,9 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
     }
     fields[k] = field;
   }
+  int axisUsed = ng + 1;
   for (int g = 0; g < ng; g++) {
+    axisIds[g] = axisUsed;
     const Domain *domain = groups + g;
     Umbra shadows[ns];
     int nearby[ns], last = -1, n = 0;
@@ -401,9 +444,25 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
             }
           }
       }
-      modes[g * nt + k] = mode;
+      int index = g * nt + k;
+      if (mode == 4 || mode == 5) {
+        int ids[AXIS_BLOCKERS];
+        int n = axisCandidates(c, domain, obs, ns, ids);
+        if (n) {
+          if (axisUsed + 2 + n <= axisCapacity) {
+            axisIds[axisUsed] = k;
+            axisIds[axisUsed + 1] = n;
+            for (int j = 0; j < n; j++)
+              axisIds[axisUsed + 2 + j] = ids[j];
+          }
+          axisUsed += 2 + n;
+        }
+      }
+      modes[index] = mode;
     }
   }
+  axisIds[ng] = axisUsed;
+  return axisUsed;
 }
 static void evaluatePlane(const Chart *s, Receiver y, const Moments *m, float *w) {
   Vec D = minus(y.p, s->c), A = scale3(s->ax, s->width), B = scale3(s->v, s->height);

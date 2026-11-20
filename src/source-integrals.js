@@ -51,6 +51,7 @@ export class SourceIntegrals {
         (packet.lampIds?.byteLength || 0) +
         (packet.planeField?.byteLength || 0) +
         (packet.lampEvents?.byteLength || 0) +
+        packet.axisPairs.byteLength +
         packet.domains.byteLength +
         packet.jacobians.byteLength +
         packet.shapes.byteLength +
@@ -67,6 +68,12 @@ export class SourceIntegrals {
       part.counts.forEach((x, i) => (flags[i] += x));
       links += part.col.length;
       for (const array of [
+        part.axisCounts,
+        part.rowIds,
+        part.deltaStarts,
+        part.deltaCols,
+        part.deltaWeights,
+        part.weakDirect,
         part.starts,
         part.col,
         part.weights,
@@ -77,7 +84,7 @@ export class SourceIntegrals {
       ])
         bytes += array.byteLength;
       for (let row = 0; row + 1 < part.jobStarts.length; row++) {
-        const receiver = part.first + row * part.stride;
+        const receiver = part.rowIds[row];
         for (let j = part.jobStarts[row]; j < part.jobStarts[row + 1]; j++) {
           angular.packed[2 * newJobs] = part.jobs[j];
           angular.packed[2 * newJobs + 1] = receiver;
@@ -112,13 +119,21 @@ export class SourceIntegrals {
           mass += p.weights[j] = Math.max(0, p.weights[j]);
         maxMass = Math.max(maxMass, mass);
       }
+    const axisCounts = new Map();
+    for (const part of parts)
+      for (let i = 0; i < part.axisCounts.length; i += 2) {
+        const key = part.axisCounts[i];
+        axisCounts.set(key, (axisCounts.get(key) || 0) + part.axisCounts[i + 1]);
+      }
     return {
+      axisCounts,
       parts,
       maxMass,
       bytes,
       links,
       newJobs,
       counts: flags,
+      axisWork: [13, 14, 15].map((k) => parts.reduce((n, p) => n + p.lampReuse[k], 0)),
       sheetSections: parts.reduce((n, p) => n + p.lampReuse[12], 0),
       outlineSections: parts.reduce((n, p) => n + p.lampReuse[11], 0),
       workerBytes: parts.reduce((a, p) => a + p.bytes, 0),

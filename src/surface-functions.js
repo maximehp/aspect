@@ -263,6 +263,7 @@ export function fieldGeometry(scene, domains, roots, order = 3) {
     supports,
     cells,
     packet: {
+      order: X.length,
       domains: domainsBuffer,
       sourceCount: vertices.length,
       jacobians: Float64Array.from(tiles, (t) => (t.type ? 1 : norm(cross(t.ax, t.v)))),
