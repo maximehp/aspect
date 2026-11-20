@@ -64,7 +64,13 @@ export function exactRoundedHit(box, origin, vector, tMin, tMax, endpoint = fals
       return v.n <= 0n ? -1 : compare(mulQ(v, v), disc);
     };
     for (const branch of [-1, 1]) {
-      if (cmp(lower, branch) >= 0 || cmp(a, branch) > 0 || (b && cmp(b, branch) < 0)) continue;
+      if (
+        cmp(lower, branch) >= 0 ||
+        (upper && cmp(upper, branch) <= 0) ||
+        cmp(a, branch) > 0 ||
+        (b && cmp(b, branch) < 0)
+      )
+        continue;
       const root = Math.sqrt(approximate(disc)),
         aa = approximate(A),
         bb = approximate(B);

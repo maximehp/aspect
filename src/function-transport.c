@@ -25,13 +25,15 @@ typedef struct {
 typedef struct {
   Plane p[12];
   int n, obj;
+  unsigned tangentMask;
+  int endpoint, axial;
 } Cone;
 typedef struct {
   double lo, hi;
   int id;
 } Interval;
 typedef struct {
-  long long strips, endpoints, exact, numeric, boundary, splits, limited, gpu, unused, regional,
+  long long strips, endpoints, exact, numeric, boundary, splits, limited, gpu, axialHits, regional,
       dark, facing, expansion, obstruction, individual, momentTiles, momentSlices, refined,
       sliceHits, sliceMisses;
 } Counts;
@@ -88,6 +90,27 @@ static Cone shadow(const Shape *s, int id, Vec eye) {
     return out;
   }
   double h[3] = {s->h.x, s->h.y, s->h.z};
+  // A tangent contact has n dot (eye - center) = radius. Bound that
+  // quantity on each feature's orthant of unit normals for this entire eye.
+  Vec O = local(s, minus(eye, s->c));
+  out.endpoint = 1;
+  unsigned bit = 1;
+  for (int feature = -1; feature < 3; feature++)
+    for (int signs = 0; signs < 8; signs++) {
+      if (feature >= 0 && (signs & (1 << feature)))
+        continue;
+      double positive = 0, min = FAR;
+      for (int d = 0; d < 3; d++)
+        if (d != feature) {
+          double q = (signs & (1 << d) ? 1 : -1) * ((double *)&O)[d] - (h[d] - s->r);
+          positive += high(0, q) * high(0, q);
+          min = low(min, q);
+        }
+      double eps = 1e-9 * (1 + length(O));
+      if (positive >= (high(0, s->r - eps) * high(0, s->r - eps)) && min <= s->r + eps)
+        out.tangentMask |= bit;
+      bit <<= 1;
+    }
   int front[3];
   for (int k = 0; k < 3; k++) {
     double a = -dp(d, s->ax[k]);
@@ -126,6 +149,11 @@ typedef struct {
 } LampSlice;
 #define SLICE_SLOTS 16384
 typedef struct {
+  int source, eye, object, feature, count;
+  double roots[2];
+} Tangents;
+#define TANGENT_SLOTS 2048
+typedef struct {
   const Shape *s;
   const Chart *c;
   Receiver y;
@@ -136,6 +164,8 @@ typedef struct {
   double tolerance, warpCenter, warpDepth;
   int lampDark, source;
   LampSlice *cache;
+  Tangents *tangents;
+  int receiver;
   double lift[5];
 } Pair;
 static int blocked(const Shape *s, Vec eye, Vec p) {
@@ -191,7 +221,7 @@ static int featureRoots(double A, double B, double C, double sizeA, double sizeB
   return rootsWithDisc(A, B, C, disc, a, b, events, count);
 }
 static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, double *hi,
-                       Counts *stats, int object) {
+                       Counts *stats, int object, const Cone *cone, Pair *pair, int eyeId) {
   const double a = *lo, b = *hi;
   Vec O = local(s, minus(eye, s->c)), D = local(s, minus(p, eye)), U = local(s, ax),
       fan = cross3(D, U);
@@ -205,22 +235,28 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
     return 1;
   double start = left ? a : FAR, end = right ? b : -FAR;
   Vec P = plus(O, D);
-  for (int k = 0; k < 3; k++)
-    if (((double *)&U)[k])
-      for (int sign = -1; sign <= 1; sign += 2) {
-        double x = (sign * (h[k] + r) - ((double *)&P)[k]) / ((double *)&U)[k];
-        if (x <= a || x >= b)
-          continue;
-        Vec v = plus(P, scale3(U, x));
-        int j = (k + 1) % 3, i = (k + 2) % 3;
-        if (absd(((double *)&v)[j]) <= h[j] + 1e-10 && absd(((double *)&v)[i]) <= h[i] + 1e-10) {
-          start = low(start, x);
-          end = high(end, x);
+  if (cone->endpoint)
+    for (int k = 0; k < 3; k++)
+      if (((double *)&U)[k])
+        for (int sign = -1; sign <= 1; sign += 2) {
+          double x = (sign * (h[k] + r) - ((double *)&P)[k]) / ((double *)&U)[k];
+          if (x <= a || x >= b)
+            continue;
+          Vec v = plus(P, scale3(U, x));
+          int j = (k + 1) % 3, i = (k + 2) % 3;
+          if (absd(((double *)&v)[j]) <= h[j] + 1e-10 && absd(((double *)&v)[i]) <= h[i] + 1e-10) {
+            start = low(start, x);
+            end = high(end, x);
+          }
         }
-      }
+  unsigned bit = 1;
   for (int feature = -1; feature < 3; feature++)
     for (int bits = 0; bits < 8; bits++) {
       if (feature >= 0 && bits & (1 << feature))
+        continue;
+      const int mayTangent = !!(cone->tangentMask & bit);
+      bit <<= 1;
+      if (!mayTangent && !cone->endpoint)
         continue;
       Vec center = {0};
       for (int j = 0; j < 3; j++)
@@ -230,21 +266,58 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
       double spread = feature < 0 ? 0 : absd(((double *)&fan)[feature]) * h[feature];
       if (absd(dp(o, fan)) > r * size + spread + 1e-10)
         continue;
+      Tangents *entry = 0;
+      int eyeKey = eyeId ? 0 : pair->receiver + 1, code = 8 * feature + bits;
+      if (mayTangent && pair->tangents && feature >= 0 && cone->axial == feature) {
+        unsigned key = (pair->source * 31u + eyeKey) * 65599u + cone->obj * 31u + code;
+        entry = pair->tangents + (key & (TANGENT_SLOTS - 1));
+      }
+      double events[4];
+      int tangent = 0;
+      int cached = entry && entry->source == pair->source + 1 && entry->eye == eyeKey &&
+                   entry->object == cone->obj && entry->feature == code;
+      if (cached) {
+        for (int j = 0; j < entry->count; j++)
+          if (entry->roots[j] > a && entry->roots[j] < b)
+            events[tangent++] = entry->roots[j];
+        stats->axialHits++;
+        if (!tangent && !cone->endpoint)
+          continue;
+      }
       if (feature >= 0)
         ((double *)&o)[feature] = ((double *)&v)[feature] = ((double *)&u)[feature] = 0;
-      Vec ep = plus(o, v);
-      double S = dp(o, o) - r * r, ou = dp(o, u), ov = dp(o, v), uu = dp(u, u), uv = dp(u, v),
-             vv = dp(v, v);
+      double uu = dp(u, u);
       if (uu == 0)
         continue;
-      double events[4];
-      int tangent =
-          featureRoots(ou * ou - S * uu, ou * ov - S * uv, ov * ov - S * vv, ou * ou + absd(S * uu),
-                       absd(ou * ov) + absd(S * uv), ov * ov + absd(S * vv), a, b, events, 0,
-                       object, feature, bits, p, ax, 0, stats);
+      if (mayTangent && !cached) {
+        double S = dp(o, o) - r * r, ou = dp(o, u), ov = dp(o, v), uv = dp(u, v), vv = dp(v, v);
+        double lo = entry ? -pair->c->width : a, hi = entry ? pair->c->width : b;
+        tangent = featureRoots(ou * ou - S * uu, ou * ov - S * uv, ov * ov - S * vv,
+                               ou * ou + absd(S * uu), absd(ou * ov) + absd(S * uv),
+                               ov * ov + absd(S * vv), lo, hi, events, 0, object, feature, bits, p,
+                               ax, 0, stats);
+        if (entry) {
+          entry->source = pair->source + 1;
+          entry->eye = eyeKey;
+          entry->object = cone->obj;
+          entry->feature = code;
+          entry->count = tangent;
+          int n = tangent;
+          tangent = 0;
+          for (int j = 0; j < n; j++) {
+            double x = events[j];
+            entry->roots[j] = x;
+            if (x > a && x < b)
+              events[tangent++] = x;
+          }
+        }
+      }
+      Vec ep = plus(o, v);
       double eu = dp(ep, u), ee = dp(ep, ep);
-      int n = featureRoots(uu, eu, ee - r * r, uu, length(ep) * length(u), ee + r * r, a, b, events,
-                           tangent, object, feature, bits, p, ax, 1, stats);
+      int n = cone->endpoint
+                  ? featureRoots(uu, eu, ee - r * r, uu, length(ep) * length(u), ee + r * r, a, b,
+                                 events, tangent, object, feature, bits, p, ax, 1, stats)
+                  : tangent;
       for (int i = 0; i < n; i++) {
         double x = events[i], t = 1;
         if (i < tangent) {
@@ -290,7 +363,7 @@ static int shadows(Pair *w, int eyeId, Vec p, Vec ax, double lo, double hi, Inte
         goto clear;
     }
     if (w->s[c->obj].r &&
-        !trimRounded(w->s + c->obj, eye, p, ax, &a, &b, w->stats, eyeId ? c->obj : -1))
+        !trimRounded(w->s + c->obj, eye, p, ax, &a, &b, w->stats, eyeId ? c->obj : -1, c, w, eyeId))
       goto clear;
     out[used++] = (Interval){a, b, c->obj};
   clear:;
@@ -627,6 +700,35 @@ static Integral refine(Pair *w, double a, double b, Panel p, double tol, int dep
   return sum(refine(w, a, m, l, tol * l.error / error, depth - 1),
              refine(w, m, b, r, tol * r.error / error, depth - 1));
 }
+// Translation along this chart coordinate does not enter a cylindrical tangent equation.
+static int invariantAxis(const Chart *c, const Shape *s) {
+  if (c->type)
+    return -1;
+  for (int d = 0; d < 3; d++)
+    if (absd(((const double *)&c->v)[d]) == 1 && ((const double *)&c->v)[(d + 1) % 3] == 0 &&
+        ((const double *)&c->v)[(d + 2) % 3] == 0) {
+      for (int k = 0; k < 3; k++)
+        if (absd(((const double *)&s->ax[k])[d]) == 1 &&
+            ((const double *)&s->ax[(k + 1) % 3])[d] == 0 &&
+            ((const double *)&s->ax[(k + 2) % 3])[d] == 0)
+          return k;
+    }
+  return -1;
+}
+// An endpoint on this source cannot cross the body if a local supporting
+// slab separates the entire chart. Silhouette tangencies still apply.
+static int endpointPossible(const Chart *c, const Shape *s) {
+  Vec d = minus(c->c, s->c);
+  for (int k = 0; k < 3; k++) {
+    Vec axis = s->ax[k];
+    double e = c->type == 2 ? c->r
+                            : c->width * absd(dp(c->ax, axis)) +
+                                  (c->type ? c->r : c->height * absd(dp(c->v, axis)));
+    if (absd(dp(d, axis)) > e + ((const double *)&s->h)[k] + 1e-9 * (1 + e + length(d)))
+      return 0;
+  }
+  return 1;
+}
 static int candidates(const Chart *c, const Shape *shapes, int skip, const Cone *all, int n,
                       Cone *out, int *hidden) {
   int count = 0;
@@ -650,7 +752,12 @@ static int candidates(const Chart *c, const Shape *shapes, int skip, const Cone 
       *hidden = 1;
       return 0;
     }
-    out[count++] = *k;
+    out[count] = *k;
+    if (shapes[j].r) {
+      out[count].endpoint = endpointPossible(c, shapes + j);
+      out[count].axial = invariantAxis(c, shapes + j);
+    }
+    count++;
   clear:;
   }
   return count;
@@ -801,6 +908,7 @@ void transport(const Shape *s, int ns, const Chart *tiles, int nt, const Receive
                const Moments *moments, const int *lampIds, LampSlice *cache) {
   for (int i = 0; i < SLICE_SLOTS; i++)
     cache[i].source = 0;
+  Tangents tangents[TANGENT_SLOTS] = {0};
   Cone lamps[ns], eyes[ns], localEye[ns], localLamp[ns];
   for (int j = 0; j < ns; j++)
     lamps[j] = shadow(s + j, j, *lamp);
@@ -846,6 +954,8 @@ void transport(const Shape *s, int ns, const Chart *tiles, int nt, const Receive
       Pair w = {.s = s,
                 .c = c,
                 .source = k,
+                .receiver = i,
+                .tangents = tangents,
                 .cache = cache,
                 .y = y,
                 .lamp = *lamp,
@@ -859,8 +969,14 @@ void transport(const Shape *s, int ns, const Chart *tiles, int nt, const Receive
         const int *ids = lampIds + k * (ns + 1);
         w.lampDark = ids[0] < 0;
         w.count[1] = w.lampDark ? 0 : ids[0];
-        for (int j = 0; j < w.count[1]; j++)
-          localLamp[j] = lamps[ids[j + 1]];
+        for (int j = 0; j < w.count[1]; j++) {
+          int id = ids[j + 1];
+          localLamp[j] = lamps[id];
+          if (s[id].r) {
+            localLamp[j].endpoint = endpointPossible(c, s + id);
+            localLamp[j].axial = invariantAxis(c, s + id);
+          }
+        }
       } else {
         w.count[1] = candidates(c, s, -1, lamps, ns, localLamp, &hidden);
         w.lampDark = hidden || (!c->type && dp(minus(*lamp, c->c), c->n) <= 0);

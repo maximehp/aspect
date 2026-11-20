@@ -116,7 +116,7 @@ REPLAY = """(async (extra, slats, ticks, digest) => {
     room.synchronize();
     times.push([performance.timeOrigin + start, performance.timeOrigin + performance.now(),room.frameStats.scanMs||0,
       room.countedBytes?.() ?? (room.stats.bytes+room.stats.workerBytes+room.frameStats.bytes+(room.view.contactBackend?.stats.peakBytes||0)+(room.math.curved?.wasm.memory.buffer.byteLength||0)),
-      solution.counts||[],solution.newJobs||0,solution.timings.workerMs||0,solution.timings.assemblyMs||0,solution.timings.solve||0,prepared-start,submitted-prepared,performance.now()-submitted,solution.timings.modalBuild||0,solution.timings.modalApply||0,solution.modal?.counts||{}]);
+      solution.counts||[],solution.newJobs||0,solution.timings.workerMs||0,solution.timings.assemblyMs||0,solution.timings.solve||0,prepared-start,submitted-prepared,performance.now()-submitted,solution.timings.modalBuild||0,solution.timings.modalApply||0,solution.modal?.counts||{},solution.timings.operatorMs||0]);
     if(digest){
       const pixels=new Uint8Array(3840*2160*4);
       gl.readPixels(0,0,3840,2160,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
@@ -215,6 +215,7 @@ def main():
                         "workerMs": percentiles([r[6] for r in rows[1:]]),
                         "assemblyMs": percentiles([r[7] for r in rows[1:]]),
                         "solveMs": percentiles([r[8] for r in rows[1:]]),
+                        "operatorConstructionMs": percentiles([r[15] for r in rows[1:]]),
                         "modalBuildMs": percentiles([r[12] for r in rows[1:]]),
                         "modalEquilibriumMs": percentiles([r[13] for r in rows[1:]]),
                         "meanModalWork": {k: statistics.mean(r[14][k] for r in rows[1:]) for k in rows[1][14]},

@@ -92,6 +92,7 @@ export class FunctionLighting {
           mass += p.weights[j] = Math.max(0, p.weights[j]);
         maxMass = Math.max(maxMass, mass);
       }
+    const solveStart = performance.now();
     const solved = this.expanded
       ? equilibrium(parts, direct, color)
       : await modalEquilibrium(geometry, parts, direct, color);
@@ -120,6 +121,7 @@ export class FunctionLighting {
         workerMs: Math.max(...parts.map((p) => p.ms)),
         assemblyMs: assembled - received,
         solve: finished - assembled,
+        operatorMs: solveStart - start + (modal?.buildMs || 0),
         modalBuild: modal?.buildMs || 0,
         modalApply: modal?.solveMs || 0,
         visibility: 0,

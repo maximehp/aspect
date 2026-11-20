@@ -110,8 +110,8 @@ run.addEventListener('click', async () => {
     }
     const elapsed = performance.now() - startWarm;
     times.sort((a, b) => a - b);
-    if(production)for(const [i,label] of ['Generator slices','Lit endpoints','Analytic length integrals','Spherical evaluations','Rounded boundary feature evaluations','Adaptive splits','Unresolved error estimates','Clear angular apertures in updated interactions','Reserved','Regional moment evaluations','Regionally excluded interactions','Domains crossing a facing boundary','Domains outside the expansion tolerance','Domains with unresolved blockers','Point or curved interactions','Integrated source moment fields','Lamp moment slices','Exact conic refinements','Reused current-pose lamp slices','Evaluated current-pose lamp slices'].entries())
-      if(label!=='Reserved')report(label+' per moving frame',Math.round(workCounts[i]/ticks).toLocaleString());
+    if(production)for(const [i,label] of ['Generator slices','Lit endpoints','Analytic length integrals','Spherical evaluations','Rounded boundary feature evaluations','Adaptive splits','Unresolved error estimates','Clear angular apertures in updated interactions','Reused cylinder tangent equations','Regional moment evaluations','Regionally excluded interactions','Domains crossing a facing boundary','Domains outside the expansion tolerance','Domains with unresolved blockers','Point or curved interactions','Integrated source moment fields','Lamp moment slices','Exact conic refinements','Reused current-pose lamp slices','Evaluated current-pose lamp slices'].entries())
+      report(label+' per moving frame',Math.round(workCounts[i]/ticks).toLocaleString());
     report('Moving window geometry', windowControl.selectedOptions[0].textContent);
     report('Covered pixels classified in runs', ((100 * grouped) / covered).toFixed(2) + '%');
     report('Exact lamp segment tests for frame visibility', Math.round(lampTests / ticks).toLocaleString());

@@ -5,7 +5,7 @@ import { buildRoom } from '../src/room.js';
 import { roundedBoxDistance } from '../src/rounded-box.js';
 import { exactRoundedHit } from '../src/exact-hit.js';
 import { exact, addQ, mulQ, approximate } from '../src/authored-scalar.js';
-import { silhouetteEquation } from '../src/silhouette.js';
+import { filletBoundary } from '../src/silhouette.js';
 
 const bits = new DataView(new ArrayBuffer(8));
 function shift(x, ulps) {
@@ -18,7 +18,9 @@ const edges = [],
   axis = [1, 0, 0];
 let queries = 0,
   floatDisagreements = 0,
-  exactDisagreements = 0;
+  exactDisagreements = 0,
+  axialCancellations = 0,
+  planeDisagreements = 0;
 for (let tick = 0; tick <= 20; tick++) {
   const angle = 0.299 + tick * 0.0001,
     scene = buildRoom({ angle, slats: 1, radius: '0.044' });
@@ -28,7 +30,9 @@ for (let tick = 0; tick <= 20; tick++) {
     roundedBoxDistance(box, eye, [x - eye[0], -eye[1], floor[2] - eye[2]], 1e-8, 1) < 1;
   const row = [];
   for (let signs = 0; signs < 4; signs++) {
-    const f = silhouetteEquation(box, eye, floor, axis, 2, signs);
+    const boundary = filletBoundary(box, eye, 2, signs);
+    const f = boundary.along(floor, axis),
+      plane = boundary.onPlane(floor, axis, [0, 0, 1]);
     if (f.discriminant.n <= 0n) continue;
     const a = approximate(f.A),
       b = approximate(f.B),
@@ -44,6 +48,9 @@ for (let tick = 0; tick <= 20; tick++) {
         const conic = v.n >= 0n,
           hit = exactRoundedHit(box, eye, [x, 0, floor[2]], 1e-8, 1, true) < 1;
         queries++;
+        axialCancellations += plane.xy.n === 0n && plane.yy.n === 0n && plane.y.n === 0n;
+        const onFloor = addQ(mulQ(addQ(mulQ(plane.xx, u), addQ(plane.x, plane.x)), u), plane.c);
+        planeDisagreements += onFloor.n >= 0n !== hit;
         floatDisagreements += binaryTest(x) !== conic;
         exactDisagreements += hit !== conic;
       }
@@ -52,4 +59,18 @@ for (let tick = 0; tick <= 20; tick++) {
   edges.push(row.sort((a, b) => a - b));
 }
 const maxStep = Math.max(...edges.slice(1).flatMap((e, i) => e.map((x, j) => Math.abs(x - edges[i][j]))));
-console.log(JSON.stringify({ queries, floatDisagreements, exactDisagreements, edges, maxStep }, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      queries,
+      floatDisagreements,
+      exactDisagreements,
+      axialCancellations,
+      planeDisagreements,
+      edges,
+      maxStep,
+    },
+    null,
+    2,
+  ),
+);
