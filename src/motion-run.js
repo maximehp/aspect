@@ -45,9 +45,9 @@ run.addEventListener('click', async () => {
     progress.textContent = 'Preparing the first pose…';
     await nextFrame();
     const started = performance.now();
-    const production=['function','pointwise'].includes(integrator.value);
+    const production=['function','expanded','pointwise'].includes(integrator.value);
     const Engine=production?LiveRenderer:(await import('./comparison-display.js')).LiveRenderer;
-    renderer = new Engine(document.querySelector('#room'), { contacts: integrator.value, regions: integrator.value!=='pointwise' });
+    renderer = new Engine(document.querySelector('#room'), { contacts: integrator.value, regions: integrator.value!=='pointwise', expanded: ['expanded','pointwise'].includes(integrator.value) });
     backend = production?renderer.angular:renderer.view.contactBackend;
     const totals = new Map();
     function record(label, elapsed) {
@@ -90,6 +90,7 @@ run.addEventListener('click', async () => {
         record('Concurrent CPU scanline visibility', renderer.frameStats.scanMs || 0);
         record('Longest transport worker (overlapping)', t.workerMs);
         record('Within exchange · sparse operator assembly', t.assemblyMs);
+        if(solution.modal){record('Surface coefficient construction', t.modalBuild);record('Surface coefficient solve and residual check', t.modalApply);}
         record('Within exchange · lamp visibility', t.visibility);
         record('Within exchange · lamp input', t.lamp);
         record('Within exchange · contact geometry and submission', t.contactMs || 0);

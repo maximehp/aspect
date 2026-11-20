@@ -74,9 +74,10 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       indices = [],
       weights = [],
       angular = [],
-      local = new Float64Array(n),
-      positions = new Int32Array(n);
-    const needed = new Uint8Array(n);
+      sourceCount = packet.sourceCount ?? n,
+      local = new Float64Array(sourceCount),
+      positions = new Int32Array(sourceCount);
+    const needed = new Uint8Array(sourceCount);
     for (let row = 0; row < rows; row++) {
       local.fill(0);
       needed.fill(0);
@@ -96,7 +97,7 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
           needed[nodes[4 * t]] = 1;
         }
       }
-      for (let j = 0; j < n; j++)
+      for (let j = 0; j < sourceCount; j++)
         if (local[j] || needed[j]) {
           positions[j] = indices.length;
           indices.push(j);

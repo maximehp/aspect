@@ -17,7 +17,7 @@
   <aside>
     <p>Replay 120 consecutive game ticks with a walking camera, a shadow-casting player body, two rotating blinds and a block moving alongside the bench.</p>
     <label for="integrator">Diffuse transport</label>
-    <select id="integrator"><option value="function">Surface functions</option><option value="pointwise">Fresh point-receiver comparison</option><option value="resident">Previous operator · GPU resident</option><option value="cpu">CPU reference</option><option value="gpu">GPU with readback reference</option></select>
+    <select id="integrator"><option value="function">Surface functions</option><option value="expanded">Fresh expanded-row comparison</option><option value="pointwise">Fresh point-receiver comparison</option><option value="resident">Previous operator · GPU resident</option><option value="cpu">CPU reference</option><option value="gpu">GPU with readback reference</option></select>
     <label for="window">Moving window geometry</label>
     <select id="window"><option value="0">Two full blinds</option><option value="1">One filleted slat</option><option value="2">Two independent filleted slats</option></select>
     <label for="extra-bodies">Additional moving solids</label>

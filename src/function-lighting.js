@@ -1,10 +1,13 @@
+import { equilibriumSolve } from './krylov.js';
+import { modalEquilibrium } from './modal-equilibrium.js';
 import { ReceiverRegions } from './receiver-regions.js';
 import { compileSurfaces } from './surface-functions.js';
 
 const integrationTolerance = 2e-4;
 export class FunctionLighting {
-  constructor(angular, { regions = true } = {}) {
+  constructor(angular, { regions = true, expanded = false } = {}) {
     this.angular = angular;
+    this.expanded = expanded;
     this.pool = [];
     this.regions = regions ? new ReceiverRegions() : null;
   }
@@ -89,7 +92,10 @@ export class FunctionLighting {
           mass += p.weights[j] = Math.max(0, p.weights[j]);
         maxMass = Math.max(maxMass, mass);
       }
-    const { incident: H, iterations, residual, bytes: solveBytes } = equilibrium(parts, direct, color);
+    const solved = this.expanded
+      ? equilibrium(parts, direct, color)
+      : await modalEquilibrium(geometry, parts, direct, color);
+    const { incident: H, iterations, residual, bytes: solveBytes, modal } = solved;
     const contraction = maxMass * color.reduce((m, x) => Math.max(m, x), 0);
     const equilibriumError = contraction < 1 ? residual / (1 - contraction) : Infinity;
     const finished = performance.now();
@@ -97,6 +103,7 @@ export class FunctionLighting {
     return {
       geometry,
       rows: parts,
+      modal,
       incident: H,
       bytes,
       workerBytes: parts.reduce((a, p) => a + p.bytes, 0),
@@ -113,6 +120,8 @@ export class FunctionLighting {
         workerMs: Math.max(...parts.map((p) => p.ms)),
         assemblyMs: assembled - received,
         solve: finished - assembled,
+        modalBuild: modal?.buildMs || 0,
+        modalApply: modal?.solveMs || 0,
         visibility: 0,
         lamp: 0,
         contactMs: 0,
@@ -127,8 +136,7 @@ export class FunctionLighting {
 function equilibrium(parts, direct, color) {
   const x = direct.slice();
   const n = x.length,
-    emitted = new Float64Array(n),
-    residual = new Float64Array(n);
+    emitted = new Float64Array(n);
   function apply(v, result) {
     for (let i = 0; i < n; i++) emitted[i] = color[i] * v[i];
     for (const p of parts)
@@ -149,55 +157,5 @@ function equilibrium(parts, direct, color) {
         result[i + 2] = c;
       }
   }
-  const directions = [],
-    images = [],
-    norms = [];
-  let iterations = 0,
-    error;
-  while (iterations < 512) {
-    apply(x, residual);
-    error = 0;
-    for (let i = 0; i < n; i++) {
-      residual[i] = direct[i] - residual[i];
-      error = Math.max(error, Math.abs(residual[i]));
-    }
-    if (error <= 1e-9)
-      return { incident: x, iterations, residual: error, bytes: (4 + 2 * directions.length) * x.byteLength };
-    for (let k = 0; k < 8; k++) {
-      const v = (directions[k] ??= new Float64Array(n)),
-        a = (images[k] ??= new Float64Array(n));
-      v.set(residual);
-      apply(v, a);
-      for (let j = 0; j < k; j++) {
-        const q = images[j],
-          d = directions[j];
-        let product = 0;
-        for (let i = 0; i < n; i++) product += q[i] * a[i];
-        const beta = product / norms[j];
-        for (let i = 0; i < n; i++) {
-          a[i] -= beta * q[i];
-          v[i] -= beta * d[i];
-        }
-      }
-      let dot = 0,
-        norm = 0;
-      for (let i = 0; i < n; i++) {
-        dot += a[i] * residual[i];
-        norm += a[i] * a[i];
-      }
-      if (!(norm > 0 && Number.isFinite(norm)))
-        throw Error('Diffuse equilibrium has a singular search direction.');
-      norms[k] = norm;
-      const alpha = dot / norm;
-      error = 0;
-      for (let i = 0; i < n; i++) {
-        x[i] += alpha * v[i];
-        residual[i] -= alpha * a[i];
-        error = Math.max(error, Math.abs(residual[i]));
-      }
-      iterations++;
-      if (error <= 1e-9) break;
-    }
-  }
-  throw Error('Diffuse equilibrium did not meet its residual tolerance.');
+  return equilibriumSolve(direct, apply, 1e-9, x);
 }

@@ -85,12 +85,12 @@ class BrowserTab:
 
 
 SETUP = """(async (mode) => {
-  const { LiveRenderer } = await import(['function','pointwise'].includes(mode)?'/src/room-display.js':'/src/comparison-display.js');
+  const { LiveRenderer } = await import(['function','expanded','pointwise'].includes(mode)?'/src/room-display.js':'/src/comparison-display.js');
   window.pose = (await import('/src/motion-benchmark.js')).motionPose;
   const canvas = document.createElement('canvas');
   document.body.replaceChildren(canvas);
   canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block';
-  window.room = new LiveRenderer(canvas, { contacts: mode, regions: mode!=='pointwise' });
+  window.room = new LiveRenderer(canvas, { contacts: mode, regions: mode!=='pointwise', expanded: mode==='expanded'||mode==='pointwise' });
 })"""
 
 REPLAY = """(async (extra, slats, ticks, digest) => {
@@ -116,7 +116,7 @@ REPLAY = """(async (extra, slats, ticks, digest) => {
     room.synchronize();
     times.push([performance.timeOrigin + start, performance.timeOrigin + performance.now(),room.frameStats.scanMs||0,
       room.countedBytes?.() ?? (room.stats.bytes+room.stats.workerBytes+room.frameStats.bytes+(room.view.contactBackend?.stats.peakBytes||0)+(room.math.curved?.wasm.memory.buffer.byteLength||0)),
-      solution.counts||[],solution.newJobs||0,solution.timings.workerMs||0,solution.timings.assemblyMs||0,solution.timings.solve||0,prepared-start,submitted-prepared,performance.now()-submitted]);
+      solution.counts||[],solution.newJobs||0,solution.timings.workerMs||0,solution.timings.assemblyMs||0,solution.timings.solve||0,prepared-start,submitted-prepared,performance.now()-submitted,solution.timings.modalBuild||0,solution.timings.modalApply||0,solution.modal?.counts||{}]);
     if(digest){
       const pixels=new Uint8Array(3840*2160*4);
       gl.readPixels(0,0,3840,2160,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
@@ -140,7 +140,7 @@ def percentiles(samples):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["function", "pointwise", "cpu", "gpu", "resident"])
+    parser.add_argument("mode", choices=["function", "expanded", "pointwise", "cpu", "gpu", "resident"])
     parser.add_argument("extra", type=int, choices=[0, 4, 8])
     parser.add_argument(
         "--port", type=int, default=9222, help="Chrome remote debugging port"
@@ -215,6 +215,9 @@ def main():
                         "workerMs": percentiles([r[6] for r in rows[1:]]),
                         "assemblyMs": percentiles([r[7] for r in rows[1:]]),
                         "solveMs": percentiles([r[8] for r in rows[1:]]),
+                        "modalBuildMs": percentiles([r[12] for r in rows[1:]]),
+                        "modalEquilibriumMs": percentiles([r[13] for r in rows[1:]]),
+                        "meanModalWork": {k: statistics.mean(r[14][k] for r in rows[1:]) for k in rows[1][14]},
                         "preparationMs": percentiles([r[9] for r in rows[1:]]),
                         "applyAndDrawMs": percentiles([r[10] for r in rows[1:]]),
                         "markAndFinishMs": percentiles([r[11] for r in rows[1:]]),
