@@ -78,3 +78,8 @@ export function exactRoundedHit(box, origin, vector, tMin, tMax, endpoint = fals
   }
   return Infinity;
 }
+
+export function hitImport(shapeAt) {
+  return (id, x, y, z, u, v, w, limit, endpoint) =>
+    exactRoundedHit(shapeAt(id), [x, y, z], [u, v, w], 1e-8, limit, endpoint);
+}

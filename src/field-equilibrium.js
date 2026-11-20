@@ -3,17 +3,28 @@
 function areaProjection(g) {
   const n = g.supports.length,
     mass = new Float64Array(n);
-  const rows = Array.from({ length: n }, () => new Map()),
-    components = new Map();
-  g.supports.forEach(({ component }, i) => {
-    if (!components.has(component)) components.set(component, []);
-    components.get(component).push(i);
-  });
+  const rows = Array.from({ length: n }, () => new Map());
   for (const q of g.receivers)
     for (const [i, wi] of q.test) {
       const w = q.area * wi;
       mass[i] += w;
       for (const [j, wj] of q.test) rows[i].set(j, (rows[i].get(j) || 0) + w * wj);
+    }
+  // A closed visibility contact disconnects the receiver mass matrix. Each
+  // connected part owns its flux and its positivity correction independently.
+  const components = [],
+    seen = new Uint8Array(n);
+  for (let i = 0; i < n; i++)
+    if (!seen[i]) {
+      const ids = [i];
+      seen[i] = 1;
+      for (let k = 0; k < ids.length; k++)
+        for (const j of rows[ids[k]].keys())
+          if (!seen[j]) {
+            ids.push(j);
+            seen[j] = 1;
+          }
+      components.push(ids);
     }
   const start = new Uint32Array(n + 1);
   for (let i = 0; i < n; i++) start[i + 1] = start[i] + rows[i].size;
@@ -37,7 +48,7 @@ function areaProjection(g) {
     values.byteLength +
     diag.byteLength +
     fixed.byteLength;
-  function project(samples, freeze = false, useFixed = false) {
+  function project(moments, freeze = false, useFixed = false) {
     const result = new Float64Array(3 * n),
       rhs = new Float64Array(n),
       x = new Float64Array(n),
@@ -45,12 +56,8 @@ function areaProjection(g) {
       p = new Float64Array(n),
       Ap = new Float64Array(n);
     for (let c = 0; c < 3; c++) {
-      rhs.fill(0);
+      for (let i = 0; i < n; i++) rhs[i] = moments[3 * i + c];
       x.fill(0);
-      g.receivers.forEach((q, k) => {
-        const v = q.area * samples[3 * k + c];
-        for (const [i, w] of q.test) rhs[i] += w * v;
-      });
       let norm = 0;
       for (let i = 0; i < n; i++) {
         r[i] = rhs[i] / Math.sqrt(mass[i]);
@@ -78,7 +85,7 @@ function areaProjection(g) {
       }
       if (!Number.isFinite(norm) || norm > tol) throw Error('Surface mass solve exceeded its tolerance');
       for (let i = 0; i < n; i++) x[i] /= Math.sqrt(mass[i]);
-      for (const ids of components.values()) {
+      for (const ids of components) {
         let flux = 0,
           minimum = Infinity;
         for (const i of ids) {
@@ -124,6 +131,49 @@ function areaProjection(g) {
   }
   return { project, bytes: bytes + 8 * n * 5, mass };
 }
+// Integrate the receiver-coordinate test functions before taking another
+// bounce. K_ij = sum_q area_q * test_i(q) * sourceWeight_j(q).
+// The cubature rows are needed once more for the final spatial residual.
+function integrateReceiverModes(g, parts, count) {
+  const samples = g.supports.map(() => []);
+  parts.forEach((p, part) => {
+    for (let row = 0; row < p.starts.length - 1; row++) {
+      const q = g.receivers[p.first + row * p.stride];
+      for (const [i, w] of q.test) samples[i].push([part, row, q.area * w]);
+    }
+  });
+  const buffer = new Float64Array(count),
+    ids = new Uint32Array(count);
+  const weights = [],
+    columns = [];
+  let bytes = buffer.byteLength + ids.byteLength,
+    links = 0;
+  for (const samplesOfMode of samples) {
+    let used = 0;
+    for (const [part, row, w] of samplesOfMode) {
+      const p = parts[part];
+      for (let j = p.starts[row]; j < p.starts[row + 1]; j++) {
+        const k = p.col[j],
+          v = w * p.weights[j];
+        if (v === 0) continue;
+        if (buffer[k] === 0) ids[used++] = k;
+        buffer[k] += v;
+      }
+    }
+    const source = ids.slice(0, used),
+      weight = new Float64Array(used);
+    for (let j = 0; j < used; j++) {
+      const k = source[j];
+      weight[j] = buffer[k];
+      buffer[k] = 0;
+    }
+    columns.push(source);
+    weights.push(weight);
+    bytes += source.byteLength + weight.byteLength;
+    links += used;
+  }
+  return { weights, columns, bytes, links };
+}
 export function fieldEquilibrium(g, I, tolerance = 0.000025) {
   const P = areaProjection(g),
     { parts } = I,
@@ -139,46 +189,82 @@ export function fieldEquilibrium(g, I, tolerance = 0.000025) {
   }
   // An incident field has two additive terms. The direct term retains its source
   // and the geometry defining its visible support, even across a shadow edge.
-  // The reflected term is a continuous function on the authored surface.
+  // The reflected term shares one trace on each side of a physical contact.
   const fieldOf = (indirect, lamp = null) => ({ geometry: g, indirect, lamp });
   const direct = fieldOf(null, g.packet);
-  function measure(input, source = -1) {
-    if (input.geometry !== g) throw Error('Cannot reflect a field belonging to another pose');
-    const smooth = input.indirect,
-      lamp = input.lamp;
-    light.fill(0);
-    if (smooth)
-      g.vertices.forEach((v, i) => {
-        const rho = g.shapes[v.object].color;
-        for (let c = 0; c < 3; c++)
-          emitted[3 * i + c] = v.object === source || source < 0 ? rho[c] * smooth[3 * i + c] : 0;
-      });
+  function observeLamp(source = -1) {
+    const result = new Float64Array(3 * n);
     for (const part of parts)
-      for (let r = 0; r + 1 < part.starts.length; r++) {
-        const i = 3 * (part.first + r * part.stride);
-        if (lamp) {
+      for (let row = 0; row < part.starts.length - 1; row++) {
+        const q = g.receivers[part.first + part.stride * row];
+        for (const [i, t] of q.test) {
+          const w = q.area * t;
           if (source < 0) {
-            for (let c = 0; c < 3; c++) light[i + c] = part.direct[3 * r + c];
+            for (let c = 0; c < 3; c++) result[3 * i + c] += w * part.direct[3 * row + c];
           } else {
-            const w = part.lamp[r * g.shapes.length + source],
-              rho = g.shapes[source].color;
-            for (let c = 0; c < 3; c++) light[i + c] = w * g.packet.lampRGB[c] * rho[c];
+            const flux = w * part.lamp[row * g.shapes.length + source];
+            for (let c = 0; c < 3; c++)
+              result[3 * i + c] += flux * g.packet.lampRGB[c] * g.shapes[source].color[c];
           }
         }
-        if (!smooth) continue;
+      }
+    return result;
+  }
+  const K = integrateReceiverModes(g, parts, g.vertices.length),
+    directMoments = observeLamp();
+  function emit(smooth, source) {
+    g.vertices.forEach((v, i) => {
+      const rho = g.shapes[v.object].color;
+      for (let c = 0; c < 3; c++)
+        emitted[3 * i + c] = source < 0 || v.object === source ? rho[c] * smooth[3 * i + c] : 0;
+    });
+  }
+  function measure(input, source = -1) {
+    if (input.geometry !== g) throw Error('Cannot reflect a field belonging to another pose');
+    const moments = input.lamp
+      ? source < 0
+        ? directMoments.slice()
+        : observeLamp(source)
+      : new Float64Array(3 * n);
+    if (!input.indirect) return moments;
+    emit(input.indirect, source);
+    for (let i = 0; i < n; i++) {
+      let a = 0,
+        b = 0,
+        c = 0;
+      const cols = K.columns[i],
+        weights = K.weights[i];
+      for (let j = 0; j < cols.length; j++) {
+        const k = 3 * cols[j],
+          w = weights[j];
+        a += w * emitted[k];
+        b += w * emitted[k + 1];
+        c += w * emitted[k + 2];
+      }
+      moments[3 * i] += a;
+      moments[3 * i + 1] += b;
+      moments[3 * i + 2] += c;
+    }
+    return moments;
+  }
+  function spatialResidualSamples(incident) {
+    emit(incident, -1);
+    for (const part of parts)
+      for (let row = 0; row < part.starts.length - 1; row++) {
+        const i = 3 * (part.first + part.stride * row);
         let a = 0,
           b = 0,
           c = 0;
-        for (let j = part.starts[r]; j < part.starts[r + 1]; j++) {
+        for (let j = part.starts[row]; j < part.starts[row + 1]; j++) {
           const k = 3 * part.col[j],
             w = part.weights[j];
           a += w * emitted[k];
           b += w * emitted[k + 1];
           c += w * emitted[k + 2];
         }
-        light[i] += a;
-        light[i + 1] += b;
-        light[i + 2] += c;
+        light[i] = a + part.direct[3 * row];
+        light[i + 1] = b + part.direct[3 * row + 1];
+        light[i + 2] = c + part.direct[3 * row + 2];
       }
     return light;
   }
@@ -198,8 +284,8 @@ export function fieldEquilibrium(g, I, tolerance = 0.000025) {
   if (residual > tolerance) throw Error('Diffuse equilibrium did not converge: ' + residual);
   // Freeze the active positive modes of the settled solution. All source
   // decompositions now use ONE linear, energy-preserving receiver projection.
-  const sample = light.slice();
-  P.project(sample, true);
+  const sample = spatialResidualSamples(incident);
+  P.project(measure(fieldOf(incident, g.packet)), true);
   function reflect(input, source = -1) {
     return fieldOf(vertexValues(P.project(measure(input, source), false, true)));
   }
@@ -218,6 +304,7 @@ export function fieldEquilibrium(g, I, tolerance = 0.000025) {
     residual,
     closure,
     reflect,
-    bytes: P.bytes + 2 * light.byteLength + 5 * incident.byteLength + n * 24,
+    modeLinks: K.links,
+    bytes: K.bytes + P.bytes + 2 * light.byteLength + 5 * incident.byteLength + n * 24,
   };
 }

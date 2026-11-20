@@ -2,6 +2,9 @@ import { authoredCharts, fieldGeometry } from './surface-functions.js';
 import { domain, leaves, split } from './field-domain.js';
 import { SourceIntegrals } from './source-integrals.js';
 import { fieldEquilibrium } from './field-equilibrium.js';
+import { contactLines, splitContacts } from './plane-contact.js';
+import { sheetBoundaryForms } from './sheet-boundary.js';
+import { poseShadows } from './plane-shadow.js';
 import { dot, cross, unit } from './cpu-geometry.js';
 
 const spatialTolerance = { absolute: 0.0015, relative: 0.045 };
@@ -13,6 +16,8 @@ function initialFunctions({ charts, shapes }, records) {
   return charts.map((g) => {
     const root = domain(),
       s = shapes[g.object];
+    g.contacts = contactLines(g, shapes);
+    splitContacts(root, g.contacts);
     if (g.empty || s.axes) return root;
     const dual = records.subarray(19 * g.object, 19 * (g.object + 1)),
       features = [];
@@ -108,6 +113,8 @@ export class DiffuseTransport {
   async update(scene) {
     const start = performance.now(),
       surface = authoredCharts(scene),
+      shadowOn = poseShadows(surface, scene.lightPosition),
+      sheetForms = sheetBoundaryForms(surface, scene.records),
       knots = initialFunctions(surface, scene.records),
       history = [];
     const counts = Array(20).fill(0);
@@ -118,7 +125,7 @@ export class DiffuseTransport {
       peak = 0;
     for (let pass = 0; ; pass++) {
       const g = fieldGeometry(scene, surface, knots, 3),
-        I = await this.sources.integrate(g);
+        I = await this.sources.integrate(g, shadowOn, sheetForms);
       const t = performance.now(),
         state = fieldEquilibrium(g, I),
         estimate = detail(g, state);
@@ -132,6 +139,10 @@ export class DiffuseTransport {
         coefficients: g.supports.length,
         observations: g.receivers.length,
         cells: g.cells.length,
+        receiverModeLinks: state.modeLinks,
+        pointLinks: I.links,
+        outlineSections: I.outlineSections,
+        sheetSections: I.sheetSections,
         failed: estimate.failed,
         maximum: estimate.maximum,
         rms: estimate.rms,

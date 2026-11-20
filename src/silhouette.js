@@ -1,3 +1,4 @@
+import { hitImport } from './exact-hit.js';
 import { exactBoxGeometry } from './rounded-box.js';
 import { exact, addQ, subQ, mulQ, approximate } from './authored-scalar.js';
 const zero = exact(0),
@@ -64,7 +65,18 @@ export function silhouetteEquation(shape, lamp, p, u, axis, signs, endpoint = fa
 // Called only when the native coefficient filter cannot settle a tangency.
 export function conicImports(context) {
   const poses = new WeakMap();
+  function shapeAt(id, packet) {
+    const s = packet.shapes.subarray(19 * id, 19 * id + 19);
+    return {
+      center: Array.from(s.subarray(0, 3)),
+      axes: [3, 6, 9].map((k) => Array.from(s.subarray(k, k + 3))),
+      halfSize: Array.from(s.subarray(12, 15)),
+      radius: s[15],
+      definition: packet.definitions?.[id],
+    };
+  }
   return {
+    hit: hitImport((id) => shapeAt(id, context().packet)),
     refine: (id, axis, signs, px, py, pz, ux, uy, uz, endpoint, address) => {
       const { packet, memory } = context();
       let curves = poses.get(packet);
@@ -75,15 +87,7 @@ export function conicImports(context) {
       const key = ((id * 4 + axis + 1) * 8 + signs) * 2 + endpoint;
       let boundary = curves.get(key);
       if (!boundary) {
-        const s = packet.shapes.subarray(19 * id, 19 * id + 19);
-        const shape = {
-          center: Array.from(s.subarray(0, 3)),
-          axes: [3, 6, 9].map((k) => Array.from(s.subarray(k, k + 3))),
-          halfSize: Array.from(s.subarray(12, 15)),
-          radius: s[15],
-          definition: packet.definitions?.[id],
-        };
-        boundary = filletBoundary(shape, Array.from(packet.lamp), axis, signs, endpoint);
+        boundary = filletBoundary(shapeAt(id, packet), Array.from(packet.lamp), axis, signs, endpoint);
         curves.set(key, boundary);
       }
       const f = boundary.along([px, py, pz], [ux, uy, uz]);

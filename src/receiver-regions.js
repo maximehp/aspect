@@ -27,6 +27,7 @@ export class ReceiverRegions {
       v = reserve(nt * 64),
       counts = reserve(160),
       ids = reserve(4 * nt * (ns + 1));
+    const f = reserve(packet.planeField.byteLength);
     const memory = this.wasm.memory;
     if (memory.buffer.byteLength < offset)
       memory.grow(Math.ceil((offset - memory.buffer.byteLength) / 65536));
@@ -36,7 +37,8 @@ export class ReceiverRegions {
     new Uint8Array(buffer, g, domains.byteLength).set(new Uint8Array(domains));
     new Float64Array(buffer, l, 3).set(lamp);
     new Uint8Array(buffer, counts, 160).fill(0);
-    this.wasm.buildRegions(s, ns, t, nt, g, ng, l, tolerance, m, v, counts, ids);
+    new Float64Array(buffer, f, packet.planeField.length).set(packet.planeField);
+    this.wasm.buildRegions(s, ns, t, nt, g, ng, l, tolerance, m, v, counts, ids, f);
     packet.regions = new Uint8Array(buffer, m, nt * ng).slice();
     packet.moments = new Float64Array(buffer, v, nt * 8).slice();
     packet.lampIds = new Int32Array(buffer, ids, nt * (ns + 1)).slice();
@@ -45,7 +47,7 @@ export class ReceiverRegions {
     for (;;) {
       const end = address + capacity * 8;
       if (memory.buffer.byteLength < end) memory.grow(Math.ceil((end - memory.buffer.byteLength) / 65536));
-      const used = this.wasm.compileLampEvents(s, ns, t, nt, l, ids, address, capacity);
+      const used = this.wasm.compileLampEvents(s, ns, t, nt, l, ids, address, capacity, f);
       if (used <= capacity) {
         packet.lampEvents = new Float64Array(memory.buffer, address, used).slice();
         break;

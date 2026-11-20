@@ -1,3 +1,4 @@
+import { joinSheets } from './join-sheets.js';
 import { roundedBoxExtent } from './rounded-box.js';
 import { shadowVolume } from './visibility.js';
 export const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -127,7 +128,24 @@ function shapeRecord(s) {
 // Capture one pose at submission. Visibility, source integration and display
 // all read the same ordered shape equations, including mutable author edits.
 export function sceneGeometry(scene) {
-  const {shapes,lightPosition,lampRGB}=structuredClone({
-    shapes:[...scene.rectangles,...scene.roundedBoxes],lightPosition:scene.lightPosition,lampRGB:scene.lampRGB});
-  return {shapes,lightPosition,lampRGB,records:Float64Array.from(shapes.flatMap(shapeRecord))};
+  const { rectangles, roundedBoxes, lightPosition, lampRGB } = structuredClone({
+    rectangles: scene.rectangles,
+    roundedBoxes: scene.roundedBoxes,
+    lightPosition: scene.lightPosition,
+    lampRGB: scene.lampRGB,
+  });
+  const joined = joinSheets(rectangles),
+    shapes = [...joined.map((x) => x.shape), ...roundedBoxes];
+  const authoredToSurface = new Uint32Array(rectangles.length + roundedBoxes.length);
+  joined.forEach((e, i) => {
+    for (const id of e.ids) authoredToSurface[id] = i;
+  });
+  roundedBoxes.forEach((s, i) => (authoredToSurface[i + rectangles.length] = i + joined.length));
+  return {
+    shapes,
+    lightPosition,
+    lampRGB,
+    authoredToSurface,
+    records: Float64Array.from(shapes.flatMap(shapeRecord)),
+  };
 }

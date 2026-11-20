@@ -3,6 +3,7 @@
 // The directional transport kernel accounts for visibility and projected area.
 // Surface charts are integration domains on the analytic solid, never draw primitives.
 import { dot, cross, unit } from './cpu-geometry.js';
+import { contactSector } from './plane-contact.js';
 import { continuousBasis, leaves, hats } from './field-domain.js';
 const scale = (a, k) => a.map((v) => v * k);
 const add = (a, ...bs) => a.map((v, i) => bs.reduce((s, b) => s + b[i], v));
@@ -174,7 +175,7 @@ export function fieldGeometry(scene, domains, roots, order = 3) {
     cells = [],
     groups = [];
   charts.forEach((g, i) => (g.domain = roots[i]));
-  const { vertices, supports } = continuousBasis(charts, positionKey);
+  const { vertices, supports } = continuousBasis(charts, positionKey, contactSector);
   const X = order === 3 ? [-Math.sqrt(0.6), 0, Math.sqrt(0.6)] : [-Math.sqrt(1 / 3), Math.sqrt(1 / 3)];
   const W = order === 3 ? [5 / 9, 8 / 9, 5 / 9] : [1, 1];
   for (const g of charts) {
@@ -230,6 +231,9 @@ export function fieldGeometry(scene, domains, roots, order = 3) {
             n,
             group,
             object: g.object,
+            plane: g.type ? -1 : g.offset,
+            s: (2 * u - 1) * g.width,
+            t: (2 * v - 1) * g.height,
             ids,
             hat,
             test: [...test],
@@ -266,6 +270,7 @@ export function fieldGeometry(scene, domains, roots, order = 3) {
       shapes: scene.records,
       tiles: tileBuffer,
       points,
+      planePoints: Float64Array.from(receivers.flatMap((q) => [q.plane, q.s, q.t])),
       lamp: new Float64Array(scene.lightPosition),
       nodes: Uint32Array.from(tiles.flatMap((t) => t.nodes)),
       colors: Float64Array.from(shapes.flatMap((s) => s.color)),
@@ -284,7 +289,7 @@ export function writeChart(buffer, offset, c) {
     c.height,
     c.r,
   ]);
-  new Int32Array(buffer, offset + 144, 6).set([c.type, c.object, c.slot, 0, 0, 0]);
+  new Int32Array(buffer, offset + 144, 6).set([c.type, c.object, c.slot, c.offset, 0, 0]);
   new Float64Array(buffer, offset + 168, 4).set(c.bounds.map((x) => x * halfPi));
 }
 export function writeReceiver(buffer, offset, { p, n, object, group = 0 }) {

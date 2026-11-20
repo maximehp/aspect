@@ -1,95 +1,134 @@
-// On a plane, the boundary of a finite sheet's point-light shadow is a line.
-// Compile the union once for the authored chart. Between consecutive vertices
-// each blocked generator interval has two affine endpoints.
-import { projectedFootprint, partitionReceiver, shadowVolume } from './visibility.js';
+// These functions belong to the authored plane and the current pose. Refining
+// its indirect brightness changes neither the lamp nor the boundary equations.
+import { projectedFootprint, shadowVolume } from './visibility.js';
+import { filletFootprint } from './fillet-footprint.js';
 import { dot, sub } from './cpu-geometry.js';
 
+// Intersect the plane with the union of the sheet shadows. Sweep the original
+// edges. Keep a break only when an exposed endpoint changes its defining line.
 function bands(chart, planes) {
   const surface = {
     center: chart.c,
     axisU: chart.ax.map((x) => x * chart.width),
     axisV: chart.v.map((x) => x * chart.height),
   };
-  const clips = [];
-  for (let j = 0; j < planes.length; j++)
-    if (j !== chart.object) {
-      const uv = projectedFootprint(surface, planes[j]);
-      if (uv) clips.push(uv);
+  const stops = new Set([-1, 1]),
+    edges = [],
+    polygons = [];
+  for (let j = 0; j < planes.length; j++) {
+    if (j === chart.object) continue;
+    const uv = projectedFootprint(surface, planes[j]);
+    if (!uv) continue;
+    const boundary = [];
+    for (let i = 0; i < uv.length; i++) {
+      const p = uv[i],
+        q = uv[(i + 1) % uv.length];
+      if (p[1] === q[1]) continue;
+      const slope = (q[0] - p[0]) / (q[1] - p[1]);
+      const edge = {
+        low: Math.min(p[1], q[1]),
+        high: Math.max(p[1], q[1]),
+        slope,
+        at: (t) => p[0] + (t - p[1]) * slope,
+      };
+      stops.add(edge.low);
+      stops.add(edge.high);
+      for (const other of edges) {
+        const a = Math.max(edge.low, other.low),
+          b = Math.min(edge.high, other.high);
+        if (!(b > a)) continue;
+        const left = edge.at(a) - other.at(a),
+          right = edge.at(b) - other.at(b);
+        if ((left < 0 && right > 0) || (left > 0 && right < 0))
+          stops.add(a + ((b - a) * left) / (left - right));
+      }
+      boundary.push(edge);
     }
-  const dark = partitionReceiver(clips).filter((c) => !c.lit);
-  const stops = [...new Set([-1, 1, ...dark.flatMap((c) => c.uv.map((p) => p[1]))])].sort((a, b) => a - b);
-  const records = [],
-    pieces = [];
-  for (let j = 1; j < stops.length; j++) {
-    const a = stops[j - 1],
-      b = stops[j],
+    edges.push(...boundary);
+    polygons.push(boundary);
+  }
+  const cuts = [...stops].sort((a, b) => a - b),
+    spans = [];
+  for (let j = 1; j < cuts.length; j++) {
+    const a = cuts[j - 1],
+      b = cuts[j],
       mid = (a + b) / 2;
     if (!(mid > a && mid < b)) return null;
     const intervals = [];
-    for (const cell of dark) {
-      let left, right;
-      for (let i = 0; i < cell.uv.length; i++) {
-        const p = cell.uv[i],
-          q = cell.uv[(i + 1) % cell.uv.length];
-        if (p[1] < mid === q[1] < mid) continue;
-        const slope = (q[0] - p[0]) / (q[1] - p[1]);
-        const edge = {
-          x: p[0] + (mid - p[1]) * slope,
-          lo: p[0] + (a - p[1]) * slope,
-          hi: p[0] + (b - p[1]) * slope,
-        };
-        if (!left || edge.x < left.x) left = edge;
-        if (!right || edge.x > right.x) right = edge;
-      }
-      if (left && right && right.x > left.x) intervals.push([left, right]);
+    for (const boundary of polygons) {
+      const active = boundary
+        .filter((e) => e.low < mid && mid < e.high)
+        .sort((l, r) => l.at(mid) - r.at(mid));
+      if (active.length >= 2) intervals.push([active[0], active.at(-1)]);
     }
-    intervals.sort((p, q) => p[0].x - q[0].x);
+    intervals.sort((p, q) => p[0].at(mid) - q[0].at(mid));
     const merged = [];
     for (const [l, r] of intervals) {
-      const last = merged.at(-1);
-      if (last && l.x <= last[1].x) {
-        if (r.x > last[1].x) last[1] = r;
+      const prev = merged.at(-1);
+      if (prev && l.at(mid) <= prev[1].at(mid)) {
+        if (r.at(mid) > prev[1].at(mid)) prev[1] = r;
       } else merged.push([l, r]);
     }
-    records.push(a * chart.height, b * chart.height, pieces.length, merged.length);
-    for (const [l, r] of merged)
-      pieces.push(l.lo * chart.width, r.lo * chart.width, l.hi * chart.width, r.hi * chart.width);
+    const last = spans.at(-1);
+    if (
+      last &&
+      merged.length === last.edges.length &&
+      merged.every(([l, r], i) => l === last.edges[i][0] && r === last.edges[i][1])
+    )
+      last.b = b;
+    else spans.push({ a, b, edges: merged });
   }
-  return [records.length / 4, ...records, ...pieces];
+  const records = [],
+    pieces = [];
+  for (const { a, b, edges } of spans) {
+    records.push(a * chart.height, b * chart.height, pieces.length, edges.length);
+    for (const [l, r] of edges)
+      pieces.push(...[l.at(a), r.at(a), l.at(b), r.at(b)].map((x) => x * chart.width));
+  }
+  return [spans.length, ...records, ...pieces];
 }
 
-export function compilePlaneShadows(geometry) {
-  const { shapes, charts, tiles, packet } = geometry,
-    ns = shapes.length,
-    nt = tiles.length;
-  const planes = shapes.map((s) => (s.axes ? null : shadowVolume(s, packet.lamp))),
-    programs = new Map(),
-    data = Array(4 * nt).fill(0);
-  for (let k = 0; k < nt; k++) {
-    const tile = tiles[k],
-      ids = k * (ns + 1),
-      count = packet.lampIds[ids];
-    if (tile.type || count <= 0) continue;
-    let sheets = 0;
-    while (sheets < count && !shapes[packet.lampIds[ids + 1 + sheets] >> 3].axes) sheets++;
-    if (!sheets) continue;
-    const chart = charts[tile.offset];
-    if (!programs.has(chart)) {
-      const program = bands(chart, planes),
-        offset = program ? data.length : 0;
-      programs.set(chart, offset);
-      if (program) for (const value of program) data.push(value);
+export function poseShadows(surface, lamp) {
+  const planes = surface.shapes.map((s) => (s.axes ? null : shadowVolume(s, lamp))),
+    cache = new Map();
+  return (chart) => {
+    if (!cache.has(chart)) {
+      const outlines = surface.shapes.map((s, i) =>
+        s.axes && i !== chart.object ? filletFootprint(chart, s, lamp) : null,
+      );
+      cache.set(chart, { sheets: bands(chart, planes), outlines });
     }
-    const start = programs.get(chart);
-    if (!start) continue;
-    const d = sub(tile.c, chart.c),
-      uv = dot(chart.ax, chart.v),
-      det = 1 - uv * uv;
-    if (det < 1e-8) continue;
+    return cache.get(chart);
+  };
+}
+export function compilePlaneShadows(geometry, shadowOn) {
+  const { charts, tiles, packet } = geometry,
+    offsets = new Map(),
+    data = Array(4 * tiles.length).fill(0);
+  for (let k = 0; k < tiles.length; k++) {
+    const tile = tiles[k];
+    if (tile.type) continue;
+    const chart = charts[tile.offset];
+    if (dot(tile.n, sub(packet.lamp, tile.c)) > 0 && !offsets.has(chart)) {
+      const { sheets, outlines } = shadowOn(chart);
+      const start = sheets ? data.length : 0;
+      if (sheets) for (const value of sheets) data.push(value);
+      const table = data.length;
+      data.push(...Array(outlines.length).fill(0));
+      outlines.forEach((f, i) => {
+        if (!f) return;
+        data[table + i] = data.length;
+        data.push(...f);
+      });
+      offsets.set(chart, [start, table]);
+    }
+    const [start, table] = offsets.get(chart) || [0, 0],
+      [a, b, l, h] = tile.bounds;
     data[4 * k] = start;
-    data[4 * k + 3] = sheets;
-    data[4 * k + 1] = (dot(d, chart.ax) - uv * dot(d, chart.v)) / det;
-    data[4 * k + 2] = (dot(d, chart.v) - uv * dot(d, chart.ax)) / det;
+    data[4 * k + 1] = (a + b - 1) * chart.width;
+    data[4 * k + 2] = (l + h - 1) * chart.height;
+
+    data[4 * k + 3] = table;
   }
   return new Float64Array(data);
 }

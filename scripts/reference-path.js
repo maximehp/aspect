@@ -307,15 +307,21 @@ export function referenceTransfer({
     const obj = solids[id],
       point = advance(origin, d, t),
       delta = point.map((v, k) => v - obj.center[k]);
+    const surface = snapshot.authoredToSurface?.[id] ?? id;
     let uv, slot;
-    if (!obj.axes) {
+    if (!obj.axes && snapshot.compiledShapes) {
+      const rec = snapshot.compiledShapes.slice(19 * surface, 19 * surface + 12);
+      const pos = point.map((x, i) => x - rec[i]);
+      uv = [0.5 + 0.5 * dot(pos, rec.slice(3, 6)), 0.5 + 0.5 * dot(pos, rec.slice(6, 9))];
+      slot = Number(dot(rec.slice(9, 12), d) > 0);
+    } else if (!obj.axes) {
       uv = [0.5 + 0.5 * dot(delta, f.dualU), 0.5 + 0.5 * dot(delta, f.dualV)];
       slot = Number(dot(f.normal, d) > 0);
     } else {
       const normal = obj.axes.map((ax) => dot(f.normal, ax)),
         local = obj.axes.map((ax) => dot(delta, ax)),
         core = obj.halfSize.map((h) => h - obj.radius);
-      const active = normal.map((v) => Number(Math.abs(v) > 1e-10)),
+      const active = normal.map((v, i) => Number(Math.abs(v) > 1e-10 || core[i] === 0)),
         count = active.reduce((a, b) => a + b, 0);
       if (count === 1) {
         const k = active.indexOf(1),
@@ -340,7 +346,7 @@ export function referenceTransfer({
         ];
       }
     }
-    const rgb = fieldValue(snapshot.charts[id][slot], ...uv, snapshot.indirect),
+    const rgb = fieldValue(snapshot.charts[surface][slot], ...uv, snapshot.indirect),
       L = room.lightPosition.map((x, i) => x - point[i]),
       r2 = dot(L, L);
     const litCos = (slot === 1 && !obj.axes ? -1 : 1) * dot(f.normal, L);

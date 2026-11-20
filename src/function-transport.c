@@ -202,6 +202,50 @@ typedef struct {
 } Tangents;
 #define TANGENT_SLOTS 2048
 typedef struct {
+  double h, u, v;
+} SheetPosition;
+typedef struct {
+  double c, x, t;
+} LinearEdge;
+typedef struct {
+  LinearEdge edges[5];
+  int count;
+} SheetSection;
+
+// With the blocking sheet at height zero, its intersection with segment XY
+// has chart coordinate (r*U(X)-h*U(Y))/(r-h), r=height(Y), h=height(X).
+// Keeping Y variable gives four biaffine edge equations on source x receiver.
+// Bind Y only for unresolved receiver cubature. On an entire source generator
+// all remaining boundaries are straight. Remove inequalities valid everywhere.
+static SheetSection bindEdges(const double *source, SheetPosition y, const Shape *sheet,
+                              const Chart *c, double u0, double v0) {
+  SheetSection out = {0};
+  const double sign = y.h > 0 ? 1 : -1;
+  for (int face = 0; face < 5; face++) {
+    LinearEdge e;
+    double margin;
+    if (!face) {
+      e = (LinearEdge){-sign * source[0], -sign * source[1], -sign * source[2]};
+      margin = -1e-9;
+    } else {
+      const int axis = (face - 1) / 2, side = face % 2 ? 1 : -1;
+      const double *coord = source + 3 * (1 + axis);
+      const double height = -sign * (1 + side * (axis ? y.v : y.u)), uv = sign * side * y.h;
+      e = (LinearEdge){sign * y.h + height * source[0] + uv * coord[0],
+                       height * source[1] + uv * coord[1], height * source[2] + uv * coord[2]};
+      margin = 1e-11 * length(plus(scale3(sheet->ax[2], height), scale3(sheet->ax[axis], uv)));
+    }
+    e.c += e.x * u0 + e.t * v0 + margin;
+    double span = absd(e.x) * c->width + absd(e.t) * c->height;
+    if (e.c - span > 1e-12 * (1 + absd(e.c) + span))
+      continue;
+    out.edges[out.count++] = e;
+  }
+  return out;
+}
+
+typedef struct {
+  const SheetSection *receiverSheets;
   const Shape *s;
   const Chart *c;
   Receiver y;
@@ -223,9 +267,6 @@ typedef struct {
 // source-specific endpoint flag and axial dimension (zero means none).
 static const Cone *blockerCone(const Pair *w, int eye, int j) {
   return w->cone[eye] + (w->blockers[eye][j] >> 3);
-}
-static int blocked(const Shape *s, Vec eye, Vec p) {
-  return segmentHit(s, eye, p, 1. - 1e-10) < 1.;
 }
 static int inSolid(const Shape *s, Vec p) {
   Vec q = local(s, minus(p, s->c));
@@ -296,9 +337,9 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
     }
     if (clip > 0) {
       if (left < 0)
-        left = blocked(s, eye, plus(p, scale3(ax, a)));
+        left = occludesSegment(s, eye, plus(p, scale3(ax, a)));
       if (right < 0)
-        right = blocked(s, eye, plus(p, scale3(ax, b)));
+        right = occludesSegment(s, eye, plus(p, scale3(ax, b)));
       if (left && right) {
         *lo = a;
         *hi = b;
@@ -310,9 +351,9 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
     }
   }
   if (left < 0)
-    left = blocked(s, eye, plus(p, scale3(ax, a)));
+    left = occludesSegment(s, eye, plus(p, scale3(ax, a)));
   if (right < 0)
-    right = blocked(s, eye, plus(p, scale3(ax, b)));
+    right = occludesSegment(s, eye, plus(p, scale3(ax, b)));
   if (left && right)
     return 1;
   double start = left ? a : FAR, end = right ? b : -FAR;
@@ -436,12 +477,80 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
   *hi = end;
   return end > start;
 }
+static const double *lampOutline(const Pair *w, int object) {
+  if (!w->field || w->c->type)
+    return 0;
+  int table = (int)w->field[4 * w->source + 3];
+  int offset = table ? (int)w->field[table + object] : 0;
+  return offset ? w->field + offset : 0;
+}
+// A horizontal section of the projected convex body is one interval. Its
+// extrema lie on a projected corner ball or on a finite tangent generator.
+static int outlineInterval(const double *f, double t, double u, double lo, double hi,
+                           Interval *out) {
+  const int n = (int)f[0];
+  const double *bands = f + 1, *fn = bands + 4 * n;
+  double eps = 1e-11 * (1 + absd(t));
+  if (t < bands[0] - eps || t > bands[4 * n - 3] + eps)
+    return 0;
+  int a = 0, b = n - 1;
+  while (a < b) {
+    int m = (a + b) / 2;
+    if (t > bands[4 * m + 1])
+      a = m + 1;
+    else
+      b = m;
+  }
+  const double *band = bands + 4 * a;
+  if (t <= band[0] + eps || t >= band[1] - eps)
+    return -1;
+  double ends[2];
+  for (int j = 0; j < 2; j++) {
+    const double *c = fn + 5 * (int)band[2 + j];
+    double d = t - c[1], x = c[0] + d * c[2];
+    if (c[3]) {
+      double y = d / c[4], rad = (1 - y) * (1 + y);
+      if (rad <= 1e-12)
+        return -1;
+      x += c[3] * ROOT(rad);
+    }
+    ends[j] = x - u;
+  }
+  out->lo = high(lo, ends[0]);
+  out->hi = low(hi, ends[1]);
+  return out->hi > out->lo;
+}
 static int shadowIntervals(Pair *w, int eyeId, Vec p, Vec ax, double lo, double hi, Interval *out,
                            int first) {
   int used = 0;
   Vec eye = eyeId ? w->lamp : w->y.p;
   for (int j = first; j < w->count[eyeId]; j++) {
     const Cone *c = blockerCone(w, eyeId, j);
+    if (!eyeId && w->receiverSheets && !w->s[c->obj].r) {
+      const SheetSection *region = w->receiverSheets + j;
+      double a = lo, b = hi, t = dp(minus(p, w->c->c), w->c->v);
+      for (int k = 0; k < region->count; k++) {
+        LinearEdge e = region->edges[k];
+        if (!clipPositive(e.c + e.t * t, e.x, &a, &b))
+          goto clear;
+      }
+      out[used++] = (Interval){a, b, c->obj};
+      w->reuse[12]++;
+      continue;
+    }
+    const double *f = eyeId && w->s[c->obj].r ? lampOutline(w, c->obj) : 0;
+    if (f) {
+      const double *tile = w->field + 4 * w->source;
+      double t = tile[2] + dp(minus(p, w->c->c), w->c->v);
+      int found = outlineInterval(f, t, tile[1], lo, hi, out + used);
+      if (found >= 0) {
+        if (w->reuse)
+          w->reuse[11]++;
+        if (found)
+          out[used++].id = c->obj;
+        continue;
+      }
+    }
     double a = lo, b = hi;
     for (int k = 0; k < c->n; k++) {
       Plane h = c->p[k];
@@ -515,7 +624,9 @@ static int sheetIntervals(Pair *w, double t, Vec p, Interval *result) {
       result[n++] = (Interval){left, right, -1};
     }
   }
-  int sheets = (int)tile[3];
+  int sheets = 0;
+  while (sheets < capacity && !w->s[blockerCone(w, 1, sheets)->obj].r)
+    sheets++;
   if (n > sheets)
     return -1;
   w->reuse[0]++;
@@ -683,18 +794,18 @@ static int arcState(Pair *w, int eyeId, Vec p, double delta) {
       Shape outer = *s;
       outer.r += delta;
       outer.h = plus(outer.h, (Vec){delta, delta, delta});
-      if (!blocked(&outer, eye, p) && !inSolid(&outer, eye) && !inSolid(&outer, p))
+      if (!occludesSegment(&outer, eye, p) && !inSolid(&outer, eye) && !inSolid(&outer, p))
         goto outside;
       if (s->r > delta) {
         Shape inner = *s;
         inner.r -= delta;
         inner.h = minus(inner.h, (Vec){delta, delta, delta});
-        if (blocked(&inner, eye, p))
+        if (occludesSegment(&inner, eye, p))
           return -1;
       }
     }
     if (delta == 0) {
-      if (blocked(s, eye, p))
+      if (occludesSegment(s, eye, p))
         return -1;
     } else
       maybe = 1;
@@ -1133,6 +1244,7 @@ static void addCrossing(Edge u, Edge v, double *cuts, int *nc, int capacity, dou
   if (t > lo && t < hi && *nc < capacity)
     insert(cuts, nc, t, a, b);
 }
+static void outlineCuts(Pair *, double *, int *, int, double, double);
 static int planarEvents(Pair *w, double *cuts, int capacity, double a, double b) {
   const double *field = w->lampGeometry;
   int nc = 0;
@@ -1146,8 +1258,10 @@ static int planarEvents(Pair *w, double *cuts, int capacity, double a, double b)
       insert(cuts, &nc, field[2 + j], a, b);
     w->reuse[2]++;
     w->reuse[3] += w->count[1];
-  } else
+  } else {
+    outlineCuts(w, cuts, &nc, capacity, a, b);
     ne += projectedEdges(w, 1, cuts, &nc, capacity, a, b, edges + ne);
+  }
   for (int i = 0; i < ne; i++)
     for (int j = 0; j < i; j++)
       addCrossing(edges[i], edges[j], cuts, &nc, capacity, a, b);
@@ -1226,8 +1340,22 @@ static int cylinderEvents(Pair *w, double *cuts, int cap) {
 
 // Once per pose, retain the lamp-side boundary events and affine edges of
 // each generator family. Receiver crossings with these edges remain local.
+static void outlineCuts(Pair *w, double *cuts, int *nc, int cap, double a, double b) {
+  for (int j = 0; j < w->count[1]; j++) {
+    const double *f = lampOutline(w, blockerCone(w, 1, j)->obj);
+    if (!f)
+      continue;
+    int n = (int)f[0];
+    for (int i = 0; i < n && *nc < cap; i++)
+      insert(cuts, nc, f[1 + 4 * i] - w->field[4 * w->source + 2], a, b);
+    if (*nc < cap)
+      insert(cuts, nc, f[4 * n - 2] - w->field[4 * w->source + 2], a, b);
+  }
+}
 int compileLampEvents(const Shape *shapes, int ns, const Chart *tiles, int nt, const Vec *light,
-                      const int *ids, double *out, int limit) {
+                      const int *ids, double *out, int limit, const double *field) {
+  predicateBase = shapes;
+  predicateCount = ns;
   Cone cones[ns];
   for (int j = 0; j < ns; j++)
     cones[j] = shadow(shapes + j, j, *light);
@@ -1244,6 +1372,8 @@ int compileLampEvents(const Shape *shapes, int ns, const Chart *tiles, int nt, c
               .c = c,
               .lamp = *light,
               .y = {.p = *light},
+              .field = field,
+              .source = k,
               .cone = {cones, cones},
               .blockers = {0, row + 1},
               .count = {0, count}};
@@ -1253,6 +1383,7 @@ int compileLampEvents(const Shape *shapes, int ns, const Chart *tiles, int nt, c
     if (c->type == 1)
       nc = cylinderEvents(&w, cuts, cap);
     else {
+      outlineCuts(&w, cuts, &nc, cap, -c->height, c->height);
       ne = projectedEdges(&w, 1, cuts, &nc, cap, -c->height, c->height, edges);
       for (int i = 0; i < ne; i++)
         for (int j = 0; j < i; j++)
@@ -1281,14 +1412,16 @@ int compileLampEvents(const Shape *shapes, int ns, const Chart *tiles, int nt, c
 typedef struct {
   LampSlice slices[SLICE_SLOTS];
   Tangents tangents[TANGENT_SLOTS];
-  unsigned long long reuse[11];
+  unsigned long long reuse[13];
   Cone lamps[];
 } TransportWorkspace;
 
 unsigned transportBytes(int ns) { return sizeof(TransportWorkspace) + ns * sizeof(Cone); }
 
 void prepareTransport(TransportWorkspace *workspace, const Shape *s, int ns, const Vec *lamp) {
-  for (int i = 0; i < 11; i++)
+  predicateBase = s;
+  predicateCount = ns;
+  for (int i = 0; i < 13; i++)
     workspace->reuse[i] = 0;
   for (int j = 0; j < SLICE_SLOTS; j++)
     workspace->slices[j].source = 0;
@@ -1317,7 +1450,8 @@ int lampEvents(TransportWorkspace *ws, const Chart *chart, const int *ids, int c
 }
 
 int lampIntervals(TransportWorkspace *ws, const Shape *shapes, const Chart *chart, const Vec *lamp,
-                  const int *ids, int count, double transverse, double *ends, Counts *stats) {
+                  const int *ids, int count, double transverse, double *ends, Counts *stats,
+                  const double *field, int tile) {
   if (count < 0)
     return 0;
   Pair w = {.s = shapes,
@@ -1329,11 +1463,11 @@ int lampIntervals(TransportWorkspace *ws, const Shape *shapes, const Chart *char
             .stats = stats,
             .reuse = ws->reuse,
             .tangents = ws->tangents,
-            .source = chart->object};
+            .source = tile,
+            .field = field};
   Vec normal, p = cp(chart, 0, transverse, &normal);
-  Interval dark[count + 1], open[count + 1];
-  int n = shadows(&w, 1, p, chart->ax, -chart->width, chart->width, dark);
-  int visible = openings(dark, n, -chart->width, chart->width, open);
+  Interval open[count + 1];
+  int visible = litGenerator(&w, transverse, p, open);
   for (int i = 0; i < visible; i++) {
     ends[2 * i] = open[i].lo;
     ends[2 * i + 1] = open[i].hi;
@@ -1347,7 +1481,19 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
                  const Receiver *receivers, int i, const Vec *lamp, double tolerance, float *output,
                  int *tileIds, Counts *stats, const unsigned char *modes, const PlaneField *fields,
                  const int *lampIds, const double *planeField, const double *eventField,
-                 int weightedGPU) {
+                 int weightedGPU, const double *sheetForms, const double *planePoints) {
+  const double *uv = planePoints ? planePoints + 3 * i : 0;
+  int receiverChart = uv ? (int)uv[0] : -1;
+  SheetPosition observer[ns];
+  if (receiverChart >= 0) {
+    const double *forms = sheetForms + (int)sheetForms[receiverChart];
+    for (int j = 0; j < ns; j++) {
+      const double *q = forms + 9 * j;
+      observer[j] =
+          (SheetPosition){q[0] + uv[1] * q[1] + uv[2] * q[2], q[3] + uv[1] * q[4] + uv[2] * q[5],
+                          q[6] + uv[1] * q[7] + uv[2] * q[8]};
+    }
+  }
   Cone eyes[ns];
   int localEye[ns], localLamp[ns], near[ns], last = -1, nearCount = 0;
   unsigned faces[ns];
@@ -1460,6 +1606,17 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
         workspace->reuse[9]++;
         continue;
       }
+    }
+    SheetSection sheetIntervalsForReceiver[w.count[0] + 1];
+    if (receiverChart >= 0 && !c->type && w.count[0]) {
+      const double *forms = sheetForms + (int)sheetForms[c->base], *tile = planeField + 4 * k;
+      for (int j = 0; j < w.count[0]; j++) {
+        int b = localEye[j] >> 3;
+        if (!s[b].r)
+          sheetIntervalsForReceiver[j] =
+              bindEdges(forms + 9 * b, observer[b], s + b, c, tile[1], tile[2]);
+      }
+      w.receiverSheets = sheetIntervalsForReceiver;
     }
     double a = c->type ? c->b0 : -c->height, b = c->type ? c->b1 : c->height;
     // Certified clear planar tiles use the GPU's projected angular measure

@@ -192,6 +192,11 @@ def main():
                 row, = browser.evaluate(REPLAY + "(" + ",".join(map(json.dumps, [args.extra, args.slats, [tick], args.digest_frames])) + ")")
                 rows.append(row)
                 print(json.dumps({"tick": tick, "gpuMs": row[1]-row[0], "field": row[12]}), file=sys.stderr, flush=True)
+            # CDP may deliver the final stamped swap just after the draw returns.
+            # Drain that event before asking Chrome to stop sending frames.
+            deadline = time.monotonic() + 3
+            while not any(t >= rows[-1][0] for t in browser.swaps.get(ticks[-1], [])) and time.monotonic() < deadline:
+                browser.evaluate("new Promise(resolve => requestAnimationFrame(() => resolve(true)))")
             browser.call("Page.stopScreencast")
             latencies, completed, tails, missing = [], [], [], []
             for pose, (start, done, *_) in zip(ticks[1:], rows[1:]):

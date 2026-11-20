@@ -1,4 +1,4 @@
-import {exactRoundedHit} from './exact-hit.js';
+import { hitImport } from './exact-hit.js';
 import { dot, sub, volume } from './cpu-geometry.js';
 import { painter } from './painter.js';
 import { roundedBoxDistance } from './rounded-box.js';
@@ -6,8 +6,9 @@ import { roundedBoxDistance } from './rounded-box.js';
 const mul = (v, s) => v.map((x) => x * s);
 export class Arena {
   constructor(module) {
-    this.wasm = new WebAssembly.Instance(module,{geometry:{hit:(id,x,y,z,u,v,w,limit,endpoint)=>
-       exactRoundedHit(this.shapes[id],[x,y,z],[u,v,w],1e-8,limit,endpoint)}}).exports;
+    this.wasm = new WebAssembly.Instance(module, {
+      geometry: { hit: hitImport((id) => this.shapes[id]) },
+    }).exports;
     this.reset();
   }
   planes(eye, shapes = this.shapes, cones) {

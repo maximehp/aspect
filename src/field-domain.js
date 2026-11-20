@@ -33,21 +33,23 @@ export function fieldValue(chart, u, v, values) {
 
 // A finer leaf meeting a coarse edge must give that edge exactly the same
 // function. Eliminate each hanging coefficient by restriction of its two
-// neighbours. The same restrictions apply on cylinder and corner seams.
-export function continuousBasis(charts, key) {
+// neighbours. Contacts select a side before imposing these constraints.
+export function continuousBasis(charts, key, sector) {
   const vertices = [],
     byKey = new Map(),
     lines = new Map(),
     supports = [];
-  function vertex(g, u, v) {
-    const name = key(g, u, v);
+  function vertex(g, u, v, leaf, findOnly = false) {
+    const region = sector(g, u, v, leaf);
+    const name = key(g, u, v) + (region ? '/side/' + region : '');
+    if (findOnly) return byKey.get(name);
     if (!byKey.has(name)) {
       byKey.set(name, vertices.length);
       vertices.push({ object: g.object, component: 2 * g.object + (g.shape.axes ? 0 : g.slot) });
     }
     return byKey.get(name);
   }
-  function edge(g, d, fixed, a, b, i, j) {
+  function edge(g, leaf, d, fixed, a, b, i, j) {
     if (i === j) return;
     let name = g.offset + '/' + d + '/' + fixed;
     if (fixed === 0 || fixed === 1) {
@@ -62,28 +64,44 @@ export function continuousBasis(charts, key) {
     }
     if (!lines.has(name)) lines.set(name, { points: new Map(), edges: [] });
     const line = lines.get(name);
-    line.points.set(a, i);
-    line.points.set(b, j);
-    line.edges.push([a, b, i, j]);
+    if (!line.points.has(a)) line.points.set(a, new Set());
+    if (!line.points.has(b)) line.points.set(b, new Set());
+    line.points.get(a).add(i);
+    line.points.get(b).add(j);
+    line.edges.push([
+      a,
+      b,
+      i,
+      j,
+      g.contacts?.length && fixed > 0 && fixed < 1
+        ? (t) => vertex(g, d ? fixed : t, d ? t : fixed, leaf, true)
+        : null,
+    ]);
   }
   for (const g of charts)
     if (!g.empty)
       for (const leaf of leaves(g.domain)) {
         const [a, b, l, h] = leaf.bounds,
-          [i, j, k, m] = (leaf.ids = [vertex(g, a, l), vertex(g, b, l), vertex(g, a, h), vertex(g, b, h)]);
-        edge(g, 0, l, a, b, i, j);
-        edge(g, 0, h, a, b, k, m);
-        edge(g, 1, a, l, h, i, k);
-        edge(g, 1, b, l, h, j, m);
+          [i, j, k, m] = (leaf.ids = [
+            vertex(g, a, l, leaf),
+            vertex(g, b, l, leaf),
+            vertex(g, a, h, leaf),
+            vertex(g, b, h, leaf),
+          ]);
+        edge(g, leaf, 0, l, a, b, i, j);
+        edge(g, leaf, 0, h, a, b, k, m);
+        edge(g, leaf, 1, a, l, h, i, k);
+        edge(g, leaf, 1, b, l, h, j, m);
       }
   for (const line of lines.values()) {
-    const points = [...line.points].sort((a, b) => a[0] - b[0]);
-    for (const [a, b, i, j] of line.edges)
-      for (const [t, k] of points) {
-        if (t <= a || t >= b || k === i || k === j) continue;
-        if (!vertices[k].constraint || b - a > vertices[k].constraint.width)
-          vertices[k].constraint = { i, j, f: (t - a) / (b - a), width: b - a };
-      }
+    const points = line.points;
+    for (const [a, b, i, j, trace] of line.edges)
+      for (const [t, ids] of points)
+        for (const k of ids) {
+          if (t <= a || t >= b || k === i || k === j || (trace && trace(t) !== k)) continue;
+          if (!vertices[k].constraint || b - a > vertices[k].constraint.width)
+            vertices[k].constraint = { i, j, f: (t - a) / (b - a), width: b - a };
+        }
   }
   function resolve(v) {
     if (v.basis) return v.basis;

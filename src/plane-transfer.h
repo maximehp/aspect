@@ -303,7 +303,9 @@ static int coversChart(const Umbra *shadow, const Chart *c) {
 }
 void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Domain *groups, int ng,
                   const Vec *lamp, double tol, unsigned char *modes, PlaneField *fields,
-                  Counts *stats, int *lampIds) {
+                  Counts *stats, int *lampIds, const double *planeField) {
+  predicateBase = s;
+  predicateCount = ns;
   Cone lamps[ns];
   Obstacle obs[ns];
   for (int j = 0; j < ns; j++) {
@@ -323,6 +325,8 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
     Pair w = {.s = s,
               .c = c,
               .lamp = *lamp,
+              .field = planeField,
+              .source = k,
               .cone = {0, lamps},
               .blockers = {0, ids + 1},
               .stats = stats};

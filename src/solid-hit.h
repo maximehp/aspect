@@ -143,9 +143,10 @@ static double hit(const Shape *s, Vec o, Vec d, double limit) {
   return FAR;
 }
 
-static double segmentHit(const Shape *s, Vec eye, Vec point, double limit) {
+// One open-segment convention for camera shadows and source visibility.
+static int occludesSegment(const Shape *s, Vec eye, Vec point) {
   predicateEndpoint = &point;
-  double t = hit(s, eye, minus(point, eye), limit);
+  double t = hit(s, eye, minus(point, eye), 1. - 1e-10);
   predicateEndpoint = 0;
-  return t;
+  return t < 1.;
 }

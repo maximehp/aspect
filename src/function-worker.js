@@ -30,6 +30,8 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       moments = space(packet.moments?.byteLength || 0),
       catalog = space(packet.lampIds?.byteLength || 0),
       planeField = space(packet.planeField?.byteLength || 0),
+      sheetForms = space(packet.sheetForms.byteLength),
+      planePoints = space(packet.planePoints.byteLength),
       eventField = space(packet.lampEvents?.byteLength || 0);
     if (cursor > engine.memory.buffer.byteLength)
       engine.memory.grow(Math.ceil((cursor - engine.memory.buffer.byteLength) / 65536));
@@ -39,6 +41,8 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
     new Uint8Array(mem, dest, points.byteLength).set(new Uint8Array(points));
     new Float64Array(mem, light, 3).set(lamp);
     new Uint8Array(mem, counts, 160).fill(0);
+    new Float64Array(mem, sheetForms, packet.sheetForms.length).set(packet.sheetForms);
+    new Float64Array(mem, planePoints, packet.planePoints.length).set(packet.planePoints);
     if (packet.lampEvents)
       new Float64Array(mem, eventField, packet.lampEvents.length).set(packet.lampEvents);
     if (packet.planeField)
@@ -87,6 +91,8 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
         packet.planeField ? planeField : 0,
         packet.lampEvents ? eventField : 0,
         1,
+        sheetForms,
+        planePoints,
       );
       kernelMs += performance.now() - begin;
       local.fill(0);
@@ -136,7 +142,7 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       jobs: Int32Array.from(angular),
       jobStarts,
       counts: Array.from(new BigInt64Array(mem, counts, 20), Number),
-      lampReuse: Array.from(new BigUint64Array(mem, engine.lampReuse(workspace), 11), Number),
+      lampReuse: Array.from(new BigUint64Array(mem, engine.lampReuse(workspace), 13), Number),
       bytes: mem.byteLength,
       ms: kernelMs,
     };

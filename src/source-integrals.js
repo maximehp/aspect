@@ -14,7 +14,7 @@ export class SourceIntegrals {
       slot.worker.terminate();
     }
   }
-  async integrate(geometry) {
+  async integrate(geometry, shadowOn, sheetForms) {
     const start = performance.now(),
       { receivers, packet } = geometry;
     const n = receivers.length;
@@ -23,8 +23,9 @@ export class SourceIntegrals {
       this.pool.push({
         worker: new Worker(new URL('./function-worker.js', import.meta.url), { type: 'module' }),
       });
+    packet.sheetForms = sheetForms;
+    packet.planeField = compilePlaneShadows(geometry, shadowOn);
     const flags = await this.regions.build(packet, integrationTolerance);
-    if (packet.lampIds) packet.planeField = compilePlaneShadows(geometry);
     const prepared = performance.now();
     const parts = await Promise.all(
       this.pool.slice(0, count).map(
@@ -55,7 +56,9 @@ export class SourceIntegrals {
         packet.shapes.byteLength +
         packet.tiles.byteLength +
         packet.nodes.byteLength +
-        packet.points.byteLength,
+        packet.points.byteLength +
+        sheetForms.byteLength +
+        packet.planePoints.byteLength,
       newJobs = 0;
     const jobCount = parts.reduce((sum, p) => sum + p.jobs.length, 0);
     angular.reserve(jobCount);
@@ -116,6 +119,8 @@ export class SourceIntegrals {
       links,
       newJobs,
       counts: flags,
+      sheetSections: parts.reduce((n, p) => n + p.lampReuse[12], 0),
+      outlineSections: parts.reduce((n, p) => n + p.lampReuse[11], 0),
       workerBytes: parts.reduce((a, p) => a + p.bytes, 0),
       timings: {
         basis: prepared - start,

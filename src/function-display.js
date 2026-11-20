@@ -34,14 +34,17 @@ void main(){
   mat3 frame=mat3(a.xyz,b.xyz,z.xyz);vec3 h=vec3(a.w,b.w,z.w),core=h-c.w;
   vec3 ro=o*frame,rd=ray*frame;float t;if(!intersectRoundedBox(ro,rd,h,c.w,0.,1.e25,t))discard;
   p=eye+t*ray;vec3 pos=ro+t*rd,normal=roundedBoxNormal(pos,h,c.w);n=frame*normal;
-  bvec3 on=greaterThan(abs(normal),vec3(.00001));int m=int(on.x)+int(on.y)+int(on.z);
+  // A collapsed core dimension is curved even at its zero-normal seam.
+  bvec3 on=bvec3(abs(normal.x)>.00001||core.x==0.,abs(normal.y)>.00001||core.y==0.,abs(normal.z)>.00001||core.z==0.);
+  int m=int(on.x)+int(on.y)+int(on.z);
   if(m==1){int d=on.x?0:(on.y?1:2),i=(d+1)%3,j=(d+2)%3;slot=2*d+int(normal[d]<0.);
    uv=.5+.5*vec2(pos[i],pos[j])/max(vec2(core[i],core[j]),vec2(1e-9));
   }else if(m==2){int d=!on.x?0:(!on.y?1:2),i=(d+1)%3,j=(d+2)%3;
    slot=6+4*d+2*int(normal[i]<0.)+int(normal[j]<0.);
    uv=vec2(.5+.5*pos[d]/max(core[d],1e-9),atan(abs(normal[j]),abs(normal[i]))*.63661977237);
   }else{slot=18+int(normal.x<0.)+2*int(normal.y<0.)+4*int(normal.z<0.);
-   uv=vec2(asin(min(1.,abs(normal.z))),atan(abs(normal.y),abs(normal.x)))*.63661977237;}
+   float phi=any(notEqual(normal.xy,vec2(0.)))?atan(abs(normal.y),abs(normal.x)):0.;
+   uv=vec2(asin(min(1.,abs(normal.z))),phi)*.63661977237;}
  }
  vec3 bounced=surfaceField(int(item(5+slot).x),uv);
  vec3 d=lightPos-p;float r2=dot(d,d);vec3 direct=lamp*(float(visible)*max(0.,dot(n,d))/(r2*sqrt(r2)));

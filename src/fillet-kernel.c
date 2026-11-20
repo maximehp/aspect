@@ -47,7 +47,7 @@ static void emit(View *v, int x, int end, int y, int id, int lit) {
 }
 static int lampHit(View *v, int k, Vec p) {
   v->stats[3]++;
-  return segmentHit(v->s + k, v->light,p, 1 - 1e-9) < 1;
+  return occludesSegment(v->s + k, v->light, p);
 }
 static int shadowAt(View *v, int id, Vec p, const int *ids, int n) {
   for (int i = 0; i < n; i++)
