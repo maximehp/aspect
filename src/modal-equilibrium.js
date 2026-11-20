@@ -32,33 +32,69 @@ export async function modalEquilibrium(geometry, parts, direct, color) {
     subset = alloc(4 * (n + 1)),
     source = alloc(24 * n),
     result = alloc(24 * n);
-  const links = alloc(0);
+  const groups = basis.groups,
+    groupOf = new Int32Array(n),
+    spans = new Int32Array(5 * groups.length);
+  groups.forEach(({ first, length, begin, end }, i) => {
+    groupOf.fill(i, first, first + length);
+    spans.set([first, length, begin, end], 5 * i);
+  });
+  const table = alloc(spans.byteLength),
+    links = alloc(0);
   reserve(top);
   new Uint8Array(mem.buffer, steps, basis.packed.byteLength).set(new Uint8Array(basis.packed));
   new Float64Array(mem.buffer, norm, n).set(amplitude);
   let full = 0;
   // Bound omitted weights in the amplitude-weighted modal norm.
   const budget = 0.0001;
-  for (const g of basis.groups) {
-    reserve(links + 8 * (full + g.length * n));
+  let zeroPairs = 0,
+    omittedCoefficients = 0,
+    omittedLifts = 0;
+  for (const g of groups) {
+    // Pack only chart pairs reached by a nonzero geometric coefficient. A
+    // pair is contiguous, so the two local basis changes run independently.
+    for (let k = 4; k < spans.length; k += 5) spans[k] = -1;
     const matrix = new Float64Array(mem.buffer, block, g.length * n);
-    matrix.fill(0);
+    let used = 0,
+      sourceModes = 0,
+      sourceLifts = 0,
+      pairs = 0;
     for (let r = 0; r < g.length; r++) {
       const i = g.first + r,
         p = parts[i % parts.length],
-        k = (i - p.first) / p.stride,
-        base = r * n;
-      for (let j = p.starts[k]; j < p.starts[k + 1]; j++) matrix[base + p.col[j]] += p.weights[j];
+        k = (i - p.first) / p.stride;
+      for (let j = p.starts[k]; j < p.starts[k + 1]; j++) {
+        const col = p.col[j],
+          index = groupOf[col],
+          slot = 5 * index + 4;
+        if (!p.weights[j]) continue;
+        const src = groups[index];
+        if (spans[slot] < 0) {
+          spans[slot] = used;
+          const next = used + g.length * src.length;
+          matrix.fill(0, used, next);
+          used = next;
+          sourceModes += src.length;
+          sourceLifts += src.end - src.begin;
+          pairs++;
+        }
+        matrix[spans[slot] + r * src.length + col - src.first] += p.weights[j];
+      }
     }
+    zeroPairs += groups.length - pairs;
+    omittedCoefficients += g.length * n - used;
+    omittedLifts += (g.end - g.begin) * (n - sourceModes) + g.length * (basis.steps.length - sourceLifts);
+    reserve(links + 8 * (full + used));
+    new Int32Array(mem.buffer, table, spans.length).set(spans);
     full = w.compileModes(
       block,
       g.first,
       g.length,
-      n,
       steps,
       g.begin,
       g.end,
-      basis.steps.length,
+      table,
+      groups.length,
       norm,
       budget,
       links,
@@ -76,6 +112,9 @@ export async function modalEquilibrium(geometry, parts, direct, color) {
     rhs = D.slice();
   const counts = {
     fullLinks: full,
+    zeroPairs,
+    omittedCoefficients,
+    omittedLifts,
     activeLinks: 0,
     activeModes: 0,
     allModes: n,
@@ -227,6 +266,12 @@ export async function modalEquilibrium(geometry, parts, direct, color) {
     iterations,
     residual,
     bytes:
-      mem.buffer.byteLength + peakBytes + basis.packed.byteLength + amplitude.byteLength + 5 * D.byteLength,
+      mem.buffer.byteLength +
+      groupOf.byteLength +
+      spans.byteLength +
+      peakBytes +
+      basis.packed.byteLength +
+      amplitude.byteLength +
+      5 * D.byteLength,
   };
 }

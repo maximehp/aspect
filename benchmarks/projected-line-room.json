@@ -1,0 +1,2414 @@
+{
+  "baselineCommit": "6ad153235ba84b7b9ca807eb624b2c2dc20f8d73",
+  "kernelSHA256": {
+    "function-transport": "5f34c8076afbf6a53ec11954c4c3faaced8b9e95423450394d0e54d641900a76",
+    "modal-operator": "3075858697ece0e3bcf918bf1295542d9e6b004055d8c15b887c8433ce5cc64d"
+  },
+  "device": "M1 Pro, Chrome 136, ANGLE Metal",
+  "framebuffer": [3840, 2160],
+  "measurement": "120 fresh solves per population per version, cold geometric and optical state, warm code and allocations. Chrome GPU completion plus matching compositor frame swap markers. Physical scanout and full process/driver memory unmeasured. The camera worker overlaps transport. Populations 1, 2 and 0 correspond to one slat, two slats and the crowded moving replay.",
+  "workCountsOrder": [
+    "strips",
+    "lit ends",
+    "length primitives",
+    "sphere evaluations",
+    "rounded feature evaluations",
+    "splits",
+    "refinement limits",
+    "GPU apertures",
+    "axial reuse",
+    "regional",
+    "whole domain dark",
+    "facing",
+    "expansion",
+    "obstruction",
+    "individual",
+    "moment tiles",
+    "moment strips",
+    "exact conics",
+    "lamp slice reuse",
+    "new lamp slices",
+    "individual receiver using common lamp field",
+    "individual rounded full occlusion proof"
+  ],
+  "replays": [
+    {
+      "pop": 1,
+      "baseline": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 1,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {"median": 520.62, "p95": 551.6},
+        "throughBothMs": {"median": 520.62, "p95": 551.6},
+        "finishedMs": {"median": 517.35, "p95": 548.2},
+        "cameraMs": {"median": 6.75, "p95": 8.7},
+        "peakCountedMiB": 127.63961601257324,
+        "meanWorkCounts": [
+          4054423.325,
+          2494207.9166666665,
+          1490259.35,
+          245493,
+          168033.60833333334,
+          59544.458333333336,
+          5.45,
+          464263.63333333336,
+          0,
+          221651.79166666666,
+          4736091.375,
+          413758.625,
+          587934.375,
+          734302.375,
+          85475.45833333333,
+          822,
+          130283.475,
+          0,
+          662942.5916666667,
+          530747.075,
+          205388.95833333334,
+          11869.916666666666
+        ],
+        "meanRectangleRules": [27592.25, 56404.183333333334, 1340.2833333333333, 82649.71666666666, 70550.5, 1130.5916666666667, 80594.28333333334, 83490.49166666667],
+        "meanRoundedVisibility": [45856.683333333334, 399198.275, 66027.89166666666],
+        "meanCurvedFacing": [6944.358333333334, 74137.93333333333],
+        "overFrameBudget": {"1": 120, "16.666666666666668": 120},
+        "meanGpuApertures": 464263.63333333336,
+        "workerMs": {"median": 247.35, "p95": 253.7},
+        "assemblyMs": {"median": 25.6, "p95": 26.6},
+        "solveMs": {"median": 123.1, "p95": 146},
+        "operatorConstructionMs": {"median": 467.95, "p95": 480.7},
+        "modalBuildMs": {"median": 83.3, "p95": 87.6},
+        "modalEquilibriumMs": {"median": 37.5, "p95": 55.2},
+        "meanModalWork": {
+          "fullLinks": 658485.2333333333,
+          "activeLinks": 644920.7166666667,
+          "activeModes": 2592.9583333333335,
+          "allModes": 2886,
+          "applications": 38.208333333333336,
+          "checks": 5.058333333333334,
+          "linkReads": 27793914.258333333,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1824573.1333333333
+        },
+        "preparationMs": {"median": 505.2, "p95": 534.3},
+        "applyAndDrawMs": {"median": 0.4, "p95": 1.2},
+        "markAndFinishMs": {"median": 11.8, "p95": 13.4},
+        "syncToSwapMs": {"median": 3.36, "p95": 3.59},
+        "beforeSync": 0
+      },
+      "sparseBasisOnly": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 1,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {"median": 520.71, "p95": 548.81},
+        "throughBothMs": {"median": 520.71, "p95": 548.81},
+        "finishedMs": {"median": 517.4, "p95": 545.4},
+        "cameraMs": {"median": 6.8, "p95": 8.8},
+        "peakCountedMiB": 127.30753517150879,
+        "meanWorkCounts": [
+          4054423.325,
+          2494207.9166666665,
+          1490259.35,
+          245493,
+          168033.60833333334,
+          59544.458333333336,
+          5.45,
+          464263.63333333336,
+          0,
+          221651.79166666666,
+          4736091.375,
+          413758.625,
+          587934.375,
+          734302.375,
+          85475.45833333333,
+          822,
+          130283.475,
+          0,
+          662942.5916666667,
+          530747.075,
+          205388.95833333334,
+          11869.916666666666
+        ],
+        "meanRectangleRules": [27592.25, 56404.183333333334, 1340.2833333333333, 82649.71666666666, 70550.5, 1130.5916666666667, 80594.28333333334, 83490.49166666667],
+        "meanRoundedVisibility": [45856.683333333334, 399198.275, 66027.89166666666],
+        "meanCurvedFacing": [6944.358333333334, 74137.93333333333],
+        "overFrameBudget": {"1": 120, "16.666666666666668": 120},
+        "meanGpuApertures": 464263.63333333336,
+        "workerMs": {"median": 265.3, "p95": 273.1},
+        "assemblyMs": {"median": 25.5, "p95": 26.5},
+        "solveMs": {"median": 104.45, "p95": 117.9},
+        "operatorConstructionMs": {"median": 468.25, "p95": 484.3},
+        "modalBuildMs": {"median": 65.1, "p95": 67.4},
+        "modalEquilibriumMs": {"median": 37.3, "p95": 50.5},
+        "meanModalWork": {
+          "fullLinks": 658485.2333333333,
+          "zeroPairs": 2096.633333333333,
+          "omittedCoefficients": 4429295.666666667,
+          "omittedLifts": 27142587.466666665,
+          "activeLinks": 644920.7166666667,
+          "activeModes": 2592.9583333333335,
+          "allModes": 2886,
+          "applications": 38.208333333333336,
+          "checks": 5.058333333333334,
+          "linkReads": 27793914.258333333,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1824573.1333333333
+        },
+        "preparationMs": {"median": 505.35, "p95": 536.1},
+        "applyAndDrawMs": {"median": 0.4, "p95": 1.2},
+        "markAndFinishMs": {"median": 11.35, "p95": 13.2},
+        "syncToSwapMs": {"median": 3.39, "p95": 3.59},
+        "beforeSync": 0
+      },
+      "playable": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 1,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {"median": 485.44, "p95": 511.63},
+        "throughBothMs": {"median": 485.44, "p95": 511.63},
+        "finishedMs": {"median": 482.15, "p95": 508.3},
+        "cameraMs": {"median": 7.0, "p95": 8.7},
+        "peakCountedMiB": 127.85891151428223,
+        "meanWorkCounts": [
+          3976960.7,
+          2448860.3,
+          1467697.125,
+          245493,
+          167955.15833333333,
+          56544.925,
+          5.45,
+          474743.05833333335,
+          0,
+          221651.79166666666,
+          4736091.375,
+          413758.625,
+          587934.375,
+          734302.375,
+          85475.45833333333,
+          822,
+          130283.475,
+          0,
+          645409.475,
+          527366.1166666667,
+          211204.275,
+          11869.916666666666
+        ],
+        "meanRectangleRules": [28455.866666666665, 56671.941666666666, 1342.2833333333333, 84986.60833333334, 71413.73333333334, 1130.5916666666667, 84454.80833333333, 84791.15],
+        "meanRoundedVisibility": [45820.64166666667, 398641.00833333336, 65990.11666666667],
+        "meanCurvedFacing": [6944.358333333334, 74137.93333333333],
+        "overFrameBudget": {"1": 120, "16.666666666666668": 120},
+        "meanGpuApertures": 474743.05833333335,
+        "workerMs": {"median": 223.8, "p95": 231.1},
+        "assemblyMs": {"median": 25.6, "p95": 26.9},
+        "solveMs": {"median": 111.35, "p95": 128.9},
+        "operatorConstructionMs": {"median": 426.25, "p95": 440.4},
+        "modalBuildMs": {"median": 64.8, "p95": 67.8},
+        "modalEquilibriumMs": {"median": 44.15, "p95": 57.1},
+        "meanModalWork": {
+          "fullLinks": 658488.2583333333,
+          "zeroPairs": 2096.633333333333,
+          "omittedCoefficients": 4429295.666666667,
+          "omittedLifts": 27142587.466666665,
+          "activeLinks": 644925.2916666666,
+          "activeModes": 2592.9666666666667,
+          "allModes": 2886,
+          "applications": 38.208333333333336,
+          "checks": 5.058333333333334,
+          "linkReads": 27794092.366666667,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1824573.1333333333
+        },
+        "preparationMs": {"median": 471.05, "p95": 499.2},
+        "applyAndDrawMs": {"median": 0.4, "p95": 1.3},
+        "markAndFinishMs": {"median": 11.75, "p95": 13.5},
+        "syncToSwapMs": {"median": 3.33, "p95": 4.84},
+        "beforeSync": 0
+      },
+      "medianSavedMs": 35.18,
+      "p95SavedMs": 39.97,
+      "meanStripsEliminated": 77462.625
+    },
+    {
+      "pop": 2,
+      "baseline": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 2,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {"median": 562.33, "p95": 593.16},
+        "throughBothMs": {"median": 562.33, "p95": 593.16},
+        "finishedMs": {"median": 559.2, "p95": 589.7},
+        "cameraMs": {"median": 9.75, "p95": 13.1},
+        "peakCountedMiB": 129.27798080444336,
+        "meanWorkCounts": [
+          4353607.325,
+          2653638.3666666667,
+          1565408.5833333333,
+          321661.525,
+          232387.49166666667,
+          62289.791666666664,
+          5.608333333333333,
+          471918.88333333336,
+          0,
+          217142.53333333333,
+          4819397.55,
+          417094.55833333335,
+          596258.8166666667,
+          746658.025,
+          114698.51666666666,
+          815.9583333333334,
+          129141,
+          0,
+          751210.3833333333,
+          616215.0166666667,
+          203767.19166666668,
+          15935.416666666666
+        ],
+        "meanRectangleRules": [27849.025, 57804.40833333333, 1345.8, 84004.33333333333, 70365.65833333334, 1164.875, 85321.79166666667, 83290.85],
+        "meanRoundedVisibility": [60989.425, 631848.5166666667, 93514.81666666667],
+        "meanCurvedFacing": [9448.191666666668, 100224.1],
+        "overFrameBudget": {"1": 120, "16.666666666666668": 120},
+        "meanGpuApertures": 471918.88333333336,
+        "workerMs": {"median": 280.55, "p95": 287.5},
+        "assemblyMs": {"median": 25.5, "p95": 26.7},
+        "solveMs": {"median": 126.25, "p95": 146.9},
+        "operatorConstructionMs": {"median": 508.1, "p95": 522.3},
+        "modalBuildMs": {"median": 85.8, "p95": 90.1},
+        "modalEquilibriumMs": {"median": 38.1, "p95": 53.2},
+        "meanModalWork": {
+          "fullLinks": 686622.2333333333,
+          "activeLinks": 672824.6083333333,
+          "activeModes": 2614.9083333333333,
+          "allModes": 2910,
+          "applications": 36.31666666666667,
+          "checks": 4.983333333333333,
+          "linkReads": 27694128.241666667,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1865591.8
+        },
+        "preparationMs": {"median": 547.5, "p95": 578.7},
+        "applyAndDrawMs": {"median": 0.4, "p95": 1.2},
+        "markAndFinishMs": {"median": 11.65, "p95": 13.4},
+        "syncToSwapMs": {"median": 3.31, "p95": 3.63},
+        "beforeSync": 0
+      },
+      "sparseBasisOnly": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 2,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {"median": 537.49, "p95": 568.52},
+        "throughBothMs": {"median": 537.49, "p95": 568.52},
+        "finishedMs": {"median": 534.2, "p95": 565.0},
+        "cameraMs": {"median": 9.45, "p95": 12.8},
+        "peakCountedMiB": 129.28815078735352,
+        "meanWorkCounts": [
+          4353607.325,
+          2653638.3666666667,
+          1565408.5833333333,
+          321661.525,
+          232387.49166666667,
+          62289.791666666664,
+          5.608333333333333,
+          471918.88333333336,
+          0,
+          217142.53333333333,
+          4819397.55,
+          417094.55833333335,
+          596258.8166666667,
+          746658.025,
+          114698.51666666666,
+          815.9583333333334,
+          129141,
+          0,
+          751210.3833333333,
+          616215.0166666667,
+          203767.19166666668,
+          15935.416666666666
+        ],
+        "meanRectangleRules": [27849.025, 57804.40833333333, 1345.8, 84004.33333333333, 70365.65833333334, 1164.875, 85321.79166666667, 83290.85],
+        "meanRoundedVisibility": [60989.425, 631848.5166666667, 93514.81666666667],
+        "meanCurvedFacing": [9448.191666666668, 100224.1],
+        "overFrameBudget": {"1": 120, "16.666666666666668": 120},
+        "meanGpuApertures": 471918.88333333336,
+        "workerMs": {"median": 267.8, "p95": 278.0},
+        "assemblyMs": {"median": 25.6, "p95": 26.7},
+        "solveMs": {"median": 113.65, "p95": 131.5},
+        "operatorConstructionMs": {"median": 475.35, "p95": 500.1},
+        "modalBuildMs": {"median": 65.7, "p95": 71.7},
+        "modalEquilibriumMs": {"median": 45.4, "p95": 54.4},
+        "meanModalWork": {
+          "fullLinks": 686622.2333333333,
+          "zeroPairs": 2091.9166666666665,
+          "omittedCoefficients": 4473972.2,
+          "omittedLifts": 27273070.133333333,
+          "activeLinks": 672824.6083333333,
+          "activeModes": 2614.9083333333333,
+          "allModes": 2910,
+          "applications": 36.31666666666667,
+          "checks": 4.983333333333333,
+          "linkReads": 27694128.241666667,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1865591.8
+        },
+        "preparationMs": {"median": 522.65, "p95": 554.6},
+        "applyAndDrawMs": {"median": 0.4, "p95": 1.1},
+        "markAndFinishMs": {"median": 12.0, "p95": 13.3},
+        "syncToSwapMs": {"median": 3.29, "p95": 4.76},
+        "beforeSync": 0
+      },
+      "playable": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 2,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {"median": 510.87, "p95": 638.37},
+        "throughBothMs": {"median": 510.87, "p95": 638.37},
+        "finishedMs": {"median": 507.5, "p95": 635.1},
+        "cameraMs": {"median": 9.8, "p95": 13.7},
+        "peakCountedMiB": 129.8266716003418,
+        "meanWorkCounts": [
+          4273408.6,
+          2601474.0833333335,
+          1539436.1833333333,
+          321661.525,
+          232253.90833333333,
+          59286.01666666667,
+          5.608333333333333,
+          482071.0833333333,
+          0,
+          217142.53333333333,
+          4819397.55,
+          417094.55833333335,
+          596258.8166666667,
+          746658.025,
+          114698.51666666666,
+          815.9583333333334,
+          129141,
+          0,
+          729779.0333333333,
+          611533.3166666667,
+          209810.925,
+          15935.416666666666
+        ],
+        "meanRectangleRules": [28704.341666666667, 58086.675, 1347.8, 86048.50833333333, 71110.68333333333, 1164.875, 89261.09166666666, 84590.925],
+        "meanRoundedVisibility": [60872.683333333334, 630361.1916666667, 93450.46666666666],
+        "meanCurvedFacing": [9448.191666666668, 100224.1],
+        "overFrameBudget": {"1": 120, "16.666666666666668": 120},
+        "meanGpuApertures": 482071.0833333333,
+        "workerMs": {"median": 246.9, "p95": 356.6},
+        "assemblyMs": {"median": 26.3, "p95": 32.3},
+        "solveMs": {"median": 107.2, "p95": 125.4},
+        "operatorConstructionMs": {"median": 458.25, "p95": 586.7},
+        "modalBuildMs": {"median": 67.5, "p95": 71.1},
+        "modalEquilibriumMs": {"median": 37.1, "p95": 50.4},
+        "meanModalWork": {
+          "fullLinks": 686606.15,
+          "zeroPairs": 2091.9166666666665,
+          "omittedCoefficients": 4473972.2,
+          "omittedLifts": 27273070.133333333,
+          "activeLinks": 672809.4083333333,
+          "activeModes": 2614.9,
+          "allModes": 2910,
+          "applications": 36.31666666666667,
+          "checks": 4.983333333333333,
+          "linkReads": 27693482.408333335,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1865591.8
+        },
+        "preparationMs": {"median": 495.65, "p95": 624.1},
+        "applyAndDrawMs": {"median": 0.6, "p95": 1.3},
+        "markAndFinishMs": {"median": 11.5, "p95": 13.3},
+        "syncToSwapMs": {"median": 3.33, "p95": 3.56},
+        "beforeSync": 0
+      },
+      "medianSavedMs": 51.46,
+      "p95SavedMs": -45.21,
+      "meanStripsEliminated": 80198.72500000056
+    },
+    {
+      "pop": 0,
+      "baseline": {
+        "mode": "function",
+        "extra": 4,
+        "slats": 0,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {"median": 1365.48, "p95": 1502.35},
+        "throughBothMs": {"median": 1365.48, "p95": 1502.35},
+        "finishedMs": {"median": 1361.6, "p95": 1498.8},
+        "cameraMs": {"median": 79.7, "p95": 145.7},
+        "peakCountedMiB": 159.7109603881836,
+        "meanWorkCounts": [
+          11114923.308333334,
+          6206201.866666666,
+          3523437.058333333,
+          2049904.5,
+          3485730.2666666666,
+          98138.40833333334,
+          887.85,
+          549068.4916666667,
+          14375.5,
+          225538.71666666667,
+          6726313.308333334,
+          491388.25,
+          742744.9833333333,
+          912131.6166666667,
+          715933.125,
+          805.9083333333333,
+          127958.275,
+          12.041666666666666,
+          2014002.4333333333,
+          2677049.4166666665,
+          201697.58333333334,
+          96953.08333333333
+        ],
+        "meanRectangleRules": [31763.775, 74432.66666666667, 1459.8916666666667, 98518.28333333334, 77321.38333333333, 1225.6416666666667, 109040.10833333334, 90317.59166666666],
+        "meanRoundedVisibility": [514690.9166666667, 10627150.375, 957906.2833333333],
+        "meanCurvedFacing": [59379.45, 734598.0083333333],
+        "overFrameBudget": {"1": 120, "16.666666666666668": 120},
+        "meanGpuApertures": 549068.4916666667,
+        "workerMs": {"median": 939.2, "p95": 1077.0},
+        "assemblyMs": {"median": 29.5, "p95": 33.3},
+        "solveMs": {"median": 167.35, "p95": 184.4},
+        "operatorConstructionMs": {"median": 1288.7, "p95": 1426.9},
+        "modalBuildMs": {"median": 106.55, "p95": 113.4},
+        "modalEquilibriumMs": {"median": 57.8, "p95": 67.7},
+        "meanModalWork": {
+          "fullLinks": 951208.2666666667,
+          "activeLinks": 925640.3583333333,
+          "activeModes": 3015.266666666667,
+          "allModes": 3390,
+          "applications": 34.49166666666667,
+          "checks": 5.083333333333333,
+          "linkReads": 36637172.75833333,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 2637180.2583333333
+        },
+        "preparationMs": {"median": 1347.45, "p95": 1484.4},
+        "applyAndDrawMs": {"median": 1.5, "p95": 1.8},
+        "markAndFinishMs": {"median": 12.85, "p95": 15.5},
+        "syncToSwapMs": {"median": 5.94, "p95": 6.88},
+        "beforeSync": 0
+      },
+      "sparseBasisOnly": {
+        "mode": "function",
+        "extra": 4,
+        "slats": 0,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {"median": 1334.03, "p95": 1502.66},
+        "throughBothMs": {"median": 1334.03, "p95": 1502.66},
+        "finishedMs": {"median": 1328.55, "p95": 1496.5},
+        "cameraMs": {"median": 79.7, "p95": 147.2},
+        "peakCountedMiB": 159.72505569458008,
+        "meanWorkCounts": [
+          11114923.308333334,
+          6206201.866666666,
+          3523437.058333333,
+          2049904.5,
+          3485730.2666666666,
+          98138.40833333334,
+          887.85,
+          549068.4916666667,
+          14375.5,
+          225538.71666666667,
+          6726313.308333334,
+          491388.25,
+          742744.9833333333,
+          912131.6166666667,
+          715933.125,
+          805.9083333333333,
+          127958.275,
+          12.041666666666666,
+          2014002.4333333333,
+          2677049.4166666665,
+          201697.58333333334,
+          96953.08333333333
+        ],
+        "meanRectangleRules": [31763.775, 74432.66666666667, 1459.8916666666667, 98518.28333333334, 77321.38333333333, 1225.6416666666667, 109040.10833333334, 90317.59166666666],
+        "meanRoundedVisibility": [514690.9166666667, 10627150.375, 957906.2833333333],
+        "meanCurvedFacing": [59379.45, 734598.0083333333],
+        "overFrameBudget": {"1": 120, "16.666666666666668": 120},
+        "meanGpuApertures": 549068.4916666667,
+        "workerMs": {"median": 928.2, "p95": 1085.3},
+        "assemblyMs": {"median": 28.7, "p95": 33.1},
+        "solveMs": {"median": 145.9, "p95": 162.5},
+        "operatorConstructionMs": {"median": 1262.0, "p95": 1422.7},
+        "modalBuildMs": {"median": 91.25, "p95": 95.5},
+        "modalEquilibriumMs": {"median": 49.6, "p95": 65},
+        "meanModalWork": {
+          "fullLinks": 951208.2666666667,
+          "zeroPairs": 2407.375,
+          "omittedCoefficients": 5342574.066666666,
+          "omittedLifts": 29818219,
+          "activeLinks": 925640.3583333333,
+          "activeModes": 3015.266666666667,
+          "allModes": 3390,
+          "applications": 34.49166666666667,
+          "checks": 5.083333333333333,
+          "linkReads": 36637172.75833333,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 2637180.2583333333
+        },
+        "preparationMs": {"median": 1314.8, "p95": 1480.9},
+        "applyAndDrawMs": {"median": 1.5, "p95": 1.9},
+        "markAndFinishMs": {"median": 13.0, "p95": 17},
+        "syncToSwapMs": {"median": 6.06, "p95": 7.82},
+        "beforeSync": 0
+      },
+      "playable": {
+        "mode": "function",
+        "extra": 4,
+        "slats": 0,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {"median": 1309.49, "p95": 1530.57},
+        "throughBothMs": {"median": 1309.49, "p95": 1530.57},
+        "finishedMs": {"median": 1304.2, "p95": 1527.3},
+        "cameraMs": {"median": 80.3, "p95": 147},
+        "peakCountedMiB": 160.2735481262207,
+        "meanWorkCounts": [
+          10983505.883333333,
+          6090917.7,
+          3465832.2666666666,
+          2049904.5,
+          3482775.825,
+          95201.41666666667,
+          887.85,
+          559970,
+          14359.141666666666,
+          225538.71666666667,
+          6726313.308333334,
+          491388.25,
+          742744.9833333333,
+          912131.6166666667,
+          715933.125,
+          805.9083333333333,
+          127958.275,
+          12.041666666666666,
+          1960353.9833333334,
+          2651078.816666667,
+          208257.5,
+          96953.08333333333
+        ],
+        "meanRectangleRules": [32598.208333333332, 74806.55, 1461.8916666666667, 100871.175, 78215.925, 1225.6583333333333, 113155.45833333333, 91599.2],
+        "meanRoundedVisibility": [512302.88333333336, 10577525.008333333, 956466.8833333333],
+        "meanCurvedFacing": [59379.45, 734598.0083333333],
+        "overFrameBudget": {"1": 120, "16.666666666666668": 120},
+        "meanGpuApertures": 559970,
+        "workerMs": {"median": 890.55, "p95": 1085.7},
+        "assemblyMs": {"median": 29.4, "p95": 34},
+        "solveMs": {"median": 156.05, "p95": 174.2},
+        "operatorConstructionMs": {"median": 1225.95, "p95": 1443.6},
+        "modalBuildMs": {"median": 91.05, "p95": 94.4},
+        "modalEquilibriumMs": {"median": 61.85, "p95": 67.7},
+        "meanModalWork": {
+          "fullLinks": 951216.0666666667,
+          "zeroPairs": 2407.375,
+          "omittedCoefficients": 5342574.066666666,
+          "omittedLifts": 29818219,
+          "activeLinks": 925630.7916666666,
+          "activeModes": 3015.2166666666667,
+          "allModes": 3390,
+          "applications": 34.49166666666667,
+          "checks": 5.083333333333333,
+          "linkReads": 36637078.78333333,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 2637180.2583333333
+        },
+        "preparationMs": {"median": 1289.2, "p95": 1512.1},
+        "applyAndDrawMs": {"median": 1.5, "p95": 2.1},
+        "markAndFinishMs": {"median": 13.7, "p95": 19.4},
+        "syncToSwapMs": {"median": 6.04, "p95": 8.91},
+        "beforeSync": 0
+      },
+      "medianSavedMs": 55.99,
+      "p95SavedMs": -28.22,
+      "meanStripsEliminated": 131417.42500000075
+    }
+  ],
+  "sparseBasisQA": [
+    {
+      "pop": 1,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 59,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 119,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "repeat": true,
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 59,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 119,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "repeat": true,
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 59,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 119,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "total": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "repeat": true,
+      "gl": 0
+    }
+  ],
+  "playableVsBaseline4K": [
+    {
+      "pop": 1,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 1697, "large": 0, "mean": 6.819862397119341e-05},
+      "total": {"max": 1, "changed": 1404, "large": 0, "mean": 5.642361111111111e-05},
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 59,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 1272, "large": 0, "mean": 5.111882716049383e-05},
+      "total": {"max": 1, "changed": 1052, "large": 0, "mean": 4.227752057613169e-05},
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 119,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 2259, "large": 0, "mean": 9.078414351851852e-05},
+      "total": {"max": 1, "changed": 1991, "large": 0, "mean": 8.001382458847737e-05},
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 1697, "large": 0, "mean": 6.819862397119341e-05},
+      "total": {"max": 1, "changed": 1404, "large": 0, "mean": 5.642361111111111e-05},
+      "repeat": true,
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 3356, "large": 0, "mean": 0.00013487011316872427},
+      "total": {"max": 1, "changed": 2956, "large": 0, "mean": 0.00011879501028806584},
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 59,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 2843, "large": 0, "mean": 0.00011425379372427983},
+      "total": {"max": 1, "changed": 2507, "large": 0, "mean": 0.00010075070730452675},
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 119,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 2323, "large": 0, "mean": 9.335615997942387e-05},
+      "total": {"max": 1, "changed": 2046, "large": 0, "mean": 8.22241512345679e-05},
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 3356, "large": 0, "mean": 0.00013487011316872427},
+      "total": {"max": 1, "changed": 2956, "large": 0, "mean": 0.00011879501028806584},
+      "repeat": true,
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 796, "large": 0, "mean": 3.198945473251029e-05},
+      "total": {"max": 1, "changed": 785, "large": 0, "mean": 3.154738940329218e-05},
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 59,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 29305, "large": 0, "mean": 0.0011777022247942387},
+      "total": {"max": 1, "changed": 27089, "large": 0, "mean": 0.001088646154835391},
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 119,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 5499, "large": 0, "mean": 0.00022099247685185186},
+      "total": {"max": 1, "changed": 5346, "large": 0, "mean": 0.00021484375},
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 0,
+      "direct": {"max": 0, "changed": 0, "large": 0, "mean": 0},
+      "indirect": {"max": 1, "changed": 796, "large": 0, "mean": 3.198945473251029e-05},
+      "total": {"max": 1, "changed": 785, "large": 0, "mean": 3.154738940329218e-05},
+      "repeat": true,
+      "gl": 0
+    }
+  ],
+  "normalPlayableEntry": {"start": "1636 × 918", "final": "3840 × 2160", "scene": "1185.00 ms", "build": "0.10 ms", "updates": 2, "lampOffRead": 0, "error": 0, "alert": null},
+  "tick30Visibility": [
+    {
+      "pop": 1,
+      "earlyBlockerRejectionsBeforeTileHalfspaces": 14467093,
+      "wholeSheetConesProjected": 346818,
+      "priorStrips": 4052341,
+      "playableStrips": 3978196,
+      "additionalRejectionsAudited": 175,
+      "rounded": 3
+    },
+    {
+      "pop": 2,
+      "earlyBlockerRejectionsBeforeTileHalfspaces": 14841831,
+      "wholeSheetConesProjected": 354284,
+      "priorStrips": 4351213,
+      "playableStrips": 4274560,
+      "additionalRejectionsAudited": 175,
+      "rounded": 5
+    },
+    {
+      "pop": 0,
+      "earlyBlockerRejectionsBeforeTileHalfspaces": 22819018,
+      "wholeSheetConesProjected": 562020,
+      "priorStrips": 11126379,
+      "playableStrips": 10996143,
+      "additionalRejectionsAudited": 175,
+      "rounded": 16
+    }
+  ],
+  "sampledRejectionExactAudit": {"charts": 525, "rounded": 24, "faceChecksAvailable": 645, "positiveAreaOverlaps": 0, "examples": []},
+  "shadowAuditMethod": "Outward-relaxed necessary bounds for the eye cone on each authored planar sheet. At tick 30 sample 175 additional rejected pairs per population which passed the previous tile/half-space screen. Clip the finite tile against the exact five half-spaces of each sheet or the six faces of the outer box enclosing the actual filleted solid, using rationals. A coplanar eye and sheet have zero projected solid angle. Check positive area, not measure-zero contact.",
+  "editSequence": ["1 mm fillet", "44 mm fillet", "second independently posed slat", "alternate bench and blue floor", "restore 1 mm scene"],
+  "edits768x432": [
+    {
+      "i": 0,
+      "diff": {
+        "total": {"changed": 0, "max": 0, "repeat": 0, "mae": 0},
+        "indirect": {"changed": 0, "max": 0, "repeat": 0, "mae": 0},
+        "direct": {"changed": 0, "max": 0, "repeat": 0, "mae": 0}
+      },
+      "probes": {"floor": [0.13526188140127007, 0.09231497182996229, 0.04082198924913601], "north-wall": [0.18237164723550314, 0.12794664467955502, 0.06240287798046613]},
+      "dark": [0, 0, 0, 255],
+      "iterations": 28,
+      "residual": 0.00023948737613794548,
+      "error": 0
+    },
+    {
+      "i": 1,
+      "diff": {
+        "total": {"changed": 230369, "max": 174, "repeat": 230369, "mae": 0.46543651941872427},
+        "indirect": {"changed": 262390, "max": 95, "repeat": 262390, "mae": 0.3082481352880658},
+        "direct": {"changed": 5179, "max": 197, "repeat": 5179, "mae": 0.529734921553498}
+      },
+      "probes": {"floor": [0.1358734539312582, 0.09285809251220281, 0.041072533923967425], "north-wall": [0.18333594402860237, 0.12888448412836934, 0.06291360722254716]},
+      "dark": [0, 0, 0, 255],
+      "iterations": 32,
+      "residual": 0.0002432867764110782,
+      "error": 0
+    },
+    {
+      "i": 2,
+      "diff": {
+        "total": {"changed": 861156, "max": 183, "repeat": 854270, "mae": 4.355073905285494},
+        "indirect": {"changed": 890670, "max": 99, "repeat": 891938, "mae": 3.189400880915638},
+        "direct": {"changed": 41057, "max": 203, "repeat": 41831, "mae": 4.338084530928498}
+      },
+      "probes": {"floor": [0.12121061599647767, 0.0811104035720124, 0.03518457707745309], "north-wall": [0.17124510922112726, 0.12001646659486734, 0.059041900067450824]},
+      "dark": [0, 0, 0, 255],
+      "iterations": 29,
+      "residual": 0.0002110840953921078,
+      "error": 0
+    },
+    {
+      "i": 3,
+      "diff": {
+        "total": {"changed": 929065, "max": 132, "repeat": 930045, "mae": 27.059040838798868},
+        "indirect": {"changed": 975293, "max": 101, "repeat": 970568, "mae": 26.43286233281893},
+        "direct": {"changed": 119097, "max": 148, "repeat": 150890, "mae": 6.95434871720679}
+      },
+      "probes": {"floor": [0.003425768665965963, 0.00797590773107408, 0.049064857727490634], "north-wall": [0.047371294861319725, 0.03649660128038831, 0.032096221381016705]},
+      "dark": [0, 0, 0, 255],
+      "iterations": 23,
+      "residual": 0.0001887315082105535,
+      "error": 0
+    },
+    {
+      "i": 4,
+      "diff": {
+        "total": {"changed": 930045, "max": 180, "repeat": 0, "mae": 29.268717447916668},
+        "indirect": {"changed": 970568, "max": 106, "repeat": 0, "mae": 27.644878874099795},
+        "direct": {"changed": 150890, "max": 203, "repeat": 0, "mae": 10.444013430748457}
+      },
+      "probes": {"floor": [0.13526188140127007, 0.09231497182996229, 0.04082198924913601], "north-wall": [0.18237164723550314, 0.12794664467955502, 0.06240287798046613]},
+      "dark": [0, 0, 0, 255],
+      "iterations": 28,
+      "residual": 0.00023948737613794548,
+      "error": 0
+    }
+  ],
+  "rgbAtEdits": [
+    {
+      "editIndex": 0,
+      "surface": "floor",
+      "playable": [0.13526188140127007, 0.09231497182996229, 0.04082198924913601],
+      "reference": [0.13626427721034712, 0.09251017293802735, 0.0405473224343759],
+      "paths": 131072,
+      "standardError": [0.0011580210174344727, 0.0009357860916813741, 0.0005194991569553928],
+      "relativeErrorPercent": [-0.7356262621418197, -0.21100501908674074, 0.6773981566961629]
+    },
+    {
+      "editIndex": 0,
+      "surface": "north-wall",
+      "playable": [0.18237164723550314, 0.12794664467955502, 0.06240287798046613],
+      "reference": [0.18538983347106397, 0.13081553517434108, 0.06425280014189219],
+      "paths": 131072,
+      "standardError": [0.0014142366202338928, 0.0011656036724803462, 0.0006999275705363403],
+      "relativeErrorPercent": [-1.6280214394992276, -2.1930808836753357, -2.8791308041685393]
+    },
+    {
+      "editIndex": 1,
+      "surface": "floor",
+      "playable": [0.1358734539312582, 0.09285809251220281, 0.041072533923967425],
+      "reference": [0.13734700106476533, 0.09332425053687868, 0.04089423258197503],
+      "paths": 131072,
+      "standardError": [0.0011620392680547738, 0.0009382333338818397, 0.0005208317663452137],
+      "relativeErrorPercent": [-1.0728644397647202, -0.49950363597257574, 0.4360060838284996]
+    },
+    {
+      "editIndex": 1,
+      "surface": "north-wall",
+      "playable": [0.18333594402860237, 0.12888448412836934, 0.06291360722254716],
+      "reference": [0.1869446298143092, 0.13203566660034766, 0.06482143031427046],
+      "paths": 131072,
+      "standardError": [0.0014161064674029528, 0.0011648254408375847, 0.0006983806500770322],
+      "relativeErrorPercent": [-1.9303500663759743, -2.3866145815861106, -2.9431980788972023]
+    },
+    {
+      "editIndex": 2,
+      "surface": "floor",
+      "playable": [0.12121061599647767, 0.0811104035720124, 0.03518457707745309],
+      "reference": [0.1233994384634713, 0.08213051304921129, 0.035303875768324416],
+      "paths": 131072,
+      "standardError": [0.0010848125638211333, 0.000859903870086542, 0.00046937897614731376],
+      "relativeErrorPercent": [-1.7737702004548161, -1.242059058595757, -0.3379195294426207]
+    },
+    {
+      "editIndex": 2,
+      "surface": "north-wall",
+      "playable": [0.17124510922112726, 0.12001646659486734, 0.059041900067450824],
+      "reference": [0.17343719353695528, 0.12233172124129438, 0.06054350090325766],
+      "paths": 131072,
+      "standardError": [0.0013961161121126232, 0.0011505240304387704, 0.000693032781530485],
+      "relativeErrorPercent": [-1.263906703703055, -1.892603670523274, -2.4802015301464753]
+    },
+    {
+      "editIndex": 3,
+      "surface": "floor",
+      "playable": [0.003425768665965963, 0.00797590773107408, 0.049064857727490634],
+      "reference": [0.0036451869333426995, 0.008496198176834655, 0.05202002677079449],
+      "paths": 131072,
+      "standardError": [5.732899290620622e-05, 0.0001408811029104701, 0.0006965336755433732],
+      "relativeErrorPercent": [-6.0193968482029625, -6.1238030814673605, -5.680829531912057]
+    },
+    {
+      "editIndex": 3,
+      "surface": "north-wall",
+      "playable": [0.047371294861319725, 0.03649660128038831, 0.032096221381016705],
+      "reference": [0.04562187704887825, 0.036374680301681894, 0.03466783886192994],
+      "paths": 131072,
+      "standardError": [0.0007009626061376506, 0.0005724109583159177, 0.0004143795704772845],
+      "relativeErrorPercent": [3.834602882663485, 0.3351808942243295, -7.417876525719125]
+    }
+  ],
+  "displayResidual4K": [
+    {
+      "angle": 24,
+      "areas": {
+        "north-wall-covered": [0.02331780252403333, 0.010189131106310874, 0.0022812831217444863],
+        "north-wall-exposed": [0.11560787053781321, 0.06944566072394892, 0.027689458914683253],
+        "bench-seat-bottom-all": [0.09169835176648164, 0.035188738300426584, 0.008633023946109038]
+      },
+      "changed": 21520125,
+      "max": 6,
+      "channels": 24883200,
+      "equilibriumError": 0.0023972997372898094
+    },
+    {
+      "angle": -46,
+      "areas": {
+        "north-wall-covered": [0.006546004673013109, 0.0025927803305491625, 0.0005820215789538281],
+        "north-wall-exposed": [0.038670151127390015, 0.022461730302869215, 0.009960480067219137],
+        "bench-seat-bottom-all": [0.011777608560963495, 0.002818955611919981, 0.0003796736078500999]
+      },
+      "changed": 23751692,
+      "max": 12,
+      "channels": 24883200,
+      "equilibriumError": 0.0027125562239112334
+    }
+  ],
+  "physicalAreaReferences": {
+    "bench-46": {
+      "reference": [0.006973952879810847, 0.001800308492254295, 0.0002713171617695839],
+      "standardError": [5.0960296716203914e-05, 1.48128485601269e-05, 2.7235098770961607e-06],
+      "region": [0, 0.5, 0, 1],
+      "paths": 2097152
+    },
+    "art-46": {
+      "reference": [0.003947482671950251, 0.001873638251548752, 0.0005017840253843829],
+      "standardError": [6.037703420591953e-05, 3.271926279270739e-05, 1.1080387834597542e-05],
+      "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+      "paths": 2097152
+    },
+    "moved": {
+      "reference": [0.004338183982248242, 0.004373918662425303, 0.009257366845925496],
+      "standardError": [1.5137344907084368e-05, 1.1274516100870268e-05, 2.036545475766818e-05],
+      "region": [0, 0.5, 0, 1],
+      "paths": 2097152
+    },
+    "bench+24": {
+      "id": "bench-seat-bottom",
+      "iu": 0,
+      "iv": 0,
+      "side": "front",
+      "angle": 24,
+      "paths": 2097152,
+      "edits": {},
+      "reference": [0.0727665943657069, 0.028120085399616336, 0.006890467368845531],
+      "standardError": [0.00013167381938597068, 5.716278232953028e-05, 1.5025941588422506e-05],
+      "region": [0, 0.5, 0, 1],
+      "orders": [
+        {
+          "mean": [0.030328506609289943, 0.012697197785902073, 0.003550166928896302],
+          "standardError": [3.7675385003490576e-05, 1.5728822988892712e-05, 4.388857694939452e-06]
+        },
+        {
+          "mean": [0.01578681155283634, 0.00740810430323272, 0.002077592758657742],
+          "standardError": [8.28518020779888e-05, 4.1015262352426716e-05, 1.1930508464209975e-05]
+        },
+        {
+          "mean": [0.009344178940933423, 0.0031426098937164036, 0.0006135049473157583],
+          "standardError": [3.8636731509286346e-05, 1.6592125117333638e-05, 4.0152315249918134e-06]
+        },
+        {
+          "mean": [0.01730709726264722, 0.004872173416765368, 0.0006492027339757962],
+          "standardError": [7.466078169509961e-05, 2.521566578244997e-05, 4.286803320626816e-06]
+        }
+      ],
+      "firstReflected": [0.030328506609289943, 0.012697197785902073, 0.003550166928896302],
+      "laterReflected": [0.04243808775641695, 0.015422887613714261, 0.0033403004399492294]
+    },
+    "art+24": {
+      "id": "north-wall",
+      "iu": 0,
+      "iv": 0,
+      "side": "front",
+      "angle": 24,
+      "paths": 2097152,
+      "edits": {},
+      "reference": [0.016372713850196032, 0.007825913527559078, 0.001974726798693674],
+      "standardError": [0.0001060945759847799, 6.0329365428559663e-05, 1.994618459165977e-05],
+      "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+      "orders": [
+        {
+          "mean": [0.00020822681981113596, 0.0001524738135314835, 8.1544235204893e-05],
+          "standardError": [4.798932923804591e-06, 4.12849555273937e-06, 2.688639817916182e-06]
+        },
+        {
+          "mean": [0.0010605514743827547, 0.0007430082653627649, 0.0003538751896238053],
+          "standardError": [1.7232899439263063e-05, 1.4665806292891204e-05, 8.111814526341671e-06]
+        },
+        {
+          "mean": [0.0013261543254799476, 0.0009127039154266063, 0.00038296300661301287],
+          "standardError": [2.7395258922737303e-05, 2.1481825572049064e-05, 1.0103779758771729e-05]
+        },
+        {
+          "mean": [0.013777781230522408, 0.006017727533238235, 0.001156344367251974],
+          "standardError": [9.927538134863941e-05, 5.2587056877929304e-05, 1.3631324734015474e-05]
+        }
+      ],
+      "firstReflected": [0.00020822681981113596, 0.0001524738135314835, 8.1544235204893e-05],
+      "laterReflected": [0.016164487030384898, 0.0076734397140275955, 0.0018931825634887812]
+    }
+  },
+  "sourceAttribution": {
+    "bench": {
+      "id": "bench-seat-bottom",
+      "iu": 0,
+      "iv": 0,
+      "side": "front",
+      "angle": -46,
+      "paths": 2097152,
+      "edits": {},
+      "reference": [0.006973952879810847, 0.001800308492254295, 0.0002713171617695839],
+      "standardError": [5.0960296716203914e-05, 1.48128485601269e-05, 2.7235098770961607e-06],
+      "region": [0, 0.5, 0, 1],
+      "orders": [
+        {
+          "mean": [1.0265829021132546e-05, 4.319503729762732e-06, 1.2121999013652298e-06],
+          "standardError": [7.783642204757014e-07, 3.265087101045151e-07, 9.140518257207029e-08]
+        },
+        {
+          "mean": [0.00013030039762817444, 6.019540551156734e-05, 1.6900198796186192e-05],
+          "standardError": [5.144753504938966e-06, 2.5276668704824935e-06, 7.405724766943579e-07]
+        },
+        {
+          "mean": [0.0017711456525673645, 0.000520409626298105, 0.0001011545062781998],
+          "standardError": [1.7573345863581643e-05, 6.018719007250341e-06, 1.3900656481512097e-06]
+        },
+        {
+          "mean": [0.0050622410005941925, 0.0012153839567148504, 0.00015205025679383455],
+          "standardError": [4.525910033296546e-05, 1.2445730472838171e-05, 1.9839598209667893e-06]
+        }
+      ],
+      "exchange": {
+        "source": "floor",
+        "hits": 1538115,
+        "paths": 2097152,
+        "production": [
+          [0.00011570974327862441, 5.151648362357863e-05, 1.4037663557597108e-05],
+          [0.0034960585029792045, 0.0009135097973209282, 0.00015053401351333733],
+          [0.011426867842863325, 0.002725162079872126, 0.00036574116647792654]
+        ],
+        "measured": ["second reflection", "third reflection", "all reflections from second onward"],
+        "sampledField": [
+          {
+            "mean": [9.569763323629822e-05, 4.267700481674449e-05, 1.1653801971565387e-05],
+            "standardError": [5.80298109225407e-08, 2.7556504679060213e-08, 7.851088796458326e-09]
+          },
+          {
+            "mean": [0.0024981656401332803, 0.0006625557545277173, 0.00011103890815320601],
+            "standardError": [1.520874502149976e-06, 3.7605071626524867e-07, 5.9301435489061987e-08]
+          },
+          {
+            "mean": [0.00858667268735407, 0.0020403736938158197, 0.0002741260623017028],
+            "standardError": [4.31024928726647e-06, 1.035375748319074e-06, 1.3957715711057993e-07]
+          }
+        ],
+        "physical": [
+          {
+            "mean": [0.00011693711248405135, 5.273829746461505e-05, 1.4504869514219104e-05],
+            "standardError": [4.7563891318937065e-06, 2.3125936978061856e-06, 6.656341971229604e-07]
+          },
+          {
+            "mean": [0.0017380310208087051, 0.0005083928895251464, 9.840176580285705e-05],
+            "standardError": [1.74570209724621e-05, 5.964553646286714e-06, 1.374460686046597e-06]
+          },
+          {
+            "mean": [0.006679464065864738, 0.0017110685597136754, 0.0002560465505330656],
+            "standardError": [5.018184437629326e-05, 1.4496478672668144e-05, 2.643518058432029e-06]
+          }
+        ],
+        "pairedDifference": [
+          {
+            "mean": [-2.1239479247754564e-05, -1.006129264787201e-05, -2.851067542654214e-06],
+            "standardError": [4.7558993783214945e-06, 2.3123619169897296e-06, 6.65568143103456e-07]
+          },
+          {
+            "mean": [0.0007601346193245673, 0.0001541628650025594, 1.2637142350347777e-05],
+            "standardError": [1.7441103092632848e-05, 5.960048694844134e-06, 1.373601863438374e-06]
+          },
+          {
+            "mean": [0.0019072086214896853, 0.000329305134102044, 1.8079511768642645e-05],
+            "standardError": [5.009357821671483e-05, 1.447450361410322e-05, 2.640565959397148e-06]
+          }
+        ],
+        "sampledReceiverMoments": [
+          {
+            "mean": [0.0019198342670344916, 0.0004583341790927853, 6.165408594759338e-05],
+            "standardError": [1.9945931112295413e-06, 4.793817622091819e-07, 6.45006542817685e-08]
+          },
+          {
+            "mean": [0.0022941759360405123, 0.0005501974759216646, 7.518672590849408e-05],
+            "standardError": [1.921191460792505e-06, 4.687872548939474e-07, 6.513227628780233e-08]
+          },
+          {
+            "mean": [0.001986110842600387, 0.00046736540860268556, 6.159240486594947e-05],
+            "standardError": [2.0951193762927723e-06, 4.918928178009963e-07, 6.396476602975091e-08]
+          },
+          {
+            "mean": [0.0023865516416791475, 0.0005644766301985438, 7.569284557967236e-05],
+            "standardError": [2.0639191473584935e-06, 4.906663422728436e-07, 6.584754666595319e-08]
+          }
+        ]
+      },
+      "firstReflected": [1.0265829021132546e-05, 4.319503729762732e-06, 1.2121999013652298e-06],
+      "laterReflected": [0.006963687050789714, 0.0017959889885245323, 0.0002701049618682187]
+    },
+    "art": {
+      "id": "north-wall",
+      "iu": 0,
+      "iv": 0,
+      "side": "front",
+      "angle": -46,
+      "paths": 2097152,
+      "edits": {},
+      "reference": [0.003947482671950251, 0.001873638251548752, 0.0005017840253843829],
+      "standardError": [6.037703420591953e-05, 3.271926279270739e-05, 1.1080387834597542e-05],
+      "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+      "orders": [
+        {
+          "mean": [1.1254400806226537e-05, 9.704504931393948e-06, 6.218190733245875e-06],
+          "standardError": [3.4005360752558484e-06, 3.1409760780428797e-06, 2.1599275368594193e-06]
+        },
+        {
+          "mean": [0.00015262895751846673, 0.0001321595665006442, 7.52460323310408e-05],
+          "standardError": [8.192680675335653e-06, 7.270598500285109e-06, 4.1414034721773346e-06]
+        },
+        {
+          "mean": [0.00030942805823481177, 0.00023399324510927976, 0.00010953878997662599],
+          "standardError": [1.4008205525932455e-05, 1.1199454405042683e-05, 5.3878116522588175e-06]
+        },
+        {
+          "mean": [0.0034741712553907397, 0.0014977809350074282, 0.00031078101234347037],
+          "standardError": [5.7208472676578025e-05, 2.8665997497363938e-05, 7.643626147452143e-06]
+        }
+      ],
+      "exchange": {
+        "source": "print-paper",
+        "hits": 2022064,
+        "paths": 2097152,
+        "production": [
+          [1.677004905503371e-06, 1.14739987866919e-06, 5.214647515033072e-07],
+          [0.00011048906041695446, 8.918260997260642e-05, 4.205961042965047e-05],
+          [0.005310122069332851, 0.0019371331956049695, 0.00034057675920309345]
+        ],
+        "measured": ["second reflection", "third reflection", "all reflections from second onward"],
+        "sampledField": [
+          {
+            "mean": [8.395421174958826e-07, 5.744593271133086e-07, 2.610494650766306e-07],
+            "standardError": [1.7516001278022842e-08, 1.1983327617974351e-08, 5.4467365682770316e-09]
+          },
+          {
+            "mean": [0.00010317744907576113, 8.324769760149779e-05, 3.92512576949592e-05],
+            "standardError": [2.0436669309003628e-07, 1.6614226542326005e-07, 7.873473702036247e-08]
+          },
+          {
+            "mean": [0.005117852048392215, 0.001850195869105004, 0.0003217907533725327],
+            "standardError": [2.7633549738243415e-06, 1.2645763793611148e-06, 3.1146304931077073e-07]
+          }
+        ],
+        "physical": [
+          {
+            "mean": [8.994424562047309e-07, 6.153409893893478e-07, 2.7968861434106897e-07],
+            "standardError": [3.078357901717073e-07, 2.106015547598227e-07, 9.572392875583273e-08]
+          },
+          {
+            "mean": [0.00013014155518334614, 0.00010540035662017594, 4.976761039276439e-05],
+            "standardError": [9.763402314166564e-06, 7.943286757324424e-06, 3.766396551539735e-06]
+          },
+          {
+            "mean": [0.0030458091454312252, 0.00133403061973678, 0.0002863115400205221],
+            "standardError": [5.427833348076474e-05, 2.775591271780046e-05, 7.847798804351351e-06]
+          }
+        ],
+        "pairedDifference": [
+          {
+            "mean": [-5.990033870885229e-08, -4.088166227601874e-08, -1.8639149264430058e-08],
+            "standardError": [3.083338510369407e-07, 2.1094229613076288e-07, 9.587880464986743e-08]
+          },
+          {
+            "mean": [-2.6964106107590065e-05, -2.2152659018672093e-05, -1.0516352697803096e-05],
+            "standardError": [9.760499344337375e-06, 7.940929218070894e-06, 3.7652804956327034e-06]
+          },
+          {
+            "mean": [0.0020720429029612904, 0.0005161652493683791, 3.547921335202028e-05],
+            "standardError": [5.422420597251868e-05, 2.7728239298342358e-05, 7.84083188374262e-06]
+          }
+        ],
+        "sampledReceiverMoments": [
+          {
+            "mean": [0.0007886258747913669, 0.00024447174851014233, 3.211285844484417e-05],
+            "standardError": [3.9095382030681103e-07, 1.275935337539508e-07, 2.3889203995396808e-08]
+          },
+          {
+            "mean": [0.0011272851575825004, 0.0003926749232205172, 6.249092257387959e-05],
+            "standardError": [1.085831030564579e-06, 4.307219352238484e-07, 8.341162218499169e-08]
+          },
+          {
+            "mean": [0.0014941713058135655, 0.0005588880794105958, 0.00010391836671236447],
+            "standardError": [1.687611904029605e-06, 7.356696239773668e-07, 1.774485450122295e-07]
+          },
+          {
+            "mean": [0.0017077697102050146, 0.0006541611179638291, 0.00012326860564145742],
+            "standardError": [1.840463470819862e-06, 7.880136074905678e-07, 1.7969132394161947e-07]
+          }
+        ]
+      },
+      "firstReflected": [1.1254400806226537e-05, 9.704504931393948e-06, 6.218190733245875e-06],
+      "laterReflected": [0.003936228271144025, 0.0018639337466173581, 0.0004955658346511369]
+    },
+    "moved": {
+      "id": "bench-seat-bottom",
+      "iu": 0,
+      "iv": 0,
+      "side": "front",
+      "angle": 17.188733853924695,
+      "paths": 2097152,
+      "edits": {"slats": 1, "secondBlind": true, "radius": 0.044, "secondAngle": -0.4, "secondRadius": 0.033, "floor": "blue", "layout": "alternate"},
+      "reference": [0.004338183982248242, 0.004373918662425303, 0.009257366845925496],
+      "standardError": [1.5137344907084368e-05, 1.1274516100870268e-05, 2.036545475766818e-05],
+      "region": [0, 0.5, 0, 1],
+      "orders": [
+        {
+          "mean": [0.0022983065489498777, 0.0022073418541364953, 0.004123113535959501],
+          "standardError": [4.451274751016416e-06, 2.850294253567323e-06, 4.912795084306905e-06]
+        },
+        {
+          "mean": [0.001038727477221247, 0.0011132640862867923, 0.0020772778582854134],
+          "standardError": [1.0587531239858338e-05, 8.174975897582722e-06, 1.4660304156365626e-05]
+        },
+        {
+          "mean": [0.0004667366577104295, 0.00048668724172555144, 0.0011852091360692962],
+          "standardError": [4.3607029014324915e-06, 3.5543043772134363e-06, 6.02704564409809e-06]
+        },
+        {
+          "mean": [0.0005344132983667163, 0.0005666254802764467, 0.0018717663156112804],
+          "standardError": [6.026709194489523e-06, 4.366023066212398e-06, 9.318855003765453e-06]
+        }
+      ],
+      "exchange": {
+        "source": "floor",
+        "hits": 1544420,
+        "paths": 2097152,
+        "production": [
+          [0.0008964252582261353, 0.001214172252847661, 0.0027042795955126596],
+          [0.00042138680598914987, 0.0005073021877738928, 0.0014111526555551667],
+          [0.001796488934469209, 0.002308477383787525, 0.006288359976003408]
+        ],
+        "measured": ["second reflection", "third reflection", "all reflections from second onward"],
+        "sampledField": [
+          {
+            "mean": [0.0006084802407865889, 0.0008202556045067529, 0.001821846400547118],
+            "standardError": [4.259472986990322e-07, 5.828180291915866e-07, 1.3061596980078361e-06]
+          },
+          {
+            "mean": [0.00031124033161734763, 0.00037827802622008303, 0.0010617772252948967],
+            "standardError": [1.6690020854851165e-07, 1.9967578951796641e-07, 5.429831281085503e-07]
+          },
+          {
+            "mean": [0.0012809549929778876, 0.0016429163531586832, 0.004543523061432875],
+            "standardError": [7.469244849200021e-07, 9.643049456593303e-07, 2.5308980828299667e-06]
+          }
+        ],
+        "physical": [
+          {
+            "mean": [0.0006568284425249644, 0.0008864645696995652, 0.001968316184577676],
+            "standardError": [4.4879524169558905e-06, 6.3734748026220795e-06, 1.4574896010750929e-05]
+          },
+          {
+            "mean": [0.000333973372316528, 0.00040735329077116604, 0.0011321557516851515],
+            "standardError": [2.3131101505496533e-06, 2.985924264764997e-06, 5.957573776445764e-06]
+          },
+          {
+            "mean": [0.001383160771393711, 0.0017784503383212152, 0.004892015311526185],
+            "standardError": [6.330000095070595e-06, 8.554495489301252e-06, 1.9362247331711178e-05]
+          }
+        ],
+        "pairedDifference": [
+          {
+            "mean": [-4.834820173838203e-05, -6.620896519280059e-05, -0.00014646978403057783],
+            "standardError": [4.46628990782314e-06, 6.344800416813107e-06, 1.451175178802403e-05]
+          },
+          {
+            "mean": [-2.2733040699187358e-05, -2.9075264551105254e-05, -7.037852639029563e-05],
+            "standardError": [2.3066658525931087e-06, 2.978766178258009e-06, 5.931270440260062e-06]
+          },
+          {
+            "mean": [-0.0001022057784157627, -0.00013553398516246971, -0.0003484922500930046],
+            "standardError": [6.283380424176259e-06, 8.496571828873887e-06, 1.9185370527040446e-05]
+          }
+        ],
+        "sampledReceiverMoments": [
+          {
+            "mean": [0.00031887541189271724, 0.00040873340501282297, 0.001108934085750216],
+            "standardError": [3.8135652614524446e-07, 4.902545196091549e-07, 1.283631372744449e-06]
+          },
+          {
+            "mean": [0.0003367090005412081, 0.00043016636991871404, 0.0012053882849240797],
+            "standardError": [3.1536304361471136e-07, 4.043622164755796e-07, 1.0985459401654843e-06]
+          },
+          {
+            "mean": [0.0003029379995457625, 0.00038990439082429865, 0.0010639859796392297],
+            "standardError": [3.4991065059574386e-07, 4.520013835413139e-07, 1.191691790940903e-06]
+          },
+          {
+            "mean": [0.000322432580998257, 0.0004141121874028787, 0.0011652147111198405],
+            "standardError": [2.86086140772227e-07, 3.698272626702855e-07, 1.0146977224851847e-06]
+          }
+        ]
+      },
+      "firstReflected": [0.0022983065489498777, 0.0022073418541364953, 0.004123113535959501],
+      "laterReflected": [0.0020398774332983636, 0.0021665768082888073, 0.005134253309965995]
+    }
+  },
+  "jointMeanAndMomentChecks": {
+    "results": [
+      {
+        "blockers": 0,
+        "mass": 0.15687164466401238,
+        "absoluteReciprocity": 4.161946134950689e-11,
+        "absoluteAnalytic": 5.974256787801696e-08,
+        "weights": [
+          0.010078043415923423,
+          0.008731580202959239,
+          0.008010429863261049,
+          0.007014096330915835,
+          0.010405742715122925,
+          0.01062505780258416,
+          0.008251093726343015,
+          0.008407774820640007,
+          0.011241323007910309,
+          0.009689729800995101,
+          0.01035186522838522,
+          0.008956501627031316,
+          0.011619864232554225,
+          0.011876914513436027,
+          0.010691620888063278,
+          0.010920006487887254
+        ],
+        "lines": 3952,
+        "jobs": 30987,
+        "events": 30
+      },
+      {
+        "blockers": 1,
+        "mass": 0.09869752615632782,
+        "absoluteReciprocity": 3.273606342599211e-11,
+        "absoluteAnalytic": null,
+        "weights": [
+          0.005472982643879653,
+          0.003372597567057293,
+          0.004973999803132941,
+          0.0030618421829839686,
+          0.005997123402944559,
+          0.008200215705492026,
+          0.005443737060291668,
+          0.006639713828690313,
+          0.006311011800320712,
+          0.003933200858389085,
+          0.007299174062335647,
+          0.004991776248133073,
+          0.006896904501934495,
+          0.009210568265146775,
+          0.007849642539848507,
+          0.00904303568574711
+        ],
+        "lines": 6824,
+        "jobs": 57251,
+        "events": 58
+      },
+      {
+        "blockers": 2,
+        "mass": 0.09271902522984686,
+        "absoluteReciprocity": 2.7004771899555302e-11,
+        "absoluteAnalytic": null,
+        "weights": [
+          0.005373603417903974,
+          0.0033084947972274775,
+          0.004562480758383813,
+          0.0027478207049950413,
+          0.005889060985283948,
+          0.008167622517172584,
+          0.00500464349294008,
+          0.006506898490064106,
+          0.006016863664490041,
+          0.0036287534627612323,
+          0.006365365878380431,
+          0.0039412334729911815,
+          0.006604393447478529,
+          0.009062945965568638,
+          0.006951646992247542,
+          0.00858719718195825
+        ],
+        "lines": 10536,
+        "jobs": 90535,
+        "events": 84
+      }
+    ],
+    "incompleteSheetRejected": true,
+    "filletInSlabRejected": true,
+    "gl": 0,
+    "refinement": {"converged": true, "angular": 2.1926958965566047e-05, "offset": 4.3334277550870215e-09, "angles": 16, "offsetPanels": 2}
+  },
+  "weakEquilibriumTrials": [
+    {
+      "a": "floor",
+      "b": "bench-seat-bottom",
+      "angle": -46,
+      "elapsed": 495.2999997138977,
+      "lines": 8300,
+      "jobs": 781148,
+      "peak": 4270176,
+      "maxMass": 1.0430748791000917,
+      "baseMaxMass": 1.0001311928681331,
+      "residual": 0.0002165894124564346,
+      "iterations": 33,
+      "before": [
+        {
+          "id": "bench-seat-bottom",
+          "side": 0,
+          "region": [0, 0.5, 0, 1],
+          "orders": [
+            [1.2805940092352988e-05, 5.371990323288256e-06, 1.5042743688497573e-06],
+            [0.0001227381030166805, 5.514455096342971e-05, 1.5154293209586755e-05],
+            [0.0035487128746905495, 0.0009298213180045189, 0.0001536819614419945],
+            [0.00809335164316386, 0.0018286177526287575, 0.00020933307882967057]
+          ],
+          "total": [0.011777608560963443, 0.0028189556119199944, 0.0003796736078501016]
+        },
+        {
+          "id": "north-wall",
+          "side": 0,
+          "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+          "orders": [
+            [2.6789749618640118e-05, 2.4485093516411496e-05, 1.6662865324814398e-05],
+            [0.00019709792856234304, 0.00015392429566056314, 8.36001534143605e-05],
+            [0.00034577000954796145, 0.0002339005346192062, 0.00010283726596942292],
+            [0.0060249277017690095, 0.002206309537147951, 0.00038789086475110807]
+          ],
+          "total": [0.006594585389497954, 0.0026186194609441322, 0.0005909911494597059]
+        }
+      ],
+      "after": [
+        {
+          "id": "bench-seat-bottom",
+          "side": 0,
+          "region": [0, 0.5, 0, 1],
+          "orders": [
+            [1.2805940092352988e-05, 5.371990323288256e-06, 1.5042743688497573e-06],
+            [0.00010865905034667158, 4.9266635590033985e-05, 1.3635747443457124e-05],
+            [0.0025231644285887518, 0.0006740772043872028, 0.00011383142699545478],
+            [0.006117737147159585, 0.0013847416781278487, 0.00015864912432673602]
+          ],
+          "total": [0.008762366566187361, 0.0021134575084283736, 0.0002876205731344977]
+        },
+        {
+          "id": "north-wall",
+          "side": 0,
+          "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+          "orders": [
+            [2.6789749618640118e-05, 2.4485093516411496e-05, 1.6662865324814398e-05],
+            [0.00019709792856234304, 0.00015392429566056314, 8.36001534143605e-05],
+            [0.00034576896036696346, 0.00023390000140089572, 0.0001028371255517057],
+            [0.006021357200752598, 0.0022058287523604395, 0.00038786936158343783]
+          ],
+          "total": [0.006591013839300545, 0.00261813814293831, 0.0005909695058743185]
+        }
+      ]
+    },
+    {
+      "a": "north-wall",
+      "b": "print-paper",
+      "angle": -46,
+      "elapsed": 75,
+      "lines": 0,
+      "jobs": 0,
+      "peak": 0,
+      "maxMass": 1.060526296051431,
+      "baseMaxMass": 1.0001311928681331,
+      "residual": 0.00021638413744644644,
+      "iterations": 26,
+      "before": [
+        {
+          "id": "bench-seat-bottom",
+          "side": 0,
+          "region": [0, 0.5, 0, 1],
+          "orders": [
+            [1.2805940092352988e-05, 5.371990323288256e-06, 1.5042743688497573e-06],
+            [0.0001227381030166805, 5.514455096342971e-05, 1.5154293209586755e-05],
+            [0.0035487128746905495, 0.0009298213180045189, 0.0001536819614419945],
+            [0.00809335164316386, 0.0018286177526287575, 0.00020933307882967057]
+          ],
+          "total": [0.011777608560963443, 0.0028189556119199944, 0.0003796736078501016]
+        },
+        {
+          "id": "north-wall",
+          "side": 0,
+          "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+          "orders": [
+            [2.6789749618640118e-05, 2.4485093516411496e-05, 1.6662865324814398e-05],
+            [0.00019709792856234304, 0.00015392429566056314, 8.36001534143605e-05],
+            [0.00034577000954796145, 0.0002339005346192062, 0.00010283726596942292],
+            [0.0060249277017690095, 0.002206309537147951, 0.00038789086475110807]
+          ],
+          "total": [0.006594585389497954, 0.0026186194609441322, 0.0005909911494597059]
+        }
+      ],
+      "after": [
+        {
+          "id": "bench-seat-bottom",
+          "side": 0,
+          "region": [0, 0.5, 0, 1],
+          "orders": [
+            [1.2805940092352988e-05, 5.371990323288256e-06, 1.5042743688497573e-06],
+            [0.0001227381030166805, 5.514455096342971e-05, 1.5154293209586755e-05],
+            [0.003548716660789957, 0.0009298227508853418, 0.000153682262033549],
+            [0.008071280506204797, 0.0018241773493628188, 0.0002089778114016319]
+          ],
+          "total": [0.011755541210103788, 0.0028145166415348786, 0.0003793186410136174]
+        },
+        {
+          "id": "north-wall",
+          "side": 0,
+          "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+          "orders": [
+            [2.6789749618640118e-05, 2.4485093516411496e-05, 1.6662865324814398e-05],
+            [0.0001971364435251721, 0.00015394329269454717, 8.360600563933699e-05],
+            [0.0003319175082131706, 0.0002226686677237502, 9.7530708685512e-05],
+            [0.004870864266907277, 0.0018212447531997503, 0.00033630814165749775]
+          ],
+          "total": [0.005426707968264259, 0.002222341807134459, 0.0005341077213071612]
+        }
+      ]
+    },
+    {
+      "a": "floor",
+      "b": "bench-seat-bottom",
+      "angle": 24,
+      "elapsed": 462,
+      "lines": 8300,
+      "jobs": 781148,
+      "peak": 4270176,
+      "maxMass": 1.0430748791946445,
+      "baseMaxMass": 1.0001790760109706,
+      "residual": 0.00019139649178944435,
+      "iterations": 31,
+      "before": [
+        {
+          "id": "bench-seat-bottom",
+          "side": 0,
+          "region": [0, 0.5, 0, 1],
+          "orders": [
+            [0.040571163401830306, 0.01698569606769654, 0.0047489371034583295],
+            [0.018437656427934525, 0.008608426870888355, 0.0024098629027794484],
+            [0.011043924428137248, 0.0036644429141152756, 0.0007047160144430507],
+            [0.021645607508579606, 0.005930172447726315, 0.0007695079254281569]
+          ],
+          "total": [0.09169835176648168, 0.035188738300426486, 0.008633023946108985]
+        },
+        {
+          "id": "north-wall",
+          "side": 0,
+          "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+          "orders": [
+            [0.0002696498665784825, 0.00020685735091065775, 0.00011768969874752499],
+            [0.0011671479263936793, 0.0008090270292195821, 0.00038255676038795235],
+            [0.0014043557997104638, 0.0009393038094080597, 0.00038440644771549766],
+            [0.020670829968147467, 0.00835563608009307, 0.0014422492286469179]
+          ],
+          "total": [0.02351198356083009, 0.01031082426963137, 0.002326902135497893]
+        }
+      ],
+      "after": [
+        {
+          "id": "bench-seat-bottom",
+          "side": 0,
+          "region": [0, 0.5, 0, 1],
+          "orders": [
+            [0.040571163401830306, 0.01698569606769654, 0.0047489371034583295],
+            [0.014006677549890817, 0.0065257060995826495, 0.001824216820328479],
+            [0.00872717836843636, 0.002883001314147606, 0.0005529152814841494],
+            [0.016706184147223316, 0.004589143176464746, 0.0005956833205386187]
+          ],
+          "total": [0.08001120346738079, 0.030983546657891544, 0.0077217525258095766]
+        },
+        {
+          "id": "north-wall",
+          "side": 0,
+          "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+          "orders": [
+            [0.0002696498665784825, 0.00020685735091065775, 0.00011768969874752499],
+            [0.0011671479263936793, 0.0008090270292195821, 0.00038255676038795235],
+            [0.0014044382283290061, 0.0009393414182642051, 0.0003844157859681199],
+            [0.020659017008594037, 0.008353527271094455, 0.0014421362438125232]
+          ],
+          "total": [0.023500253029895207, 0.010308753069488901, 0.0023267984889161204]
+        }
+      ]
+    },
+    {
+      "a": "north-wall",
+      "b": "print-paper",
+      "angle": 24,
+      "elapsed": 80,
+      "lines": 0,
+      "jobs": 0,
+      "peak": 0,
+      "maxMass": 1.0605264806952264,
+      "baseMaxMass": 1.0001790760109706,
+      "residual": 0.00018846518964044968,
+      "iterations": 27,
+      "before": [
+        {
+          "id": "bench-seat-bottom",
+          "side": 0,
+          "region": [0, 0.5, 0, 1],
+          "orders": [
+            [0.040571163401830306, 0.01698569606769654, 0.0047489371034583295],
+            [0.018437656427934525, 0.008608426870888355, 0.0024098629027794484],
+            [0.011043924428137248, 0.0036644429141152756, 0.0007047160144430507],
+            [0.021645607508579606, 0.005930172447726315, 0.0007695079254281569]
+          ],
+          "total": [0.09169835176648168, 0.035188738300426486, 0.008633023946108985]
+        },
+        {
+          "id": "north-wall",
+          "side": 0,
+          "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+          "orders": [
+            [0.0002696498665784825, 0.00020685735091065775, 0.00011768969874752499],
+            [0.0011671479263936793, 0.0008090270292195821, 0.00038255676038795235],
+            [0.0014043557997104638, 0.0009393038094080597, 0.00038440644771549766],
+            [0.020670829968147467, 0.00835563608009307, 0.0014422492286469179]
+          ],
+          "total": [0.02351198356083009, 0.01031082426963137, 0.002326902135497893]
+        }
+      ],
+      "after": [
+        {
+          "id": "bench-seat-bottom",
+          "side": 0,
+          "region": [0, 0.5, 0, 1],
+          "orders": [
+            [0.040571163401830306, 0.01698569606769654, 0.0047489371034583295],
+            [0.018437656427934525, 0.008608426870888355, 0.0024098629027794484],
+            [0.011044117441041846, 0.003664515960459965, 0.0007047313376497301],
+            [0.02154101597243349, 0.005904727884713485, 0.0007670804114027208]
+          ],
+          "total": [0.09159395324324017, 0.035163366783758344, 0.008630611755290228]
+        },
+        {
+          "id": "north-wall",
+          "side": 0,
+          "region": [0.5, 0.6632352941176471, 0.5, 0.7891891891891891],
+          "orders": [
+            [0.0002696498665784825, 0.00020685735091065775, 0.00011768969874752499],
+            [0.0011711028699327975, 0.0008117300121685439, 0.00038378114070951986],
+            [0.0013573672463138193, 0.0009083723560543661, 0.0003719996827416864],
+            [0.017326536267797635, 0.007150225910812939, 0.0012803373819112126]
+          ],
+          "total": [0.020124656250622736, 0.009077185629946506, 0.002153807904109944]
+        }
+      ]
+    }
+  ],
+  "weakEquilibriumNotes": "Changed the two reciprocal transfer blocks and re-solved the entire current room. Comparisons use the same first-bounce right hand side. The floor/bench replacement uses positive lumped area projection. Because the remaining blocks use point observations, the combined room fails the unit hemisphere mass bound. These trials are offline; zero frame savings claimed for the weak blocks.",
+  "geometryMassAtMinus46": {
+    "productionFloorShare": 0.8886926998632829,
+    "productionPrintShare": 0.9595856006706391,
+    "scope": "production weights measured before adding sheet bounds; all sampled final-segment and full-path RGB in sourceAttribution were rerun with the published kernels"
+  },
+  "lineRefinements": {
+    "meanOnly": [
+      {
+        "src": "floor",
+        "id": "bench-seat-bottom",
+        "qualified": true,
+        "records": [
+          {
+            "angles": 8,
+            "panels": 1,
+            "elapsed": 51.59999990463257,
+            "lines": 2948,
+            "jobs": 98692,
+            "blocks": 4789,
+            "mass": 0.7335443274040604,
+            "fields": [
+              [9.57498909220226e-05, 4.2704247188758025e-05, 1.1662033723658881e-05],
+              [0.0025003960133367317, 0.0006631384855465253, 0.00011113444223499454],
+              [0.008592340691866061, 0.0020418496789002738, 0.00027433746800155487]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 16,
+            "panels": 1,
+            "elapsed": 47.40000009536743,
+            "lines": 3040,
+            "jobs": 101477,
+            "blocks": 4880,
+            "mass": 0.7335299743115621,
+            "fields": [
+              [9.573873592543554e-05, 4.269819104949164e-05, 1.166017088273253e-05],
+              [0.002500073093612083, 0.0006630563227236332, 0.00011112149405455957],
+              [0.008591558803374425, 0.0020416520605289544, 0.00027430973240492597]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 32,
+            "panels": 1,
+            "elapsed": 44.80000019073486,
+            "lines": 3328,
+            "jobs": 110528,
+            "blocks": 5400,
+            "mass": 0.7335518941793389,
+            "fields": [
+              [9.573771339556874e-05, 4.2697632014574744e-05, 1.166000644790456e-05],
+              [0.002500169516729506, 0.0006630764725112371, 0.00011112392526436691],
+              [0.008591781820274603, 0.002041697919514062, 0.0002743146967630905]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 64,
+            "panels": 2,
+            "elapsed": 93.80000019073486,
+            "lines": 7928,
+            "jobs": 261879,
+            "blocks": 12927,
+            "mass": 0.7335637558905103,
+            "fields": [
+              [9.57436674634391e-05, 4.2700067393754735e-05, 1.1660587013950728e-05],
+              [0.0025000150807254875, 0.0006630215600249502, 0.00011111218091497251],
+              [0.008591151651832753, 0.0020415194725978128, 0.0002742872001127776]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 128,
+            "panels": 4,
+            "elapsed": 262.80000019073486,
+            "lines": 22896,
+            "jobs": 745686,
+            "blocks": 38611,
+            "mass": 0.7335705866086454,
+            "fields": [
+              [9.574489959116919e-05, 4.2700432381167065e-05, 1.1660650196017978e-05],
+              [0.002500094418100184, 0.00066304352414684, 0.00011111603819430744],
+              [0.008591429564696749, 0.0020415858994239106, 0.00027429616641956876]
+            ],
+            "negative": 0
+          }
+        ],
+        "error": 0
+      },
+      {
+        "src": "print-paper",
+        "id": "north-wall",
+        "qualified": true,
+        "records": [
+          {
+            "angles": 8,
+            "panels": 1,
+            "elapsed": 6.400000095367432,
+            "lines": 410,
+            "jobs": 14115,
+            "blocks": 0,
+            "mass": 0.9641589196448311,
+            "fields": [
+              [8.379116265272248e-07, 5.733438561967249e-07, 2.6054245038856527e-07],
+              [0.00010211656931235691, 8.238670128142694e-05, 3.884387023305408e-05],
+              [0.005109909290638542, 0.0018457880280075064, 0.000320359146759382]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 16,
+            "panels": 1,
+            "elapsed": 7.099999904632568,
+            "lines": 547,
+            "jobs": 18976,
+            "blocks": 0,
+            "mass": 0.964210381203568,
+            "fields": [
+              [8.37802971400236e-07, 5.732695251726385e-07, 2.605086627353529e-07],
+              [0.00010208675387169484, 8.236266495599834e-05, 3.883259778887294e-05],
+              [0.0051086585441344, 0.0018452502183402754, 0.0003202512892258098]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 32,
+            "panels": 1,
+            "elapsed": 9.799999713897705,
+            "lines": 874,
+            "jobs": 30148,
+            "blocks": 0,
+            "mass": 0.964232060242093,
+            "fields": [
+              [8.384723052026872e-07, 5.737274420169828e-07, 2.6071679708723793e-07],
+              [0.00010195598113086918, 8.225604943999761e-05, 3.878199735503815e-05],
+              [0.005108868481915334, 0.001845350932187583, 0.00032024960527765524]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 64,
+            "panels": 2,
+            "elapsed": 32.59999990463257,
+            "lines": 3030,
+            "jobs": 106260,
+            "blocks": 0,
+            "mass": 0.9643474095901842,
+            "fields": [
+              [8.387772958163369e-07, 5.739361063345222e-07, 2.6081163509379796e-07],
+              [0.00010259369164278636, 8.277339486966954e-05, 3.9026618920697064e-05],
+              [0.005115584171633765, 0.0018487600827441259, 0.0003212583670264729]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 128,
+            "panels": 4,
+            "elapsed": 113.30000019073486,
+            "lines": 11333,
+            "jobs": 394727,
+            "blocks": 0,
+            "mass": 0.9643805155516125,
+            "fields": [
+              [8.386716232443446e-07, 5.738638137280793e-07, 2.607787751542096e-07],
+              [0.00010293231247814236, 8.304838481697358e-05, 3.915682321585447e-05],
+              [0.005115928439874767, 0.0018491200195257607, 0.00032146303400235076]
+            ],
+            "negative": 0
+          }
+        ],
+        "error": 0
+      }
+    ],
+    "fourMoments": [
+      {
+        "src": "floor",
+        "id": "bench-seat-bottom",
+        "qualified": true,
+        "records": [
+          {
+            "angles": 8,
+            "panels": 1,
+            "elapsed": 189.90000009536743,
+            "lines": 2948,
+            "jobs": 301036,
+            "blocks": 4789,
+            "bytes": 4270176,
+            "mass": 0.7335443584385898,
+            "receiverMoments": [
+              [0.0019209385234982986, 0.00045861780984033924, 6.16940430860701e-05],
+              [0.002296661336869491, 0.0005508427469686623, 7.527987568562523e-05],
+              [0.00198718950565852, 0.0004676451040892509, 6.163110087817484e-05],
+              [0.002387535639836247, 0.0005647394626275727, 7.573176476308296e-05]
+            ],
+            "fields": [
+              [9.57499178200182e-05, 4.270425926111912e-05, 1.1662036389368755e-05],
+              [0.0025003911936924963, 0.0006631365671994453, 0.00011113404914566305],
+              [0.008592325005862558, 0.0020418451235258246, 0.000274336784412953]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 16,
+            "panels": 1,
+            "elapsed": 190.80000019073486,
+            "lines": 3040,
+            "jobs": 309494,
+            "blocks": 4880,
+            "bytes": 4270176,
+            "mass": 0.7335300074820987,
+            "receiverMoments": [
+              [0.0019206750975935022, 0.0004585539908699551, 6.168557575815922e-05],
+              [0.0022963640608478194, 0.0005507697359409644, 7.5269712459546e-05],
+              [0.0019870751686679156, 0.0004676164200638528, 6.1627278309872e-05],
+              [0.0023874288296629603, 0.0005647073682729001, 7.57264837244921e-05]
+            ],
+            "fields": [
+              [9.573876466050044e-05, 4.269820385204073e-05, 1.1660173726213108e-05],
+              [0.0025000682851489715, 0.0006630544073026475, 0.00011112110144744969],
+              [0.008591543156772196, 0.0020416475151476747, 0.00027430905025206925]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 32,
+            "panels": 1,
+            "elapsed": 194.09999990463257,
+            "lines": 3328,
+            "jobs": 337047,
+            "blocks": 5400,
+            "bytes": 4270176,
+            "mass": 0.7335519301790299,
+            "receiverMoments": [
+              [0.001920769286066707, 0.0004585747999886861, 6.168809702103417e-05],
+              [0.0022964108494367523, 0.0005507784115451749, 7.527048048127735e-05],
+              [0.001987111127540441, 0.00046762292532079617, 6.162783744457999e-05],
+              [0.002387474937091002, 0.0005647172431273248, 7.57276003688695e-05]
+            ],
+            "fields": [
+              [9.57377419058328e-05, 4.269764476712019e-05, 1.1660009288296811e-05],
+              [0.0025001647163265437, 0.0006630745589776485, 0.00011112353292690406],
+              [0.008591766200134897, 0.0020416933799819797, 0.0002743140153157608]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 64,
+            "panels": 2,
+            "elapsed": 442.5,
+            "lines": 7928,
+            "jobs": 796731,
+            "blocks": 12927,
+            "bytes": 4270176,
+            "mass": 0.7335637889651396,
+            "receiverMoments": [
+              [0.0019207189083806431, 0.00045855595965284225, 6.168463117757913e-05],
+              [0.00229612176309247, 0.0005507040049345405, 7.52599286239524e-05],
+              [0.001987064618231569, 0.0004676038020578361, 6.162414713993037e-05],
+              [0.002387230717633474, 0.0005646511608401221, 7.571781099102349e-05]
+            ],
+            "fields": [
+              [9.574369572409245e-05, 4.270008004462893e-05, 1.1660589828426123e-05],
+              [0.0025000102743096796, 0.0006630196448383837, 0.00011111178828578664],
+              [0.00859113600733816, 0.002041514927485342, 0.0002742865179324851]
+            ],
+            "negative": 0
+          }
+        ],
+        "error": 0
+      },
+      {
+        "src": "print-paper",
+        "id": "north-wall",
+        "qualified": true,
+        "records": [
+          {
+            "angles": 8,
+            "panels": 1,
+            "elapsed": 43.10000038146973,
+            "lines": 410,
+            "jobs": 76947,
+            "blocks": 0,
+            "bytes": 4265248,
+            "mass": 0.964158969161937,
+            "receiverMoments": [
+              [0.0007890558364384415, 0.00024459116900007864, 3.210473115320263e-05],
+              [0.001126489371078903, 0.00039224035743286165, 6.23570716873306e-05],
+              [0.00149152443607862, 0.0005573963020020713, 0.0001034324658946272],
+              [0.0017028319107753299, 0.0006515575329574452, 0.00012246452578891932]
+            ],
+            "fields": [
+              [8.379116673873826e-07, 5.733438841555903e-07, 2.605424630937097e-07],
+              [0.00010211642143480763, 8.238663145758415e-05, 3.884385467442323e-05],
+              [0.005109901554371294, 0.0018457853613924574, 0.0003203587945240798]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 16,
+            "panels": 1,
+            "elapsed": 53.299999713897705,
+            "lines": 547,
+            "jobs": 102432,
+            "blocks": 0,
+            "bytes": 4265248,
+            "mass": 0.96421043239078,
+            "receiverMoments": [
+              [0.0007887859728521594, 0.0002444956743432974, 3.209584981471318e-05],
+              [0.001125715229060143, 0.00039190163769311495, 6.228679425873306e-05],
+              [0.001491569399102455, 0.0005574519954067871, 0.00010346332923110834],
+              [0.001702580216371923, 0.0006513982480511989, 0.00012240496438278714]
+            ],
+            "fields": [
+              [8.378030052345797e-07, 5.732695483249931e-07, 2.6050867325575196e-07],
+              [0.00010208660632114821, 8.236259538852113e-05, 3.8832582347936045e-05],
+              [0.005108650817386681, 0.001845247555494399, 0.0003202509376873418]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 32,
+            "panels": 1,
+            "elapsed": 82.60000038146973,
+            "lines": 874,
+            "jobs": 162562,
+            "blocks": 0,
+            "bytes": 4265248,
+            "mass": 0.9642321137512426,
+            "receiverMoments": [
+              [0.0007888164093320597, 0.00024452740064569693, 3.2108749452094464e-05],
+              [0.001126004254798519, 0.0003920486367243204, 6.232130868740555e-05],
+              [0.001491712109230044, 0.0005575037788239094, 0.0001034560657876218],
+              [0.0017023279932222176, 0.0006512684570259803, 0.00012236313051853452]
+            ],
+            "fields": [
+              [8.384723381939571e-07, 5.737274645929453e-07, 2.6071680734542753e-07],
+              [0.00010195583403784066, 8.225598018264114e-05, 3.878198203766299e-05],
+              [0.00510886076658284, 0.0018453482732199078, 0.0003202492544456564]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 64,
+            "panels": 2,
+            "elapsed": 286.19999980926514,
+            "lines": 3030,
+            "jobs": 574487,
+            "blocks": 0,
+            "bytes": 4265248,
+            "mass": 0.9643474570028515,
+            "receiverMoments": [
+              [0.0007889155513376326, 0.0002445781615795097, 3.2125978314042754e-05],
+              [0.0011270922607763262, 0.0003925565288511446, 6.245007190867271e-05],
+              [0.0014930039928230886, 0.0005582049062576578, 0.00010368102345829993],
+              [0.001706564601267145, 0.0006534178066560584, 0.00012300093843522288]
+            ],
+            "fields": [
+              [8.387773308334145e-07, 5.739361302957823e-07, 2.608116459820092e-07],
+              [0.00010259354119707266, 8.27733235334047e-05, 3.9026602866044455e-05],
+              [0.0051155764062041946, 0.0018487574033443698, 0.00032125801211623834]
+            ],
+            "negative": 0
+          }
+        ],
+        "error": 0
+      }
+    ],
+    "movedBlueSecondSlat": [
+      {
+        "src": "floor",
+        "id": "bench-seat-bottom",
+        "qualified": true,
+        "records": [
+          {
+            "angles": 8,
+            "panels": 1,
+            "elapsed": 183.59999990463257,
+            "lines": 2976,
+            "jobs": 311511,
+            "blocks": 3698,
+            "bytes": 4270176,
+            "mass": 0.7362550864344081,
+            "receiverMoments": [
+              [0.00031883023778751834, 0.0004086716888024942, 0.001108777689385512],
+              [0.00033662578030395254, 0.0004300650075250383, 0.0012050895287034774],
+              [0.0003031522376337886, 0.00039016807664691574, 0.0010646837616585833],
+              [0.00032226861589870233, 0.00041390794514548014, 0.0011646538091806024]
+            ],
+            "fields": [
+              [0.0006084354543472428, 0.0008202052964904126, 0.0018217469159129277],
+              [0.00031122102112426063, 0.0003782442942152804, 0.001061631106995028],
+              [0.001280876871623962, 0.001642812718119927, 0.004543204788928178]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 16,
+            "panels": 1,
+            "elapsed": 178.90000009536743,
+            "lines": 3104,
+            "jobs": 323614,
+            "blocks": 3828,
+            "bytes": 4270176,
+            "mass": 0.7362321388481047,
+            "receiverMoments": [
+              [0.0003187970252673276, 0.0004086251617257311, 0.0011086459727733338],
+              [0.00033657768913907264, 0.0004300014038146068, 0.001204919362975913],
+              [0.0003031302496939864, 0.0003901392114383888, 0.0010645947231239523],
+              [0.00032224581954117914, 0.0004138784689147895, 0.0011645692327126671]
+            ],
+            "fields": [
+              [0.0006083791832783638, 0.0008201302028575752, 0.0018215868035681558],
+              [0.0003111887475380712, 0.0003782002099610886, 0.001061506837752627],
+              [0.0012807507836415657, 0.0016426442458935158, 0.004542729291585866]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 32,
+            "panels": 1,
+            "elapsed": 182.5,
+            "lines": 3304,
+            "jobs": 341679,
+            "blocks": 4252,
+            "bytes": 4270176,
+            "mass": 0.7362538920167098,
+            "receiverMoments": [
+              [0.00031880979049149147, 0.0004086417428007783, 0.0011086879771288896],
+              [0.00033660440086165204, 0.0004300365628607241, 0.001205009057534146],
+              [0.00030314020821284554, 0.0003901520517656773, 0.0010646288956778693],
+              [0.0003222682861131005, 0.0004139076681825449, 0.0011646462494705088]
+            ],
+            "fields": [
+              [0.0006084227587065352, 0.000820191010896107, 0.0018217255594165952],
+              [0.00031120295716637937, 0.00037821624017376115, 0.0010615511584534491],
+              [0.001280822685679089, 0.0016427380256097246, 0.0045429721798114124]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 64,
+            "panels": 2,
+            "elapsed": 431.5,
+            "lines": 7824,
+            "jobs": 801140,
+            "blocks": 10257,
+            "bytes": 4270176,
+            "mass": 0.7362667339313061,
+            "receiverMoments": [
+              [0.0003188040111547931, 0.00040862963883771676, 0.0011086800759497304],
+              [0.00033655197413918835, 0.0004299637693236781, 0.0012048424188381905],
+              [0.0003031289547611629, 0.00039013264409154747, 0.0010646020219478994],
+              [0.000322207486151511, 0.00041382314501720664, 0.001164450931654373]
+            ],
+            "fields": [
+              [0.0006082975912823568, 0.0008200029697703391, 0.0018212857445077664],
+              [0.0003111928676485785, 0.0003782084882061764, 0.0010615501183476703],
+              [0.001280692426206654, 0.0016425491972701497, 0.004542575448390188]
+            ],
+            "negative": 0
+          }
+        ],
+        "error": 0
+      },
+      {
+        "src": "print-paper",
+        "id": "north-wall",
+        "qualified": true,
+        "records": [
+          {
+            "angles": 8,
+            "panels": 1,
+            "elapsed": 7.699999809265137,
+            "lines": 184,
+            "jobs": 10025,
+            "blocks": 0,
+            "bytes": 3451296,
+            "mass": 0.00301526843155531,
+            "receiverMoments": [
+              [2.60687086850932e-05, 1.6907953718995382e-05, 1.1228863108485328e-05],
+              [3.7095517966563363e-06, 2.2983763435326636e-06, 1.3719124419871382e-06],
+              [2.4819151137804428e-05, 1.6154552408730177e-05, 1.0552728559939336e-05],
+              [3.2786771072437732e-06, 2.039490784815867e-06, 1.2111833493539528e-06]
+            ],
+            "fields": [
+              [2.0383857081032043e-06, 1.3954291247258685e-06, 6.381647389271004e-07],
+              [5.1662088563471875e-06, 4.376653727250726e-06, 4.116145692955274e-06],
+              [5.787608872679777e-05, 3.740037325607409e-05, 2.4364687459765752e-05]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 16,
+            "panels": 1,
+            "elapsed": 7.100000381469727,
+            "lines": 224,
+            "jobs": 11943,
+            "blocks": 0,
+            "bytes": 3696800,
+            "mass": 0.0030162623555257794,
+            "receiverMoments": [
+              [2.6069020879485675e-05, 1.6909742220593017e-05, 1.1232198754993651e-05],
+              [3.7050755733839225e-06, 2.296618095472987e-06, 1.372020464912708e-06],
+              [2.485246101886619e-05, 1.6178621680982264e-05, 1.0568913298631246e-05],
+              [3.2916609759709252e-06, 2.048096584673441e-06, 1.216010424676384e-06]
+            ],
+            "fields": [
+              [2.035251261041006e-06, 1.393285411721339e-06, 6.371933198982858e-07],
+              [5.17968577197638e-06, 4.387624717078902e-06, 4.122475403391914e-06],
+              [5.7918218447706684e-05, 3.7433078581721715e-05, 2.4389142943213997e-05]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 32,
+            "panels": 1,
+            "elapsed": 12,
+            "lines": 380,
+            "jobs": 20533,
+            "blocks": 0,
+            "bytes": 4265248,
+            "mass": 0.0030164034520300765,
+            "receiverMoments": [
+              [2.6060543640904322e-05, 1.6904564764323594e-05, 1.1229366809985005e-05],
+              [3.705718603329341e-06, 2.296999671354637e-06, 1.3720464933085918e-06],
+              [2.4875001365704487e-05, 1.6195553019203595e-05, 1.0579690438740785e-05],
+              [3.29995727357752e-06, 2.0537736399653972e-06, 1.2193417149738933e-06]
+            ],
+            "fields": [
+              [2.033276475652049e-06, 1.3919343054705096e-06, 6.365788360022797e-07],
+              [5.187582567611079e-06, 4.3939317438796836e-06, 4.125437151270126e-06],
+              [5.7941220883515674e-05, 3.745089109484723e-05, 2.4400445457008266e-05]
+            ],
+            "negative": 0
+          },
+          {
+            "angles": 64,
+            "panels": 2,
+            "elapsed": 38.5,
+            "lines": 1360,
+            "jobs": 72140,
+            "blocks": 0,
+            "bytes": 4265248,
+            "mass": 0.0030134627966345137,
+            "receiverMoments": [
+              [2.603856551572938e-05, 1.688844689991591e-05, 1.12189900692534e-05],
+              [3.704912279145319e-06, 2.2962722897186013e-06, 1.3715716001612908e-06],
+              [2.4736157103739684e-05, 1.6093073812643802e-05, 1.050929413903764e-05],
+              [3.2982979074616787e-06, 2.052020352564699e-06, 1.217712760688034e-06]
+            ],
+            "fields": [
+              [2.0214662480327853e-06, 1.3838539750852827e-06, 6.329038184607194e-07],
+              [5.137182662260099e-06, 4.35305976700285e-06, 4.1010779141138765e-06],
+              [5.777793280607604e-05, 3.732981335484301e-05, 2.4317568569140365e-05]
+            ],
+            "negative": 0
+          }
+        ],
+        "error": 0
+      }
+    ]
+  },
+  "qualityNotes": "Channel comparisons include direct, reflected and total 4K from the same fresh scene. The same pose and camera are revisited after two edits. Across-scene physical accuracy is not inferred from revision equality. The reported memory is counted payload, excluding uninstrumented JS and browser/OS/device overhead. The mean-only refinements used the packed-basis comparator. Four-moment and source-attribution probes use the playable kernels.",
+  "momentVsPathSampling": {
+    "bench": {
+      "mass": 0.7335637889651396,
+      "sampledMass": 0.7334303855895996,
+      "absoluteStandardErrorsPerMomentAndChannel": [
+        [0.44351970392911305, 0.462638709981098, 0.473564653349337],
+        [1.0128230796712088, 1.0805093517110784, 1.123908446479878],
+        [0.45523689102121534, 0.4846451229279104, 0.49624622977808125],
+        [0.3290225565258543, 0.35570127098974896, 0.37913958249324375]
+      ]
+    },
+    "art": {
+      "mass": 0.9643474570028515,
+      "sampledMass": 0.9641952514648438,
+      "absoluteStandardErrorsPerMomentAndChannel": [
+        [0.7409482430390336, 0.8340004876155189, 0.5491965827373247],
+        [0.17764900868041536, 0.2748742510898409, 0.48974788089212473],
+        [0.6916951626672255, 0.9286412414917085, 1.3375328270411178],
+        [0.6547855781852282, 0.9432721728471938, 1.4895944910590626]
+      ]
+    },
+    "moved": {
+      "mass": 0.7362667339313061,
+      "sampledMass": 0.7364368438720703,
+      "absoluteStandardErrorsPerMomentAndChannel": [
+        [0.18722831006953009, 0.21165776337755357, 0.19788375843644598],
+        [0.4979226488301119, 0.5010374035482162, 0.4968987330716375],
+        [0.5457256447475183, 0.5049835588123956, 0.5169476817351817],
+        [0.7868079388200614, 0.7815605144549739, 0.7527162509015703]
+      ]
+    }
+  },
+  "shortComparisons": {
+    "packed": {"1": {"median": 526.1, "p95": 665.12}, "0": {"median": 1361.86, "p95": 2240.44}},
+    "outline": {"1": {"median": 511.78, "p95": 541.26}, "0": {"median": 1283.33, "p95": 2238.45}},
+    "project": {"1": {"median": 500.43, "p95": 550.3}, "0": {"median": 1319.91, "p95": 2210.97}}
+  },
+  "shortComparisonNotes": "12 poses each. outline clipped full polygons for bounds only and was not selected. Packed, outline and project denote sparse modal transform, direct outline clip and coordinate elimination respectively. Production still draws no polygonal geometry."
+}

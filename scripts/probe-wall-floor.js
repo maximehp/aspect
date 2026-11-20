@@ -163,3 +163,45 @@ export async function reflectedOrders(renderer, scene, observations) {
     return { id, side, region, orders: rgb, total };
   });
 }
+
+// Portable source fields for the independent reference. Multiplying by a
+// source reflectance and the receiving material happens once, on each path.
+export async function captureSourceField(renderer, scene, source, observation) {
+  const { geometry, firstBounce, incident, modal, rows } = await renderer.prepareScene(scene);
+  const { shapes, receivers, maps } = geometry,
+    from = shapes.findIndex((s) => s.id === source),
+    to = shapes.findIndex((s) => s.id === observation.id);
+  if (!shapes[from]?.axisU || !shapes[to]?.axisU || !['front', 'back'].includes(observation.side))
+    throw Error('Select two authored sheets and a receiving side');
+  checkRegion(observation.region);
+  const target = maps[to][observation.side === 'front' ? 0 : 1];
+  if (target.type !== 0) throw Error('Select a populated receiver side');
+  const outgoing = modal.firstCoefficients.map(
+    (x, i) => x * shapes[receivers[Math.floor(i / 3)].object].color[i % 3],
+  );
+  const fields = [firstBounce, modal.basis.decode(modal.transfer(outgoing, false)), incident];
+  const charts = maps[from].map((chart) => ({
+    cols: chart.cols,
+    rows: chart.rows,
+    knots: chart.knots,
+    ids: chart.ids.map((id, i) => (id < 0 ? -1 : i)),
+    fields: fields.map((field) =>
+      chart.ids.flatMap((id) => (id < 0 ? [0, 0, 0] : Array.from(field.subarray(3 * id, 3 * id + 3)))),
+    ),
+  }));
+  const production = fields.map((field) => {
+    const result = new Float64Array(field.length);
+    for (const i of target.ids) {
+      const part = rows[i % rows.length],
+        row = (i - part.first) / part.stride;
+      for (let j = part.starts[row]; j < part.starts[row + 1]; j++) {
+        const id = part.col[j];
+        if (receivers[id].object !== from) continue;
+        for (let c = 0; c < 3; c++)
+          result[3 * i + c] += part.weights[j] * field[3 * id + c] * shapes[from].color[c];
+      }
+    }
+    return average(target, observation.region, result).map((x, c) => x * shapes[to].color[c]);
+  });
+  return { scene, source, observation, charts, production };
+}

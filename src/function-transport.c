@@ -928,14 +928,23 @@ static int crossesRounded(const Chart *c, const Shape *b, const Cone *cone) {
   }
   return square < (b->r - eps) * (b->r - eps);
 }
+typedef struct {
+  double xlo, xhi, tlo, thi;
+} PlaneBounds;
 static int chartBlockers(const Chart *c, const Shape *shapes, int skip, const Cone *all, int n,
-                         int *out, int *hidden, const int *objects, const unsigned *unresolved) {
+                         int *out, int *hidden, const int *objects, const unsigned *unresolved,
+                         const PlaneBounds *bounds, double x, double t, double dx, double dt) {
   int count = 0;
   for (int index = 0; index < n; index++) {
     int j = objects ? objects[index] : index;
     const Cone *k = all + j;
     if (j == c->object || j == skip || (!k->n && !shapes[j].r))
       continue;
+    if (bounds) {
+      const PlaneBounds r = bounds[j];
+      if (x + dx < r.xlo || x - dx > r.xhi || t + dt < r.tlo || t - dt > r.thi)
+        continue;
+    }
     int full = k->n > 0;
     unsigned faces = unresolved ? unresolved[index] : (1u << k->n) - 1;
     while (faces) {
@@ -965,7 +974,7 @@ static int chartBlockers(const Chart *c, const Shape *shapes, int skip, const Co
 }
 static int candidates(const Chart *c, const Shape *s, int skip, const Cone *all, int n, int *out,
                       int *hidden) {
-  return chartBlockers(c, s, skip, all, n, out, hidden, 0, 0);
+  return chartBlockers(c, s, skip, all, n, out, hidden, 0, 0, 0, 0, 0, 0, 0);
 }
 // A generating chart belongs to one solid. Certify each cone half-space over
 // its whole support once, then test only its unresolved faces on each chart.
@@ -1041,6 +1050,59 @@ static int footprint(const Chart *c, const Cone *k, UV *poly) {
       poly[z] = tmp[z];
   }
   return n;
+}
+// Project the cone onto each coordinate of the entire authored plane.
+// For B>0 and B'<0, B*f'-B'*f >= 0 eliminates v in one step for every
+// feasible point of f=A*u+B*v+C >= 0 and f'>=0. Its complement needs no
+// geometric integration. Relax uncertain coefficients over the finite chart.
+static void restrictAxis(double a, double c, double *lo, double *hi) {
+  if (a > 0)
+    *lo = high(*lo, -c / a - 1e-11);
+  else if (a < 0)
+    *hi = low(*hi, -c / a + 1e-11);
+  else if (c < 0) {
+    *lo = 1;
+    *hi = -1;
+  }
+}
+static void planeBounds(const Shape *s, const Cone *eyes, const int *near,
+                        const unsigned *unresolved, int count, PlaneBounds *out) {
+  Vec U = cross3(s->ax[1], s->ax[2]), V = cross3(s->ax[2], s->ax[0]);
+  U = scale3(U, 1 / dp(U, s->ax[0]));
+  V = scale3(V, 1 / dp(V, s->ax[1]));
+  double shapeSize = 1 + length(s->c) + length(U) + length(V);
+  for (int i = 0; i < count; i++) {
+    const Cone *cone = eyes + near[i];
+    PlaneBounds r = {-2, 2, -2, 2};
+    double A[12], B[12], C[12];
+    int n = 0;
+    for (unsigned mask = unresolved[i]; mask; mask &= mask - 1) {
+      const Plane h = cone->p[__builtin_ctz(mask)];
+      double a = dp(U, h.n), b = dp(V, h.n);
+      double c = dp(s->c, h.n) - h.b + 1e-9 * (shapeSize + absd(h.b));
+      restrictAxis(a, c + 1.00000001 * absd(b), &r.xlo, &r.xhi);
+      restrictAxis(b, c + 1.00000001 * absd(a), &r.tlo, &r.thi);
+      for (int j = 0; j < n; j++) {
+        double ua = B[j] * a, vb = A[j] * b, det = ua - vb;
+        if ((b > 0 && B[j] < 0) || (b < 0 && B[j] > 0)) {
+          double u = B[j] * c, v = b * C[j],
+                 error = 2e-14 * (absd(ua) + absd(vb) + absd(u) + absd(v));
+          double sign = B[j] > 0 ? 1 : -1;
+          restrictAxis(sign * det, sign * (u - v) + error, &r.xlo, &r.xhi);
+        }
+        if ((a > 0 && A[j] < 0) || (a < 0 && A[j] > 0)) {
+          double u = a * C[j], v = A[j] * c,
+                 error = 2e-14 * (absd(ua) + absd(vb) + absd(u) + absd(v));
+          double sign = a > 0 ? 1 : -1;
+          restrictAxis(sign * det, sign * (u - v) + error, &r.tlo, &r.thi);
+        }
+      }
+      A[n] = a;
+      B[n] = b;
+      C[n++] = c;
+    }
+    out[near[i]] = r;
+  }
 }
 static int projectedEdges(Pair *w, int side, double *cuts, int *nc, int capacity, double a,
                           double b, Edge *edges) {
@@ -1288,6 +1350,8 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
   int localEye[ns], localLamp[ns], near[ns], last = -1, nearCount = 0;
   unsigned faces[ns];
   Receiver y = receivers[i];
+  PlaneBounds borders[ns];
+  int bounded = 0;
   int count = 0;
   for (int j = 0; j < ns; j++)
     eyes[j] = shadow(s + j, j, y.p);
@@ -1350,10 +1414,24 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
     if (last != c->object) {
       last = c->object;
       nearCount = sourceBlockers(s, last, y.object, eyes, ns, near, faces);
+      bounded = !c->type && !s[last].r && nearCount > 0 && nt > 1;
+      if (bounded)
+        planeBounds(s + last, eyes, near, faces, nearCount, borders);
     }
     if (nearCount < 0)
       continue;
-    w.count[0] = chartBlockers(c, s, y.object, eyes, nearCount, localEye, &hidden, near, faces);
+    double x = 0, t = 0, dx = 0, dt = 0;
+    if (bounded) {
+      Vec d = minus(c->c, s[last].c), U = s[last].ax[0], V = s[last].ax[1];
+      x = dp(U, d);
+      t = dp(V, d);
+      double pad = 1e-11 * (1 + length(s[last].c) + length(c->c) + c->width + c->height);
+      dx = c->width * absd(dp(U, c->ax)) + c->height * absd(dp(U, c->v)) + pad * (1 + length(U));
+      dt = c->width * absd(dp(V, c->ax)) + c->height * absd(dp(V, c->v)) + pad * (1 + length(V));
+    }
+    int inside = bounded && absd(x) + dx <= 1.00000001 && absd(t) + dt <= 1.00000001;
+    w.count[0] = chartBlockers(c, s, y.object, eyes, nearCount, localEye, &hidden, near, faces,
+                               inside ? borders : 0, x, t, dx, dt);
     if (hidden) {
       if (hidden == 2)
         workspace->reuse[10]++;

@@ -4,13 +4,16 @@ import { buildRoom } from '../src/room.js';
 import { hitRoundedBox } from '../src/rounded-box.js';
 
 const [id = 'bench-seat-bottom', u = '0', v = '0', side = 'front', degrees = '24', count = '524288'] = process.argv.slice(2);
-const iu = Number(u), iv = Number(v), angle = Number(degrees), paths = Number(count);
-if (!['front', 'back'].includes(side) || !Number.isFinite(angle) || !Number.isSafeInteger(paths) || paths < 2) {
+const iu = Number(u), iv = Number(v), paths = Number(count);
+const token = degrees.endsWith('rad') ? degrees.slice(0, -3) : degrees;
+const radians = degrees.endsWith('rad') ? Number(token) : Number(token)*Math.PI/180;
+const angle = degrees.endsWith('rad') ? radians*180/Math.PI : Number(degrees);
+if (!token.trim() || !['front', 'back'].includes(side) || !Number.isFinite(angle) || !Number.isSafeInteger(paths) || paths < 2) {
   throw new Error('Expected a front/back side, a finite blind angle and at least two paths.');
 }
 // The optional final JSON argument accepts the same authored room edits as play.
 const edits = process.argv[8] ? JSON.parse(process.argv[8]) : {};
-const room = buildRoom({ ...edits, angle: angle*Math.PI/180 });
+const room = buildRoom({ ...edits, angle: radians });
 const target = room.rectangles.findIndex(r => r.id === id);
 if (target < 0) throw new Error('Unknown planar receiver: ' + id);
 // Keep the original observation areas comparable when the renderer changes.
@@ -99,7 +102,14 @@ if (measurement && (!Array.isArray(region) || region.length !== 4 ||
 }
 // One value per complete path in each bin gives the sampling error of the
 // individual bounce orders, including covariance within the final tail.
-const binsByDepth = measurement?.orders && Array.from({ length: 4 }, () => ({
+let exchange;
+if (measurement?.sourceFieldFile) {
+  const {readFile} = await import('node:fs/promises');
+  const {sourceExchangeProbe} = await import('./source-exchange.js');
+  const snapshot = JSON.parse(await readFile(measurement.sourceFieldFile, 'utf8'));
+  exchange = sourceExchangeProbe(snapshot, room, {id,side,region}, paths);
+}
+const binsByDepth = (exchange || measurement?.orders) && Array.from({ length: 4 }, () => ({
   sum: [0, 0, 0], squares: [0, 0, 0], path: [0, 0, 0],
 }));
 const first = [0,0,0], later = [0,0,0], sumSquares = [0,0,0];
@@ -111,6 +121,7 @@ for (let sample=0; sample<paths; sample++) {
   let position = advance(advance(f.center,f.axisU,u),f.axisV,v);
   const weight = [1,1,1], energy = [0,0,0];
   for (let depth=0; ; depth++) {
+    if (exchange && depth === 1) exchange.firstHit(i, position, f, sign, weight);
     if (depth > 0) {
       const d = room.lightPosition.map((x,k) => x-position[k]), r2 = dot(d,d);
       const cosine = sign*dot(d,f.normal)/Math.sqrt(r2);
@@ -139,6 +150,7 @@ for (let sample=0; sample<paths; sample++) {
     f = nextFace;
     sign = dot(f.normal,direction) < 0 ? 1 : -1;
   }
+  if (exchange) exchange.finishPath(binsByDepth,u,v);
   if (binsByDepth) {
     for (const bin of binsByDepth) for (let c = 0; c < 3; c++) {
       bin.sum[c] += bin.path[c];
@@ -158,5 +170,5 @@ const orders = binsByDepth && binsByDepth.map(bin => {
   };
 });
 console.log(JSON.stringify({ id, iu, iv, side, angle, paths, ...(process.argv[8] ? { edits } : {}), reference, standardError,
-  ...(region && { region }), ...(orders && { orders }),
+  ...(region && { region }), ...(orders && { orders }), ...(exchange && {exchange:exchange.result()}),
   firstReflected: scale(first,1/paths), laterReflected: scale(later,1/paths) }, null, 2));

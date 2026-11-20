@@ -53,11 +53,11 @@ void main() {
 }`;
 
 export class AngularMeasure {
-  constructor(gl, { indexed = false, apertureVertex = null, components = 1 } = {}) {
+  constructor(gl, { indexed = false, apertureVertex = null, components = 1, attributeSize = 3 } = {}) {
     this.gl = gl;
     this.indexed = indexed;
     this.channels = indexed ? 4 : components;
-    this.stride = indexed ? 2 : 12;
+    this.stride = indexed ? 2 : 4 * attributeSize;
     this.stats = { polygons: 0, batches: 0 };
     this.program = gl.createProgram();
     for (const [type, source] of [
@@ -93,7 +93,7 @@ export class AngularMeasure {
     } else
       for (let i = 0; i < 4; i++) {
         gl.enableVertexAttribArray(i);
-        gl.vertexAttribPointer(i, 3, gl.FLOAT, false, 48, 12 * i);
+        gl.vertexAttribPointer(i, attributeSize, gl.FLOAT, false, 4 * this.stride, 4 * attributeSize * i);
       }
     gl.bindVertexArray(null);
   }
@@ -131,7 +131,7 @@ export class AngularMeasure {
   reserve(count) {
     if (count && (!this.values || this.values.length < this.channels * count)) {
       this.values = new Float32Array(this.channels * count);
-      this.packed = this.indexed ? new Int32Array(count * 2) : new Float32Array(count * 12);
+      this.packed = this.indexed ? new Int32Array(count * 2) : new Float32Array(count * this.stride);
     }
   }
   put(index, tile, receiver) {
