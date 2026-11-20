@@ -27,8 +27,8 @@ For an independent estimate of indirect radiance, run `node scripts/probe-light.
 Rebuild the modules with Zig from the repository root.
 
 ```sh
-zig cc -target wasm32-freestanding -O3 -ffreestanding -c src/function-transport.c -o /tmp/aspect-function.o
-zig wasm-ld --strip-debug --no-entry --export=transport --export=buildRegions --export=__heap_base --export-memory -z stack-size=1048576 /tmp/aspect-function.o -o src/function-transport.wasm
+zig cc -target wasm32-freestanding -O3 -mbulk-memory -ffreestanding -c src/function-transport.c -o /tmp/aspect-function.o
+zig wasm-ld --strip-debug --no-entry --export=transportRow --export=prepareTransport --export=transportBytes --export=buildRegions --export=__heap_base --export-memory -z stack-size=1048576 /tmp/aspect-function.o -o src/function-transport.wasm
 zig cc -target wasm32-freestanding -O3 -ffreestanding -c src/modal-operator.c -o /tmp/aspect-modal.o
 zig wasm-ld --strip-debug --no-entry --export=compileModes --export=restrictModes --export=applyModes --export=__heap_base --export-memory /tmp/aspect-modal.o -o src/modal-operator.wasm
 zig cc -target wasm32-freestanding -O3 -c src/beam-sweep.c -o /tmp/room-beam.o

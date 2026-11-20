@@ -11,8 +11,7 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
     const { shapes, tiles, points, lamp } = packet,
       n = points.byteLength / 56,
       k = tiles.byteLength / 168;
-    const rows = Math.ceil((n - first) / stride),
-      count = k * rows;
+    const rows = Math.ceil((n - first) / stride);
     let cursor = Number(engine.__heap_base);
     function space(len) {
       const p = cursor;
@@ -23,10 +22,10 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       chart = space(tiles.byteLength),
       dest = space(points.byteLength),
       light = space(24),
-      out = space(count * 20),
-      jobs = space(count),
+      out = space(k * 20),
+      tileIds = space(k * 4),
       counts = space(160),
-      sliceCache = space(64 * 16384),
+      workspace = space(engine.transportBytes(shapes.length / 19)),
       regions = space(packet.regions?.byteLength || 0),
       moments = space(packet.moments?.byteLength || 0),
       catalog = space(packet.lampIds?.byteLength || 0);
@@ -45,28 +44,10 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
     }
 
     const start = performance.now();
-    engine.transport(
-      src,
-      shapes.length / 19,
-      chart,
-      k,
-      dest,
-      n,
-      light,
-      first,
-      stride,
-      tolerance,
-      out,
-      jobs,
-      counts,
-      packet.regions ? regions : 0,
-      moments,
-      packet.regions ? catalog : 0,
-      sliceCache,
-    );
-    const kernelMs = performance.now() - start;
-    const values = new Float32Array(mem, out, 5 * count),
-      gpu = new Uint8Array(mem, jobs, count);
+    engine.prepareTransport(workspace, src, shapes.length / 19, light);
+    let kernelMs = performance.now() - start;
+    const values = new Float32Array(mem, out, 5 * k),
+      ids = new Int32Array(mem, tileIds, k);
     const { nodes, colors, lampRGB } = packet,
       chartIds = new Int32Array(tiles),
       direct = new Float64Array(rows * 3);
@@ -79,20 +60,40 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       positions = new Int32Array(sourceCount);
     const needed = new Uint8Array(sourceCount);
     for (let row = 0; row < rows; row++) {
+      const begin = performance.now();
+      const count = engine.transportRow(
+        workspace,
+        src,
+        shapes.length / 19,
+        chart,
+        k,
+        dest,
+        first + row * stride,
+        light,
+        tolerance,
+        out,
+        tileIds,
+        counts,
+        packet.regions ? regions : 0,
+        moments,
+        packet.regions ? catalog : 0,
+      );
+      kernelMs += performance.now() - begin;
       local.fill(0);
       needed.fill(0);
       let pending = angular.length;
-      for (let t = 0; t < k; t++) {
-        const ix = row * k + t,
+      for (let ix = 0; ix < count; ix++) {
+        const gpu = ids[ix] < 0,
+          t = gpu ? ~ids[ix] : ids[ix],
           b = 5 * ix,
           object = chartIds[42 * t + 37];
-        if (!values[b] && !values[b + 1] && !values[b + 2] && !values[b + 3] && !values[b + 4] && !gpu[ix])
+        if (!values[b] && !values[b + 1] && !values[b + 2] && !values[b + 3] && !values[b + 4] && !gpu)
           continue;
         const jac = packet.jacobians[t];
         for (let j = 0; j < 4; j++) local[nodes[4 * t + j]] += jac * values[b + j];
         for (let c = 0; c < 3; c++)
           direct[3 * row + c] += jac * values[b + 4] * colors[3 * object + c] * lampRGB[c];
-        if (gpu[ix]) {
+        if (gpu) {
           angular.push(row, t, nodes[4 * t]);
           needed[nodes[4 * t]] = 1;
         }

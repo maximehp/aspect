@@ -26,7 +26,6 @@ typedef struct {
   Plane p[12];
   int n, obj;
   unsigned tangentMask;
-  int endpoint, axial;
 } Cone;
 typedef struct {
   double lo, hi;
@@ -93,7 +92,6 @@ static Cone shadow(const Shape *s, int id, Vec eye) {
   // A tangent contact has n dot (eye - center) = radius. Bound that
   // quantity on each feature's orthant of unit normals for this entire eye.
   Vec O = local(s, minus(eye, s->c));
-  out.endpoint = 1;
   unsigned bit = 1;
   for (int feature = -1; feature < 3; feature++)
     for (int signs = 0; signs < 8; signs++) {
@@ -159,6 +157,7 @@ typedef struct {
   Receiver y;
   Vec lamp;
   const Cone *cone[2];
+  const int *blockers[2];
   int count[2];
   Counts *stats;
   double tolerance, warpCenter, warpDepth;
@@ -168,6 +167,11 @@ typedef struct {
   int receiver;
   double lift[5];
 } Pair;
+// Each catalog entry refers to an immutable cone and carries just the
+// source-specific endpoint flag and axial dimension (zero means none).
+static const Cone *blockerCone(const Pair *w, int eye, int j) {
+  return w->cone[eye] + (w->blockers[eye][j] >> 3);
+}
 static int blocked(const Shape *s, Vec eye, Vec p) {
   return segmentHit(s, eye, p, 1. - 1e-10) < 1.;
 }
@@ -221,8 +225,10 @@ static int featureRoots(double A, double B, double C, double sizeA, double sizeB
   return rootsWithDisc(A, B, C, disc, a, b, events, count);
 }
 static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, double *hi,
-                       Counts *stats, int object, const Cone *cone, Pair *pair, int eyeId) {
+                       Counts *stats, int object, const Cone *cone, int descriptor, Pair *pair,
+                       int eyeId) {
   const double a = *lo, b = *hi;
+  const int endpoint = descriptor & 4, axial = (descriptor & 3) - 1;
   Vec O = local(s, minus(eye, s->c)), D = local(s, minus(p, eye)), U = local(s, ax),
       fan = cross3(D, U);
   double h[] = {s->h.x - s->r, s->h.y - s->r, s->h.z - s->r}, r = s->r, size = length(fan);
@@ -235,7 +241,7 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
     return 1;
   double start = left ? a : FAR, end = right ? b : -FAR;
   Vec P = plus(O, D);
-  if (cone->endpoint)
+  if (endpoint)
     for (int k = 0; k < 3; k++)
       if (((double *)&U)[k])
         for (int sign = -1; sign <= 1; sign += 2) {
@@ -256,7 +262,7 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
         continue;
       const int mayTangent = !!(cone->tangentMask & bit);
       bit <<= 1;
-      if (!mayTangent && !cone->endpoint)
+      if (!mayTangent && !endpoint)
         continue;
       Vec center = {0};
       for (int j = 0; j < 3; j++)
@@ -268,7 +274,7 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
         continue;
       Tangents *entry = 0;
       int eyeKey = eyeId ? 0 : pair->receiver + 1, code = 8 * feature + bits;
-      if (mayTangent && pair->tangents && feature >= 0 && cone->axial == feature) {
+      if (mayTangent && pair->tangents && feature >= 0 && axial == feature) {
         unsigned key = (pair->source * 31u + eyeKey) * 65599u + cone->obj * 31u + code;
         entry = pair->tangents + (key & (TANGENT_SLOTS - 1));
       }
@@ -281,7 +287,7 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
           if (entry->roots[j] > a && entry->roots[j] < b)
             events[tangent++] = entry->roots[j];
         stats->axialHits++;
-        if (!tangent && !cone->endpoint)
+        if (!tangent && !endpoint)
           continue;
       }
       if (feature >= 0)
@@ -314,10 +320,9 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
       }
       Vec ep = plus(o, v);
       double eu = dp(ep, u), ee = dp(ep, ep);
-      int n = cone->endpoint
-                  ? featureRoots(uu, eu, ee - r * r, uu, length(ep) * length(u), ee + r * r, a, b,
-                                 events, tangent, object, feature, bits, p, ax, 1, stats)
-                  : tangent;
+      int n = endpoint ? featureRoots(uu, eu, ee - r * r, uu, length(ep) * length(u), ee + r * r, a,
+                                      b, events, tangent, object, feature, bits, p, ax, 1, stats)
+                       : tangent;
       for (int i = 0; i < n; i++) {
         double x = events[i], t = 1;
         if (i < tangent) {
@@ -354,7 +359,7 @@ static int shadows(Pair *w, int eyeId, Vec p, Vec ax, double lo, double hi, Inte
   int used = 0;
   Vec eye = eyeId ? w->lamp : w->y.p;
   for (int j = 0; j < w->count[eyeId]; j++) {
-    const Cone *c = w->cone[eyeId] + j;
+    const Cone *c = blockerCone(w, eyeId, j);
     double a = lo, b = hi;
     for (int k = 0; k < c->n; k++) {
       Plane h = c->p[k];
@@ -362,8 +367,8 @@ static int shadows(Pair *w, int eyeId, Vec p, Vec ax, double lo, double hi, Inte
       if (!clipPositive(v - (k == 0 && !w->s[c->obj].r ? 1e-9 : -1e-11), dp(h.n, ax), &a, &b))
         goto clear;
     }
-    if (w->s[c->obj].r &&
-        !trimRounded(w->s + c->obj, eye, p, ax, &a, &b, w->stats, eyeId ? c->obj : -1, c, w, eyeId))
+    if (w->s[c->obj].r && !trimRounded(w->s + c->obj, eye, p, ax, &a, &b, w->stats,
+                                       eyeId ? c->obj : -1, c, w->blockers[eyeId][j], w, eyeId))
       goto clear;
     out[used++] = (Interval){a, b, c->obj};
   clear:;
@@ -533,7 +538,7 @@ static int arcState(Pair *w, int eyeId, Vec p, double delta) {
   Vec eye = eyeId ? w->lamp : w->y.p;
   int maybe = 0;
   for (int j = 0; j < w->count[eyeId]; j++) {
-    const Cone *c = w->cone[eyeId] + j;
+    const Cone *c = blockerCone(w, eyeId, j);
     int full = 1;
     for (int k = 0; k < c->n; k++) {
       double d = dp(c->p[k].n, p) - c->p[k].b;
@@ -730,7 +735,7 @@ static int endpointPossible(const Chart *c, const Shape *s) {
   return 1;
 }
 static int candidates(const Chart *c, const Shape *shapes, int skip, const Cone *all, int n,
-                      Cone *out, int *hidden) {
+                      int *out, int *hidden) {
   int count = 0;
   for (int j = 0; j < n; j++) {
     const Cone *k = all + j;
@@ -752,12 +757,10 @@ static int candidates(const Chart *c, const Shape *shapes, int skip, const Cone 
       *hidden = 1;
       return 0;
     }
-    out[count] = *k;
-    if (shapes[j].r) {
-      out[count].endpoint = endpointPossible(c, shapes + j);
-      out[count].axial = invariantAxis(c, shapes + j);
-    }
-    count++;
+    int flags = 0;
+    if (shapes[j].r)
+      flags = 4 * endpointPossible(c, shapes + j) + invariantAxis(c, shapes + j) + 1;
+    out[count++] = 8 * j + flags;
   clear:;
   }
   return count;
@@ -817,7 +820,7 @@ static int planarEvents(Pair *w, double *cuts, int capacity, double a, double b)
   for (int e = 0; e < 2; e++)
     for (int o = 0; o < w->count[e]; o++) {
       UV poly[24];
-      int n = footprint(c, w->cone[e] + o, poly);
+      int n = footprint(c, blockerCone(w, e, o), poly);
       for (int i = 0; i < n; i++) {
         UV p = poly[i], q = poly[(i + 1) % n];
         if (nc < capacity)
@@ -859,7 +862,7 @@ static int cylinderEvents(Pair *w, double *cuts, int cap) {
     Vec eye = e ? w->lamp : w->y.p, rel = minus(eye, c->c);
     angularCuts((Constraint){-c->r, dp(c->u, rel), dp(c->v, rel), 0}, cuts, &nc, cap);
     for (int j = 0; j < w->count[e]; j++) {
-      const Cone *co = w->cone[e] + j;
+      const Cone *co = blockerCone(w, e, j);
       Constraint line[14] = {{c->width, 0, 0, 1}, {c->width, 0, 0, -1}};
       for (int i = 0; i < co->n; i++) {
         Plane p = co->p[i];
@@ -900,133 +903,140 @@ static int cylinderEvents(Pair *w, double *cuts, int cap) {
 }
 
 #include "plane-transfer.h"
-// Produce one source tile's coefficients for arbitrary receiver positions.
-// Direct flux and the four linear basis weights are separate parts of T.
-void transport(const Shape *s, int ns, const Chart *tiles, int nt, const Receiver *receivers,
-               int nr, const Vec *lamp, int first, int stride, double tolerance, float *output,
-               unsigned char *gpu, Counts *stats, const unsigned char *modes,
-               const Moments *moments, const int *lampIds, LampSlice *cache) {
-  for (int i = 0; i < SLICE_SLOTS; i++)
-    cache[i].source = 0;
-  Tangents tangents[TANGENT_SLOTS] = {0};
-  Cone lamps[ns], eyes[ns], localEye[ns], localLamp[ns];
+// The lamp cones and both interval caches belong to a single fresh pose.
+typedef struct {
+  LampSlice slices[SLICE_SLOTS];
+  Tangents tangents[TANGENT_SLOTS];
+  Cone lamps[];
+} TransportWorkspace;
+
+unsigned transportBytes(int ns) { return sizeof(TransportWorkspace) + ns * sizeof(Cone); }
+
+void prepareTransport(TransportWorkspace *workspace, const Shape *s, int ns, const Vec *lamp) {
+  for (int j = 0; j < SLICE_SLOTS; j++)
+    workspace->slices[j].source = 0;
+  for (int j = 0; j < TANGENT_SLOTS; j++)
+    workspace->tangents[j].source = 0;
   for (int j = 0; j < ns; j++)
-    lamps[j] = shadow(s + j, j, *lamp);
-  for (int i = first, row = 0; i < nr; i += stride, row++) {
-    Receiver y = receivers[i];
-    for (int j = 0; j < ns; j++)
-      eyes[j] = shadow(s + j, j, y.p);
-    for (int k = 0; k < nt; k++) {
-      const Chart *c = tiles + k;
-      float *weights = output + 5 * (row * nt + k);
-      for (int j = 0; j < 5; j++)
-        weights[j] = 0;
-      gpu[row * nt + k] = 0;
-      int mode = modes && y.pad ? modes[(y.pad - 1) * nt + k] : 0;
-      if (mode == 1) {
-        evaluatePlane(c, y, moments + k, weights);
-        stats->regional++;
-        continue;
-      }
-      if (mode == 2) {
-        stats->dark++;
-        continue;
-      }
-      if (mode == 3)
-        stats->facing++;
-      else if (mode == 4)
-        stats->expansion++;
-      else if (mode == 5)
-        stats->obstruction++;
-      else
-        stats->individual++;
-      if (c->object == y.object)
-        continue; // a convex solid cannot see itself
-      Vec d = minus(c->c, y.p);
-      double ext = c->type == 2 ? c->r
-                                : c->width * absd(dp(c->ax, y.n)) +
-                                      (c->type ? c->r : c->height * absd(dp(c->v, y.n)));
-      if (dp(d, y.n) + ext <= 1e-10)
-        continue;
-      if (c->type == 0 && dp(d, c->n) >= -1e-10)
-        continue;
-      int hidden = 0;
-      Pair w = {.s = s,
-                .c = c,
-                .source = k,
-                .receiver = i,
-                .tangents = tangents,
-                .cache = cache,
-                .y = y,
-                .lamp = *lamp,
-                .cone = {localEye, localLamp},
-                .stats = stats,
-                .tolerance = tolerance};
-      w.count[0] = candidates(c, s, y.object, eyes, ns, localEye, &hidden);
-      if (hidden)
-        continue;
-      if (lampIds) {
-        const int *ids = lampIds + k * (ns + 1);
-        w.lampDark = ids[0] < 0;
-        w.count[1] = w.lampDark ? 0 : ids[0];
-        for (int j = 0; j < w.count[1]; j++) {
-          int id = ids[j + 1];
-          localLamp[j] = lamps[id];
-          if (s[id].r) {
-            localLamp[j].endpoint = endpointPossible(c, s + id);
-            localLamp[j].axial = invariantAxis(c, s + id);
-          }
-        }
-      } else {
-        w.count[1] = candidates(c, s, -1, lamps, ns, localLamp, &hidden);
-        w.lampDark = hidden || (!c->type && dp(minus(*lamp, c->c), c->n) <= 0);
-        if (w.lampDark)
-          w.count[1] = 0;
-      }
-      double a = c->type ? 0 : -c->height, b = c->type ? PI / 2 : c->height;
-      // Certified clear planar tiles use the GPU's projected angular measure
-      // as the constant coefficient of their partition of unity.
-      if (!c->type && !w.count[0] && dp(d, y.n) - ext > 1e-8 &&
-          absd(dp(d, c->n)) < .8 * high(c->width, c->height)) {
-        gpu[row * nt + k] = 1;
-        stats->gpu++;
-        w.lift[0] = 1;
-      }
-      int capacity = 32 + 32 * (w.count[0] + w.count[1]);
-      double cuts[capacity + 1];
-      int nc = 0;
-      if (!c->type) {
-        Vec dy = minus(y.p, c->c), lateral = cross3(c->ax, c->v);
-        double h2 = dp(lateral, lateral);
-        w.warpCenter = dp(cross3(c->ax, dy), lateral) / h2;
-        double depth = absd(dp(dy, c->n)) / ROOT(h2),
-               over = high(0, absd(dp(dy, c->ax)) - c->width);
-        depth = ROOT(depth * depth + over * over);
-        if (depth > 1e-12 && depth < .35 * c->height)
-          w.warpDepth = depth;
-        nc = planarEvents(&w, cuts, capacity, a, b);
-      }
-      if (c->type == 1)
-        nc = cylinderEvents(&w, cuts, capacity);
-      if (nc == capacity)
-        stats->limited++;
-      cuts[nc++] = b;
-      Integral value = {0};
-      for (int j = 0; j < nc; j++) {
-        double hi = cuts[j];
-        double L = a, H = hi;
-        if (w.warpDepth) {
-          L = angle(a - w.warpCenter, w.warpDepth);
-          H = angle(hi - w.warpCenter, w.warpDepth);
-        }
-        value = sum(value, refine(&w, L, H, panel(&w, L, H),
-                                  tolerance * (hi - a) / (c->type ? PI / 2 : 2 * c->height), 22));
-        a = hi;
-      }
-      for (int j = 0; j < 5; j++)
-        weights[j] = j == 4 && hidden ? 0 : value.w[j];
+    workspace->lamps[j] = shadow(s + j, j, *lamp);
+}
+
+// Emit only integrated tiles, in authored order. out and tileIds hold at most
+// one receiver's contributions and can immediately be reused for the next.
+int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Chart *tiles, int nt,
+                 const Receiver *receivers, int i, const Vec *lamp, double tolerance, float *output,
+                 int *tileIds, Counts *stats, const unsigned char *modes, const Moments *moments,
+                 const int *lampIds) {
+  Cone eyes[ns];
+  int localEye[ns], localLamp[ns];
+  Receiver y = receivers[i];
+  int count = 0;
+  for (int j = 0; j < ns; j++)
+    eyes[j] = shadow(s + j, j, y.p);
+  for (int k = 0; k < nt; k++) {
+    const Chart *c = tiles + k;
+    float *weights = output + 5 * count;
+    int gpu = 0;
+    int mode = modes && y.pad ? modes[(y.pad - 1) * nt + k] : 0;
+    if (mode == 1) {
+      evaluatePlane(c, y, moments + k, weights);
+      tileIds[count++] = k;
+      stats->regional++;
+      continue;
     }
+    if (mode == 2) {
+      stats->dark++;
+      continue;
+    }
+    if (mode == 3)
+      stats->facing++;
+    else if (mode == 4)
+      stats->expansion++;
+    else if (mode == 5)
+      stats->obstruction++;
+    else
+      stats->individual++;
+    if (c->object == y.object)
+      continue; // a convex solid cannot see itself
+    Vec d = minus(c->c, y.p);
+    double ext = c->type == 2 ? c->r
+                              : c->width * absd(dp(c->ax, y.n)) +
+                                    (c->type ? c->r : c->height * absd(dp(c->v, y.n)));
+    if (dp(d, y.n) + ext <= 1e-10)
+      continue;
+    if (c->type == 0 && dp(d, c->n) >= -1e-10)
+      continue;
+    int hidden = 0;
+    Pair w = {.s = s,
+              .c = c,
+              .source = k,
+              .receiver = i,
+              .tangents = workspace->tangents,
+              .cache = workspace->slices,
+              .y = y,
+              .lamp = *lamp,
+              .cone = {eyes, workspace->lamps},
+              .blockers = {localEye, localLamp},
+              .stats = stats,
+              .tolerance = tolerance};
+    w.count[0] = candidates(c, s, y.object, eyes, ns, localEye, &hidden);
+    if (hidden)
+      continue;
+    if (lampIds) {
+      const int *ids = lampIds + k * (ns + 1);
+      w.lampDark = ids[0] < 0;
+      w.count[1] = w.lampDark ? 0 : ids[0];
+      w.blockers[1] = ids + 1;
+    } else {
+      w.count[1] = candidates(c, s, -1, workspace->lamps, ns, localLamp, &hidden);
+      w.lampDark = hidden || (!c->type && dp(minus(*lamp, c->c), c->n) <= 0);
+      if (w.lampDark)
+        w.count[1] = 0;
+    }
+    double a = c->type ? 0 : -c->height, b = c->type ? PI / 2 : c->height;
+    // Certified clear planar tiles use the GPU's projected angular measure
+    // as the constant coefficient of their partition of unity.
+    if (!c->type && !w.count[0] && dp(d, y.n) - ext > 1e-8 &&
+        absd(dp(d, c->n)) < .8 * high(c->width, c->height)) {
+      gpu = 1;
+      stats->gpu++;
+      w.lift[0] = 1;
+    }
+    int capacity = 32 + 32 * (w.count[0] + w.count[1]);
+    double cuts[capacity + 1];
+    int nc = 0;
+    if (!c->type) {
+      Vec dy = minus(y.p, c->c), lateral = cross3(c->ax, c->v);
+      double h2 = dp(lateral, lateral);
+      w.warpCenter = dp(cross3(c->ax, dy), lateral) / h2;
+      double depth = absd(dp(dy, c->n)) / ROOT(h2), over = high(0, absd(dp(dy, c->ax)) - c->width);
+      depth = ROOT(depth * depth + over * over);
+      if (depth > 1e-12 && depth < .35 * c->height)
+        w.warpDepth = depth;
+      nc = planarEvents(&w, cuts, capacity, a, b);
+    }
+    if (c->type == 1)
+      nc = cylinderEvents(&w, cuts, capacity);
+    if (nc == capacity)
+      stats->limited++;
+    cuts[nc++] = b;
+    Integral value = {0};
+    for (int j = 0; j < nc; j++) {
+      double hi = cuts[j];
+      double L = a, H = hi;
+      if (w.warpDepth) {
+        L = angle(a - w.warpCenter, w.warpDepth);
+        H = angle(hi - w.warpCenter, w.warpDepth);
+      }
+      value = sum(value, refine(&w, L, H, panel(&w, L, H),
+                                tolerance * (hi - a) / (c->type ? PI / 2 : 2 * c->height), 22));
+      a = hi;
+    }
+    for (int j = 0; j < 5; j++)
+      weights[j] = j == 4 && hidden ? 0 : value.w[j];
+    tileIds[count++] = gpu ? ~k : k;
   }
+  return count;
 }
 void *memcpy(void *dst, const void *src, unsigned long n) {
   volatile unsigned char *a = dst;

@@ -175,7 +175,7 @@ static Moments lampPanel(Pair *w, double a, double b, double tol, int depth) {
 void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Domain *groups, int ng,
                   const Vec *lamp, double tol, unsigned char *modes, Moments *moments,
                   Counts *stats, int *lampIds) {
-  Cone lamps[ns], local[ns];
+  Cone lamps[ns];
   Obstacle obs[ns];
   for (int j = 0; j < ns; j++) {
     lamps[j] = shadow(s + j, j, *lamp);
@@ -197,15 +197,17 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
     Moments M = {0};
     {
       int hidden = 0;
-      Pair w = {.s = s, .c = c, .lamp = *lamp, .cone = {0, local}, .stats = stats};
-      w.count[1] = candidates(c, s, -1, lamps, ns, local, &hidden);
       int *ids = lampIds + k * (ns + 1);
+      Pair w = {.s = s,
+                .c = c,
+                .lamp = *lamp,
+                .cone = {0, lamps},
+                .blockers = {0, ids + 1},
+                .stats = stats};
+      w.count[1] = candidates(c, s, -1, lamps, ns, ids + 1, &hidden);
       if (!c->type && dp(c->n, minus(*lamp, c->c)) <= 0)
         hidden = 1;
       ids[0] = hidden ? -1 : w.count[1];
-      if (!hidden)
-        for (int i = 0; i < w.count[1]; i++)
-          ids[i + 1] = local[i].obj;
       if (needed && !hidden) {
         stats->momentTiles++;
         int cap = 32 + 32 * w.count[1];
