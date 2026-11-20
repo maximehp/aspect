@@ -187,12 +187,13 @@ def main():
             )
             rows = browser.evaluate(REPLAY + "(" + ",".join(map(json.dumps,[args.extra,args.slats,ticks,args.digest_frames])) + ")")
             browser.call("Page.stopScreencast")
-            latencies, tails, missing = [], [], []
+            latencies, completed, tails, missing = [], [], [], []
             for pose, (start, done, *_) in zip(ticks[1:], rows[1:]):
                 stamps = [t for t in browser.swaps.get(pose, []) if t >= start]
                 if stamps:
                     swap = min(stamps)
                     latencies.append(swap - start)
+                    completed.append(max(swap, done) - start)
                     tails.append(swap - done)
                 else:
                     missing.append(pose)
@@ -207,6 +208,7 @@ def main():
                         **({"frameDigests": [r[-1] for r in rows]} if args.digest_frames else {}),
                         "missing": missing,
                         "startToSwapMs": percentiles(latencies),
+                        "throughBothMs": percentiles(completed),
                         "finishedMs": percentiles([r[1]-r[0] for r in rows[1:]]),
                         "cameraMs": percentiles([r[2] for r in rows[1:]]),
                         "peakCountedMiB": max(r[3] for r in rows)/1048576,
