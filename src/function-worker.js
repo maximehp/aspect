@@ -131,7 +131,7 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       jobs: Int32Array.from(angular),
       jobStarts,
       counts: Array.from(new BigInt64Array(mem, counts, 20), Number),
-      lampReuse: Array.from(new BigUint64Array(mem, engine.lampReuse(workspace), 7), Number),
+      lampReuse: Array.from(new BigUint64Array(mem, engine.lampReuse(workspace), 9), Number),
       bytes: mem.byteLength,
       ms: kernelMs,
     };

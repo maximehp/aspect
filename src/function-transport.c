@@ -68,6 +68,45 @@ static Vec cp(const Chart *p, double x, double t, Vec *normal) {
   *normal = plus(scale3(circle, cosine(x)), scale3(p->ax, sine(x)));
   return plus(p->c, scale3(*normal, p->r));
 }
+enum { CURVED_DOMAIN_DARK = 6 };
+
+// n is a unit vector in the chart's positive quadrant (or octant).
+// For x=c+s*axis+r*n, n.(y-x) = n.(y-c)-r. The squared length of
+// the positive components bounds this for all normals simultaneously.
+static int arcFacesAway(const Chart *c, Vec rel, Vec da, Vec db, int domain) {
+  double sum = 0;
+  Vec axes[] = {c->u, c->v, c->ax};
+  for (int j = 0; j < (c->type == 1 ? 2 : 3); j++) {
+    double t = dp(axes[j], rel);
+    if (domain)
+      t += absd(dp(axes[j], da)) + absd(dp(axes[j], db));
+    t = high(0, t);
+    sum += t * t;
+  }
+  double error = 1e-11 * (1 + absd(rel.x) + absd(rel.y) + absd(rel.z) + c->width + c->r);
+  if (domain)
+    error += 1e-11 * (length(da) + length(db));
+  double lower = c->r - error;
+  return lower > 0 && sum < lower * lower;
+}
+// The receiver half-space is constant over its planar domain. A support
+// value for the circular arc includes both its radial and axial extent.
+static int belowHorizon(const Chart *c, Vec rel, Vec n) {
+  double margin = 1e-11 * (1 + c->width + c->r + absd(rel.x) + absd(rel.y) + absd(rel.z));
+  double h = dp(rel, n) - (c->type == 1 ? c->width * absd(dp(c->ax, n)) : 0) - margin;
+  if (h <= -c->r)
+    return 0;
+  double a = dp(n, c->u), b = dp(n, c->v), d = c->type == 1 ? -1 : dp(n, c->ax);
+  double largest = high(a, high(b, d));
+  if (largest <= 0)
+    return h > c->r * largest;
+  if (h <= 0)
+    return 0;
+  a = high(0, a);
+  b = high(0, b);
+  d = high(0, d);
+  return h * h > c->r * c->r * (a * a + b * b + d * d);
+}
 static void addPlane(Cone *c, Vec n, Vec p, Vec inside) {
   double size = length(n);
   if (size < 1e-18)
@@ -660,14 +699,24 @@ static int arcState(Pair *w, int eyeId, Vec p, double delta) {
   }
   return maybe ? 0 : 1;
 }
-static Integral sampleArc(Pair *w, double t, double x, int visible, int lit) {
+// A meridian is one circle in a fixed plane. Position, the two surface
+// cosines and lamp incidence share the same sine and cosine coordinates.
+typedef struct {
+  Vec circle;
+  double v, eye[2], lamp[2], receiver[2], base, eps;
+} Meridian;
+static int meridianDark(const double ab[2], double sn, double cs, double h, double limit) {
+  const double f = ab[0] * cs + ab[1] * sn, slope = ab[1] * cs - ab[0] * sn;
+  return f + absd(slope) * h + high(0, -f) * h * h * .5 < limit;
+}
+static Integral sampleArc(Pair *w, const Meridian *m, double x, double cs, Vec n, Vec p,
+                          int visible, int lit) {
   Integral out = {0};
-  Vec n, p = cp(w->c, x, t, &n), d = minus(w->y.p, p);
+  Vec d = minus(w->y.p, p);
   double z = dp(d, d), c = dp(n, d), s = -dp(w->y.n, d);
   if (c <= 0 || s <= 0 || z < 1e-22 || (!visible && arcState(w, 0, p, 0) < 0))
     return out;
-  double weight = c * s / (PI * z * z) * w->c->r * w->c->r * cosine(x), u = x / (PI / 2),
-         v = t / (PI / 2);
+  double weight = c * s / (PI * z * z) * w->c->r * w->c->r * cs, u = x / (PI / 2), v = m->v;
   out.w[0] = weight * (1 - u) * (1 - v);
   out.w[1] = weight * u * (1 - v);
   out.w[2] = weight * (1 - u) * v;
@@ -678,6 +727,11 @@ static Integral sampleArc(Pair *w, double t, double x, int visible, int lit) {
   if (c > 0 && lit >= 0 && (lit || arcState(w, 1, p, 0) > 0))
     out.w[4] = weight * c / (z * ROOT(z));
   return out;
+}
+static Integral meridianSample(Pair *w, const Meridian *m, double x, int visible, int lit) {
+  double cs = cosine(x);
+  Vec n = plus(scale3(m->circle, cs), scale3(w->c->ax, sine(x)));
+  return sampleArc(w, m, x, cs, n, plus(w->c->c, scale3(n, w->c->r)), visible, lit);
 }
 static double diff(Integral a, Integral b) {
   double err = 0;
@@ -692,18 +746,25 @@ typedef struct {
   Integral value;
   double error;
 } Panel;
-static Panel arcPanel(Pair *w, double t, double a, double b) {
+static Panel arcPanel(Pair *w, const Meridian *m, double a, double b) {
   double x = .5 * (a + b), h = .5 * (b - a);
-  Vec n, p = cp(w->c, x, t, &n);
+  double cs = cosine(x), sn = sine(x);
+  if (meridianDark(m->eye, sn, cs, h, w->c->r - m->eps) ||
+      meridianDark(m->receiver, sn, cs, h, -m->base - m->eps))
+    return (Panel){0};
+  Vec n = plus(scale3(m->circle, cs), scale3(w->c->ax, sn)), p = plus(w->c->c, scale3(n, w->c->r));
   double delta = w->c->r * h;
   int vis = arcState(w, 0, p, delta);
   if (vis < 0)
     return (Panel){0};
-  int lit = w->lampDark ? -1 : arcState(w, 1, p, delta);
-  Integral mid = sampleArc(w, t, x, vis, lit);
+  int lit = w->lampDark || meridianDark(m->lamp, sn, cs, h, w->c->r - m->eps)
+                ? -1
+                : arcState(w, 1, p, delta);
+  Integral mid = sampleArc(w, m, x, cs, n, p, vis, lit);
   double offset = h * .5773502691896258;
-  Integral result =
-      times(sum(sampleArc(w, t, x - offset, vis, lit), sampleArc(w, t, x + offset, vis, lit)), h);
+  Integral result = times(
+      sum(meridianSample(w, m, x - offset, vis, lit), meridianSample(w, m, x + offset, vis, lit)),
+      h);
   double error = diff(result, times(mid, 2 * h));
   if (vis == 0 || lit == 0) {
     Vec e = minus(w->y.p, p), l = minus(w->lamp, p);
@@ -726,9 +787,19 @@ static Integral arcIntegral(Pair *w, double t) {
   } Leaf;
   // Spend one absolute error budget over the complete clipped meridian.
   // A shadow edge may consume most of the budget at only one angle.
+  const Chart *c = w->c;
+  Vec eye = minus(w->y.p, c->c), lamp = minus(w->lamp, c->c);
+  Vec arc = plus(scale3(c->u, cosine(t)), scale3(c->v, sine(t)));
+  Meridian mer = {.circle = arc,
+                  .v = t / (PI / 2),
+                  .eye = {dp(eye, arc), dp(eye, c->ax)},
+                  .lamp = {dp(lamp, arc), dp(lamp, c->ax)},
+                  .receiver = {c->r * dp(w->y.n, arc), c->r * dp(w->y.n, c->ax)},
+                  .base = -dp(w->y.n, eye),
+                  .eps = 1e-11 * (1 + length(eye) + length(lamp) + c->r)};
   Leaf heap[128];
   int n = 1;
-  heap[0] = (Leaf){0, PI / 2, arcPanel(w, t, 0, PI / 2)};
+  heap[0] = (Leaf){0, PI / 2, arcPanel(w, &mer, 0, PI / 2)};
   Integral value = heap[0].p.value;
   double error = heap[0].p.error;
   while (error > w->tolerance * .25) {
@@ -738,7 +809,8 @@ static Integral arcIntegral(Pair *w, double t) {
     }
     Leaf old = heap[0];
     double m = .5 * (old.a + old.b);
-    Leaf left = {old.a, m, arcPanel(w, t, old.a, m)}, right = {m, old.b, arcPanel(w, t, m, old.b)};
+    Leaf left = {old.a, m, arcPanel(w, &mer, old.a, m)},
+         right = {m, old.b, arcPanel(w, &mer, m, old.b)};
     error += left.p.error + right.p.error - old.p.error;
     value = sum(value, sum(times(old.p.value, -1), sum(left.p.value, right.p.value)));
     int i = 0;
@@ -872,8 +944,8 @@ static int sourceBlockers(const Shape *s, int obj, int skip, const Cone *eyes, i
         const Plane p = eyes[j].p[k];
         double d = dp(p.n, s[obj].c) - p.b,
                e = absd(p.n.x) * ext.x + absd(p.n.y) * ext.y + absd(p.n.z) * ext.z,
-               eps = 1e-8 + 8e-15 * (absd(p.b) + absd(s[obj].c.x * p.n.x) + absd(s[obj].c.y * p.n.y) +
-                                     absd(s[obj].c.z * p.n.z) + e);
+               eps = 1e-8 + 8e-15 * (absd(p.b) + absd(s[obj].c.x * p.n.x) +
+                                     absd(s[obj].c.y * p.n.y) + absd(s[obj].c.z * p.n.z) + e);
         if (d + e < -eps)
           goto next;
         if (d - e <= eps)
@@ -934,8 +1006,8 @@ static int footprint(const Chart *c, const Cone *k, UV *poly) {
   }
   return n;
 }
-static int projectedEdges(Pair *w, int side, double *cuts, int *nc, int capacity, double a, double b,
-                          Edge *edges) {
+static int projectedEdges(Pair *w, int side, double *cuts, int *nc, int capacity, double a,
+                          double b, Edge *edges) {
   int ne = 0;
   for (int j = 0; j < w->count[side]; j++) {
     UV poly[24];
@@ -1110,14 +1182,14 @@ int compileLampEvents(const Shape *shapes, int ns, const Chart *tiles, int nt, c
 typedef struct {
   LampSlice slices[SLICE_SLOTS];
   Tangents tangents[TANGENT_SLOTS];
-  unsigned long long reuse[7];
+  unsigned long long reuse[9];
   Cone lamps[];
 } TransportWorkspace;
 
 unsigned transportBytes(int ns) { return sizeof(TransportWorkspace) + ns * sizeof(Cone); }
 
 void prepareTransport(TransportWorkspace *workspace, const Shape *s, int ns, const Vec *lamp) {
-  for (int i = 0; i < 7; i++)
+  for (int i = 0; i < 9; i++)
     workspace->reuse[i] = 0;
   for (int j = 0; j < SLICE_SLOTS; j++)
     workspace->slices[j].source = 0;
@@ -1194,7 +1266,9 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
       stats->regional++;
       continue;
     }
-    if (mode == 2) {
+    if (mode == 2 || mode == CURVED_DOMAIN_DARK) {
+      if (c->type && mode == CURVED_DOMAIN_DARK)
+        workspace->reuse[8]++;
       stats->dark++;
       continue;
     }
@@ -1214,6 +1288,11 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
                                     (c->type ? c->r : c->height * absd(dp(c->v, y.n)));
     if (dp(d, y.n) + ext <= 1e-10)
       continue;
+    if (c->type && (arcFacesAway(c, scale3(d, -1), (Vec){0}, (Vec){0}, 0) ||
+                    belowHorizon(c, scale3(d, -1), y.n))) {
+      workspace->reuse[7]++;
+      continue;
+    }
     if (c->type == 0 && dp(d, c->n) >= -1e-10)
       continue;
     int hidden = 0;
@@ -1294,6 +1373,15 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
     Integral value = {0};
     for (int j = 0; j < nc; j++) {
       double hi = cuts[j];
+      if (c->type == 1) {
+        Vec toEye = minus(y.p, c->c);
+        double ab[] = {dp(toEye, c->u), dp(toEye, c->v)}, mid = .5 * (a + hi);
+        if (meridianDark(ab, sine(mid), cosine(mid), .5 * (hi - a),
+                         c->r - 1e-11 * (1 + length(toEye)))) {
+          a = hi;
+          continue;
+        }
+      }
       double L = a, H = hi;
       if (w.warpDepth) {
         L = angle(a - w.warpCenter, w.warpDepth);

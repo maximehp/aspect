@@ -24,15 +24,6 @@ const vertex =
   gl_Position=vec4(0,0,0,1); gl_PointSize=1.;
 }`;
 
-// A clipped aperture can have any number of directed boundary edges.
-// Integrate the signed projected area. Adjacent cell edges cancel.
-const boundaryVertex =
-  preamble +
-  `void main() {
-  measure=edge(normalize(relativeCenter),normalize(axisU))*(0.5/3.141592653589793);
-  gl_Position=vec4(0,0,0,1); gl_PointSize=1.;
-}`;
-
 // Coordinates are shared across the whole batch. Jobs reference two authored
 // geometry records and never upload four endpoint vectors per interaction.
 const indexedVertex = `#version 300 es
@@ -62,15 +53,15 @@ void main() {
 }`;
 
 export class AngularMeasure {
-  constructor(gl, { boundary = false, indexed = false } = {}) {
+  constructor(gl, { indexed = false, apertureVertex = null, components = 1 } = {}) {
     this.gl = gl;
     this.indexed = indexed;
-    this.channels = indexed ? 4 : 1;
+    this.channels = indexed ? 4 : components;
     this.stride = indexed ? 2 : 12;
     this.stats = { polygons: 0, batches: 0 };
     this.program = gl.createProgram();
     for (const [type, source] of [
-      [gl.VERTEX_SHADER, indexed ? indexedVertex : boundary ? boundaryVertex : vertex],
+      [gl.VERTEX_SHADER, apertureVertex || (indexed ? indexedVertex : vertex)],
       [
         gl.FRAGMENT_SHADER,
         '#version 300 es\nprecision highp float; out vec4 color; void main(){color=vec4(0);}',
@@ -101,8 +92,6 @@ export class AngularMeasure {
         gl.uniform1i(gl.getUniformLocation(this.program, name), 4 + i);
     } else
       for (let i = 0; i < 4; i++) {
-        // The boundary program has no third input.
-        if (boundary && i === 2) continue;
         gl.enableVertexAttribArray(i);
         gl.vertexAttribPointer(i, 3, gl.FLOAT, false, 48, 12 * i);
       }
@@ -154,12 +143,6 @@ export class AngularMeasure {
       a[k + 6 + j] = tile.v[j] * tile.height;
       a[k + 9 + j] = receiver.n[j];
     }
-  }
-  putEdge(index, from, to, normal, orientation) {
-    const k = 12 * index;
-    this.packed.set(from, k);
-    this.packed.set(to, k + 3);
-    for (let d = 0; d < 3; d++) this.packed[k + 9 + d] = orientation * normal[d];
   }
   integrate(count) {
     if (!count) return;

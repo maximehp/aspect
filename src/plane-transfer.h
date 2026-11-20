@@ -86,7 +86,10 @@ static int qualify(const Chart *s, const Domain *g, const Obstacle *obs, int ns,
   if (s->object == g->object)
     return 2;
   if (s->type)
-    return 0;
+    return (arcFacesAway(s, minus(g->c, s->c), g->a, g->b, 1) ||
+            belowHorizon(s, minus(g->c, s->c), g->n))
+               ? CURVED_DOMAIN_DARK
+               : 0;
   Vec D = minus(g->c, s->c), A = scale3(s->ax, s->width), B = scale3(s->v, s->height);
   double h = -dp(g->n, D), dh = radiusOn(A, B, g->n), k = dp(s->n, D),
          dk = radiusOn(g->a, g->b, s->n);
@@ -277,7 +280,7 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
       }
       if (n >= 0) {
         mode = qualify(c, domain, obs, ns, *lamp, tol);
-        if (mode != 1 && mode != 2)
+        if (mode != 1 && mode != 2 && mode != CURVED_DOMAIN_DARK)
           for (int i = 0; i < n; i++) {
             if (coversChart(shadows + nearby[i], c)) {
               mode = 2;
@@ -302,6 +305,8 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
                 .blockers = {0, ids + 1},
                 .stats = stats};
       w.count[1] = candidates(c, s, -1, lamps, ns, ids + 1, &hidden);
+      if (c->type && arcFacesAway(c, minus(*lamp, c->c), (Vec){0}, (Vec){0}, 0))
+        hidden = 1;
       if (!c->type && dp(c->n, minus(*lamp, c->c)) <= 0)
         hidden = 1;
       ids[0] = hidden ? -1 : w.count[1];

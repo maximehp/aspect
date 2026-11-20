@@ -1,4 +1,34 @@
 import { inverseTangentCoefficients } from './inverse-tangent.js';
+export const gauss8 = `const float nodes8[8] = float[8](-.9602898565, -.7966664774, -.5255324099, -.1834346425, .1834346425,
+                                 .5255324099, .7966664774, .9602898565);
+const float weights8[8] = float[8](.1012285363, .2223810345, .3137066459, .3626837834, .3626837834,
+                                   .3137066459, .2223810345, .1012285363);
+`;
+
+export const linearGenerator = `// A linear hat along a straight generator is proportional to the sine of
+// the angular distance from the opposite endpoint. Integrating the product
+// with the receiver cosine requires only two positive sine-product moments.
+vec2 lengthWeights(vec2 mid, float w, float h, float slope, float middleCosine) {
+  float g = length(vec2(h, mid.y));
+  vec2 X = mid.x + vec2(-w, w), lens = sqrt(g * g + X * X);
+  float den = lens.x * lens.y, sine = 2. * w * g / den, cosine = (g * g + X.x * X.y) / den;
+  float crossTerm, squareTerm;
+  if (cosine > 0. && sine < .16) {
+    float z = sine * sine,
+          ratio = 1. + z * (1. / 6. + z * (3. / 40. + z * (5. / 112. + z * 35. / 1152.)));
+    float a2 = z * ratio * ratio, scale = sine * ratio * ratio * ratio;
+    crossTerm = scale * (1. / 6. + a2 * (-1. / 60. + a2 * (1. / 1680. - a2 / 90720.)));
+    squareTerm = scale * (1. / 3. + a2 * (-1. / 15. + a2 * (2. / 315. - a2 / 2835.)));
+  } else {
+    float a = atan(sine, cosine), scale = .5 / (sine * sine);
+    crossTerm = (sine - a * cosine) * scale;
+    squareTerm = (a - sine * cosine) * scale;
+  }
+  vec2 endpoints = (middleCosine + slope * vec2(-w, w)) / lens;
+  return h / (g * lens) * (squareTerm * endpoints + crossTerm * endpoints.yx);
+}
+`;
+
 // Angular integrals of the four bilinear source functions on a clear rectangle.
 // Both source coordinates integrate to endpoint functions of receiver position.
 export const rectangleAperture = `
@@ -42,32 +72,8 @@ vec4 quadraticField(vec2 mid, vec2 halfSize, float D, vec3 light, float scale) {
 // Positive Gauss rules for the single transverse coordinate.
 const float nodes4[4] = float[4](-.8611363116, -.3399810436, .3399810436, .8611363116);
 const float weights4[4] = float[4](.3478548451, .6521451549, .6521451549, .3478548451);
-const float nodes8[8] = float[8](-.9602898565, -.7966664774, -.5255324099, -.1834346425, .1834346425,
-                                 .5255324099, .7966664774, .9602898565);
-const float weights8[8] = float[8](.1012285363, .2223810345, .3137066459, .3626837834, .3626837834,
-                                   .3137066459, .2223810345, .1012285363);
-// A linear hat along a straight generator is proportional to the sine of
-// the angular distance from the opposite endpoint. Integrating the product
-// with the receiver cosine requires only two positive sine-product moments.
-vec2 lengthWeights(vec2 mid, float w, float h, float slope, float middleCosine) {
-  float g = length(vec2(h, mid.y));
-  vec2 X = mid.x + vec2(-w, w), lens = sqrt(g * g + X * X);
-  float den = lens.x * lens.y, sine = 2. * w * g / den, cosine = (g * g + X.x * X.y) / den;
-  float crossTerm, squareTerm;
-  if (cosine > 0. && sine < .16) {
-    float z = sine * sine,
-          ratio = 1. + z * (1. / 6. + z * (3. / 40. + z * (5. / 112. + z * 35. / 1152.)));
-    float a2 = z * ratio * ratio, scale = sine * ratio * ratio * ratio;
-    crossTerm = scale * (1. / 6. + a2 * (-1. / 60. + a2 * (1. / 1680. - a2 / 90720.)));
-    squareTerm = scale * (1. / 3. + a2 * (-1. / 15. + a2 * (2. / 315. - a2 / 2835.)));
-  } else {
-    float a = atan(sine, cosine), scale = .5 / (sine * sine);
-    crossTerm = (sine - a * cosine) * scale;
-    squareTerm = (a - sine * cosine) * scale;
-  }
-  vec2 endpoints = (middleCosine + slope * vec2(-w, w)) / lens;
-  return h / (g * lens) * (squareTerm * endpoints + crossTerm * endpoints.yx);
-}
+${gauss8}
+${linearGenerator}
 vec4 lineRule(vec2 mid, vec2 extent, float h, vec3 light, int rule) {
   bool swap = rule >= 5;
   if (swap) {

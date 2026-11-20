@@ -24,6 +24,22 @@ function average(chart, bounds, field) {
     }
   return mean;
 }
+// Compare two projections to composing the actual kernels through the region.
+function projected(moments, weights, color) {
+  const field = moments.map((_, i) =>
+    [0, 1, 2].map((c) =>
+      moments.reduce((sum, m, j) => sum + ((i ^ j) & 1 ? -2 : 4) * ((i ^ j) & 2 ? -2 : 4) * m[c], 0),
+    ),
+  );
+  return {
+    weights,
+    field,
+    rgb: color.map((r, c) => r * weights.reduce((sum, w, k) => sum + w * field[k][c], 0)),
+    constantRGB: color.map(
+      (r, c) => r * weights.reduce((s, w) => s + w, 0) * moments.reduce((s, m) => s + m[c], 0),
+    ),
+  };
+}
 export async function comparePlanePath(
   renderer,
   scene,
@@ -33,6 +49,7 @@ export async function comparePlanePath(
     floor = 'floor',
     floorSide = 1,
     region = [0.5, 0.75, 0.4, 0.6],
+    observers = [],
     panels,
     tolerance,
   } = {},
@@ -59,9 +76,26 @@ export async function comparePlanePath(
     axisV: owner.axisV.map((x) => x * (t - b)),
   };
   const operator = await PlaneComposition.create(renderer.gl, geometry, chart, target, scene.roundedBoxes);
+  const next = observers.map(({ id, side = 0, uv = [0.5, 0.5] }) => {
+    const object = geometry.shapes.findIndex((s) => s.id === id),
+      shape = geometry.shapes[object];
+    if (!shape?.axisU || !geometry.maps[object][side]?.n) throw Error('Expected a planar observer side');
+    return {
+      object,
+      n: geometry.maps[object][side].n,
+      p: shape.center.map((c, d) => c + (2 * uv[0] - 1) * shape.axisU[d] + (2 * uv[1] - 1) * shape.axisV[d]),
+    };
+  });
   let composed;
   try {
-    composed = panels ? panels.map((p) => operator.integrate(p)) : operator.solve(tolerance);
+    composed = panels ? panels.map((p) => operator.integrate(p, next)) : operator.solve(tolerance, next);
+    const aperture = next.map((receiver) => operator.receiverWeights(receiver));
+    for (const s of Array.isArray(composed) ? composed : composed.estimates)
+      if (next.length)
+        s.followingReflection = next.map((receiver, k) => {
+          const shade = (m) => projected(m, aperture[k], geometry.shapes[receiver.object].color);
+          return { direct: shade(s.directMoments), reflected: shade(s.reflectedMoments) };
+        });
   } finally {
     operator.dispose();
   }

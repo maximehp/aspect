@@ -28,7 +28,7 @@ const advance = (a,b,s) => a.map((x,k) => x + s*b[k]);
 const faces = room.rectangles.map(rect => {
   const area = cross(rect.axisU,rect.axisV), normal = unit(area), tangent = unit(rect.axisU);
   const jacobian = Math.hypot(...area);
-  return { ...rect, normal, tangent, bitangent: cross(normal,tangent),
+  return { ...rect, normal, tangent, jacobian, bitangent: cross(normal,tangent),
     dualU: scale(cross(rect.axisV,normal),1/jacobian), dualV: scale(cross(normal,rect.axisU),1/jacobian) };
 });
 

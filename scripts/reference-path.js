@@ -95,14 +95,17 @@ export function referencePath({
       2 * point[1] - 1,
     );
   const region = path.region;
-  if (
-    region &&
-    (region.length !== 4 ||
-      !region.every((x) => Number.isFinite(x) && x >= 0 && x <= 1) ||
-      region[0] >= region[1] ||
-      region[2] >= region[3])
-  )
-    throw RangeError('Expected increasing U and V bounds in the unit square');
+  function checkRegion(bounds) {
+    if (
+      bounds &&
+      (bounds.length !== 4 ||
+        !bounds.every((x) => Number.isFinite(x) && x >= 0 && x <= 1) ||
+        bounds[0] >= bounds[1] ||
+        bounds[2] >= bounds[3])
+    )
+      throw RangeError('Expected increasing U and V bounds in the unit square');
+  }
+  checkRegion(region);
   const sum = [
       [0, 0, 0],
       [0, 0, 0],
@@ -111,30 +114,83 @@ export function referencePath({
       [0, 0, 0],
       [0, 0, 0],
     ];
+  const collect = path.receiverMoments === true;
+  if (collect && !region) throw RangeError('Receiver moments require a finite region');
+  const moments = Array.from({ length: 2 }, () => Array.from({ length: 4 }, () => [0, 0, 0]));
+  const momentSquares = moments.map((m) => m.map((row) => row.slice()));
+  const observers = (path.observers || []).map(({ id, side = 0, uv = [0.5, 0.5], region: observation }) => {
+    const face = faces.find((f) => f.id === id);
+    if (!region || !face || (side !== 0 && side !== 1))
+      throw Error('Expected a receiver region and a planar observer');
+    checkRegion(observation);
+    const position = (u, v) => advance(advance(face.center, face.axisU, 2 * u - 1), face.axisV, 2 * v - 1);
+    return {
+      sample:
+        observation &&
+        (() =>
+          position(
+            observation[0] + random() * (observation[1] - observation[0]),
+            observation[2] + random() * (observation[3] - observation[2]),
+          )),
+      color: face.color,
+      normal: scale(face.normal, side ? -1 : 1),
+      p: position(...uv),
+      sum: Array.from({ length: 2 }, () => [0, 0, 0]),
+      squares: Array.from({ length: 2 }, () => [0, 0, 0]),
+    };
+  });
+  const regionArea = region && 4 * receiver.jacobian * (region[1] - region[0]) * (region[3] - region[2]);
+  let start,
+    u = 0,
+    v = 0;
   function deposit(k, throughput, factor) {
+    for (const o of observers)
+      if (o.factor === undefined) {
+        const d = (o.sample ? o.sample() : o.p).map((x, i) => x - start[i]),
+          r2 = dot(d, d);
+        const cosA = Math.max(0, (side === 'front' ? 1 : -1) * dot(receiver.normal, d)),
+          cosB = Math.max(0, -dot(o.normal, d));
+        o.factor =
+          cosA * cosB > 0 && !trace(start, d, target, true)
+            ? (regionArea * cosA * cosB) / (Math.PI * r2 * r2)
+            : 0;
+      }
     for (let c = 0; c < 3; c++) {
       let x = throughput[c] * room.lampRGB[c] * factor;
       sum[k][c] += x;
       squares[k][c] += x * x;
+      for (const o of observers) {
+        const value = x * o.factor * o.color[c];
+        o.sum[k][c] += value;
+        o.squares[k][c] += value * value;
+      }
+      if (collect)
+        for (let j = 0; j < 4; j++) {
+          const test = x * (j & 1 ? u : 1 - u) * (j & 2 ? v : 1 - v);
+          moments[k][j][c] += test;
+          momentSquares[k][j][c] += test * test;
+        }
     }
   }
   let wallHits = 0;
   for (let it = 0; it < paths; it++) {
+    if (region) {
+      u = random();
+      v = random();
+    }
     let p = region
         ? advance(
-            advance(
-              receiver.center,
-              receiver.axisU,
-              2 * (region[0] + random() * (region[1] - region[0])) - 1,
-            ),
+            advance(receiver.center, receiver.axisU, 2 * (region[0] + u * (region[1] - region[0])) - 1),
             receiver.axisV,
-            2 * (region[2] + random() * (region[3] - region[2])) - 1,
+            2 * (region[2] + v * (region[3] - region[2])) - 1,
           )
         : origin,
       f = receiver,
       weight = f.color.slice(),
       skip = target,
       sign = side === 'front' ? 1 : -1;
+    start = p;
+    for (const o of observers) o.factor = undefined;
     for (const goal of via) {
       const dir = cosineDirection(f, sign),
         [hit, dist, face] = trace(p, dir, skip);
@@ -179,6 +235,26 @@ export function referencePath({
     path,
     paths,
     arrivals: wallHits,
+    ...(collect && {
+      receiverMoments: moments.map((m, k) =>
+        m.map((row, j) => ({
+          mean: row.map((x) => x / paths),
+          standardError: row.map((x, c) =>
+            Math.sqrt(Math.max(0, momentSquares[k][j][c] / paths - (x / paths) ** 2) / (paths - 1)),
+          ),
+        })),
+      ),
+    }),
+    ...(observers.length && {
+      followingReflection: observers.map((o) =>
+        o.sum.map((row, k) => ({
+          mean: row.map((x) => x / paths),
+          standardError: row.map((x, c) =>
+            Math.sqrt(Math.max(0, o.squares[k][c] / paths - (x / paths) ** 2) / (paths - 1)),
+          ),
+        })),
+      ),
+    }),
     fromLamp: { mean: mean[0], standardError: se[0] },
     fromRoundedSurfaces: { mean: mean[1], standardError: se[1] },
   };
