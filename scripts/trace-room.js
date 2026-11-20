@@ -131,3 +131,53 @@ export function referenceSnapshot(scene, { illumination }) {
     indirect: Array.from(illumination.indirect),
   };
 }
+
+// For an isolated emitting surface, integral(received over every other surface)
+// cannot exceed integral(emitted). This checks the reverse direction from the
+// unit-hemisphere bound at each receiver. Use the actual playable operator.
+export function auditEnergy(solution) {
+  const { illumination, operator, firstBounce } = solution,
+    g = illumination.geometry;
+  const areas = new Float64Array(g.vertices.length);
+  for (const q of g.receivers) for (let k = 0; k < 4; k++) areas[q.ids[k]] += q.area * q.hat[k];
+  function integral(values, material = false) {
+    const total = [0, 0, 0];
+    g.vertices.forEach((v, i) => {
+      for (let c = 0; c < 3; c++)
+        total[c] += areas[i] * values[3 * i + c] * (material ? g.shapes[v.object].color[c] : 1);
+    });
+    return total;
+  }
+  const groups = new Map();
+  g.vertices.forEach((v, i) => {
+    if (!groups.has(v.component)) groups.set(v.component, []);
+    groups.get(v.component).push(i);
+  });
+  const field = { geometry: g, lamp: null, indirect: new Float64Array(illumination.indirect.length) };
+  const transfers = [];
+  for (const [component, ids] of groups) {
+    let area = 0;
+    const object = g.vertices[ids[0]].object,
+      rho = g.shapes[object].color;
+    for (const i of ids) {
+      area += areas[i];
+      for (let c = 0; c < 3; c++) field.indirect[3 * i + c] = rho[c] > 0 ? 1 / rho[c] : 0;
+    }
+    const received = integral(operator.reflect(field, object).indirect);
+    transfers.push({
+      object: g.shapes[object].id,
+      side: g.shapes[object].axes ? 'solid' : component % 2,
+      area,
+      receivedOverEmitted: received.map((v, c) => (rho[c] > 0 ? v / area : null)),
+    });
+    for (const i of ids) field.indirect.fill(0, 3 * i, 3 * i + 3);
+  }
+  const fromIndirect = operator.reflect({ ...illumination, lamp: null });
+  return {
+    surfaces: transfers,
+    indirectEmitted: integral(illumination.indirect, true),
+    receivedFromIndirect: integral(fromIndirect.indirect),
+    receivedFromLampLitSurfaces: integral(firstBounce.indirect),
+    totalIndirectReceived: integral(illumination.indirect),
+  };
+}

@@ -2506,5 +2506,1799 @@
         "examples": []
       }
     ]
-  }
+  },
+  "emittedEnergyAudit": {
+    "one": {
+      "surfaces": [
+        {
+          "object": "floor",
+          "side": 0,
+          "area": 60.519999999999996,
+          "receivedOverEmitted": [
+            0.09022067116327841,
+            0.09022067116327841,
+            0.09022067116327841
+          ]
+        },
+        {
+          "object": "floor",
+          "side": 1,
+          "area": 60.520000000000024,
+          "receivedOverEmitted": [
+            0.9967724085976273,
+            0.996772408597627,
+            0.996772408597627
+          ]
+        },
+        {
+          "object": "ceiling",
+          "side": 0,
+          "area": 60.51999999999999,
+          "receivedOverEmitted": [
+            0.9952543813648342,
+            0.9952543813648347,
+            0.9952543813648348
+          ]
+        },
+        {
+          "object": "ceiling",
+          "side": 1,
+          "area": 60.51999999999999,
+          "receivedOverEmitted": [
+            0.12376771688292032,
+            0.12376771688292033,
+            0.12376771688292033
+          ]
+        },
+        {
+          "object": "north-wall",
+          "side": 0,
+          "area": 25.160000000000117,
+          "receivedOverEmitted": [
+            0.9975332888204721,
+            0.9975332888204721,
+            0.9975332888204723
+          ]
+        },
+        {
+          "object": "north-wall",
+          "side": 1,
+          "area": 25.159999999999997,
+          "receivedOverEmitted": [
+            0.1868142762339692,
+            0.1868142762339692,
+            0.1868142762339692
+          ]
+        },
+        {
+          "object": "south-wall",
+          "side": 0,
+          "area": 25.16,
+          "receivedOverEmitted": [
+            0.15769675425032767,
+            0.15769675425032767,
+            0.15769675425032767
+          ]
+        },
+        {
+          "object": "south-wall",
+          "side": 1,
+          "area": 25.160000000000007,
+          "receivedOverEmitted": [
+            0.9986869401094443,
+            0.9986869401094446,
+            0.9986869401094443
+          ]
+        },
+        {
+          "object": "east-wall",
+          "side": 0,
+          "area": 32.92999999999999,
+          "receivedOverEmitted": [
+            0.9991491155076407,
+            0.9991491155076405,
+            0.999149115507641
+          ]
+        },
+        {
+          "object": "window-below",
+          "side": 0,
+          "area": 8.366,
+          "receivedOverEmitted": [
+            0.8648057822934027,
+            0.8648057822934031,
+            0.8648057822934031
+          ]
+        },
+        {
+          "object": "window-below",
+          "side": 1,
+          "area": 8.366,
+          "receivedOverEmitted": [
+            0.99935890266118,
+            0.9993589026611798,
+            0.9993589026611791
+          ]
+        },
+        {
+          "object": "window-above",
+          "side": 0,
+          "area": 5.340000000000002,
+          "receivedOverEmitted": [
+            0.8809873033077034,
+            0.8809873033077034,
+            0.8809873033077034
+          ]
+        },
+        {
+          "object": "window-above",
+          "side": 1,
+          "area": 5.340000000000002,
+          "receivedOverEmitted": [
+            1.0000348545035027,
+            1.0000348545035027,
+            1.0000348545035023
+          ]
+        },
+        {
+          "object": "window-rear",
+          "side": 0,
+          "area": 2.4840000000000004,
+          "receivedOverEmitted": [
+            0.882696573922033,
+            0.8826965739220327,
+            0.8826965739220327
+          ]
+        },
+        {
+          "object": "window-rear",
+          "side": 1,
+          "area": 2.4840000000000013,
+          "receivedOverEmitted": [
+            0.9992828106512671,
+            0.9992828106512672,
+            0.9992828106512669
+          ]
+        },
+        {
+          "object": "window-front",
+          "side": 0,
+          "area": 8.100000000000001,
+          "receivedOverEmitted": [
+            0.8814025216086623,
+            0.8814025216086626,
+            0.8814025216086626
+          ]
+        },
+        {
+          "object": "window-front",
+          "side": 1,
+          "area": 8.100000000000001,
+          "receivedOverEmitted": [
+            1.0001478374433888,
+            1.0001478374433892,
+            1.0001478374433879
+          ]
+        },
+        {
+          "object": "exterior-wall",
+          "side": 1,
+          "area": 420,
+          "receivedOverEmitted": [
+            0.11944161687207501,
+            0.11944161687207501,
+            0.11944161687207493
+          ]
+        },
+        {
+          "object": "bench-seat-top",
+          "side": 0,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            1.0239673870057016,
+            1.0239673870057018,
+            1.0239673870057018
+          ]
+        },
+        {
+          "object": "bench-seat-top",
+          "side": 1,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            0.9987760043105453,
+            0.9987760043105456,
+            0.9987760043105445
+          ]
+        },
+        {
+          "object": "bench-seat-bottom",
+          "side": 0,
+          "area": 1.4300000000000008,
+          "receivedOverEmitted": [
+            1.0068862380105388,
+            1.0068862380105383,
+            1.0068862380105401
+          ]
+        },
+        {
+          "object": "bench-seat-bottom",
+          "side": 1,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            1.0239673514464815,
+            1.023967351446482,
+            1.023967351446482
+          ]
+        },
+        {
+          "object": "bench-seat-left",
+          "side": 0,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            1.0252671911198437,
+            1.0252671911198434,
+            1.0252671911198423
+          ]
+        },
+        {
+          "object": "bench-seat-left",
+          "side": 1,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            0.5436313329905654,
+            0.5436313329905654,
+            0.5436313329905654
+          ]
+        },
+        {
+          "object": "bench-seat-right",
+          "side": 0,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            0.5436313322254225,
+            0.5436313322254225,
+            0.5436313322254225
+          ]
+        },
+        {
+          "object": "bench-seat-right",
+          "side": 1,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            1.0242851868932163,
+            1.0242851868932172,
+            1.0242851868932168
+          ]
+        },
+        {
+          "object": "bench-seat-front",
+          "side": 0,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.015577926609331,
+            1.015577926609331,
+            1.015577926609331
+          ]
+        },
+        {
+          "object": "bench-seat-front",
+          "side": 1,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.0050129933679914,
+            1.0050129933679914,
+            1.0050129933679914
+          ]
+        },
+        {
+          "object": "bench-seat-back",
+          "side": 0,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.0050129895685498,
+            1.0050129895685502,
+            1.0050129895685502
+          ]
+        },
+        {
+          "object": "bench-seat-back",
+          "side": 1,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.0056220051340226,
+            1.0056220051340228,
+            1.0056220051340221
+          ]
+        },
+        {
+          "object": "bench-left-leg-left",
+          "side": 0,
+          "area": 0.26500000000000007,
+          "receivedOverEmitted": [
+            0.8771937467881624,
+            0.8771937467881623,
+            0.8771937467881629
+          ]
+        },
+        {
+          "object": "bench-left-leg-left",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            1.227216308738267,
+            1.2272163087382675,
+            1.2272163087382675
+          ]
+        },
+        {
+          "object": "bench-left-leg-right",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            1.2081920646505495,
+            1.2081920646505493,
+            1.2081920646505493
+          ]
+        },
+        {
+          "object": "bench-left-leg-right",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.8662730059868174,
+            0.8662730059868174,
+            0.8662730059868176
+          ]
+        },
+        {
+          "object": "bench-left-leg-front",
+          "side": 0,
+          "area": 0.06499999999999999,
+          "receivedOverEmitted": [
+            0.9859864422737746,
+            0.9859864422737753,
+            0.9859864422737753
+          ]
+        },
+        {
+          "object": "bench-left-leg-front",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            1.1683125865596549,
+            1.1683125865596546,
+            1.1683125865596549
+          ]
+        },
+        {
+          "object": "bench-left-leg-back",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            1.1661017060562506,
+            1.1661017060562506,
+            1.1661017060562506
+          ]
+        },
+        {
+          "object": "bench-left-leg-back",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.9750854788670905,
+            0.9750854788670903,
+            0.9750854788670901
+          ]
+        },
+        {
+          "object": "bench-right-leg-left",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            1.0184938894277646,
+            1.0184938894277646,
+            1.0184938894277655
+          ]
+        },
+        {
+          "object": "bench-right-leg-left",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.9384451456205061,
+            0.9384451456205061,
+            0.9384451456205061
+          ]
+        },
+        {
+          "object": "bench-right-leg-right",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.9108956027203983,
+            0.9108956027203983,
+            0.9108956027203983
+          ]
+        },
+        {
+          "object": "bench-right-leg-right",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.9996231347684695,
+            0.9996231347684695,
+            0.9996231347684701
+          ]
+        },
+        {
+          "object": "bench-right-leg-front",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.8754387136591911,
+            0.8754387136591912,
+            0.8754387136591912
+          ]
+        },
+        {
+          "object": "bench-right-leg-front",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.9296192840122625,
+            0.9296192840122625,
+            0.9296192840122625
+          ]
+        },
+        {
+          "object": "bench-right-leg-back",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.9296192839704982,
+            0.9296192839704983,
+            0.9296192839704982
+          ]
+        },
+        {
+          "object": "bench-right-leg-back",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.8670031902791364,
+            0.8670031902791366,
+            0.8670031902791374
+          ]
+        },
+        {
+          "object": "print-paper",
+          "side": 0,
+          "area": 3.3711999999999955,
+          "receivedOverEmitted": [
+            0.9990982432916311,
+            0.9990982432916311,
+            0.9990982432916311
+          ]
+        },
+        {
+          "object": "print-paper",
+          "side": 1,
+          "area": 3.3711999999999995,
+          "receivedOverEmitted": [
+            0.9962559409151989,
+            0.9962559409151989,
+            0.996255940915199
+          ]
+        },
+        {
+          "object": "print-clay",
+          "side": 0,
+          "area": 1.904,
+          "receivedOverEmitted": [
+            1.0015973383010575,
+            1.0015973383010575,
+            1.0015973383010575
+          ]
+        },
+        {
+          "object": "print-clay",
+          "side": 1,
+          "area": 1.904,
+          "receivedOverEmitted": [
+            1.0015106037534238,
+            1.0015106037534238,
+            1.0015106037534238
+          ]
+        },
+        {
+          "object": "print-ink",
+          "side": 0,
+          "area": 0.4408,
+          "receivedOverEmitted": [
+            1.0089034592348336,
+            1.0089034592348336,
+            1.0089034592348336
+          ]
+        },
+        {
+          "object": "print-ink",
+          "side": 1,
+          "area": 0.4408,
+          "receivedOverEmitted": [
+            1.0015829899555928,
+            1.0015829899555928,
+            1.0015829899555928
+          ]
+        },
+        {
+          "object": "window-slat-0",
+          "side": "solid",
+          "area": 2.7721354173935695,
+          "receivedOverEmitted": [
+            0.8141769898575464,
+            0.8141769898575465,
+            0.8141769898575457
+          ]
+        }
+      ],
+      "indirectEmitted": [
+        79.36773437843878,
+        65.20466940233914,
+        38.47552378596947
+      ],
+      "receivedFromIndirect": [
+        54.914314389300344,
+        41.654772365421074,
+        22.425276757789653
+      ],
+      "receivedFromLampLitSurfaces": [
+        59.22256433322686,
+        50.914791635081606,
+        36.854650640141976
+      ],
+      "totalIndirectReceived": [
+        114.13678244343365,
+        92.56955874301552,
+        59.279927395919316
+      ]
+    },
+    "edited": {
+      "surfaces": [
+        {
+          "object": "floor",
+          "side": 0,
+          "area": 60.519999999999996,
+          "receivedOverEmitted": [
+            0.0902206647774516,
+            0.09022066477745164,
+            0.0902206647774516
+          ]
+        },
+        {
+          "object": "floor",
+          "side": 1,
+          "area": 60.520000000000046,
+          "receivedOverEmitted": [
+            1.0001829988369686,
+            1.0001829988369686,
+            1.000182998836969
+          ]
+        },
+        {
+          "object": "ceiling",
+          "side": 0,
+          "area": 60.52,
+          "receivedOverEmitted": [
+            0.995724186504942,
+            0.9957241865049424,
+            0.9957241865049429
+          ]
+        },
+        {
+          "object": "ceiling",
+          "side": 1,
+          "area": 60.51999999999999,
+          "receivedOverEmitted": [
+            0.12376771688292032,
+            0.12376771688292033,
+            0.12376771688292033
+          ]
+        },
+        {
+          "object": "north-wall",
+          "side": 0,
+          "area": 25.160000000000036,
+          "receivedOverEmitted": [
+            0.9971029614512341,
+            0.9971029614512341,
+            0.9971029614512347
+          ]
+        },
+        {
+          "object": "north-wall",
+          "side": 1,
+          "area": 25.159999999999997,
+          "receivedOverEmitted": [
+            0.1868142773792052,
+            0.18681427737920528,
+            0.18681427737920525
+          ]
+        },
+        {
+          "object": "south-wall",
+          "side": 0,
+          "area": 25.16,
+          "receivedOverEmitted": [
+            0.15769675077450804,
+            0.15769675077450807,
+            0.15769675077450807
+          ]
+        },
+        {
+          "object": "south-wall",
+          "side": 1,
+          "area": 25.160000000000007,
+          "receivedOverEmitted": [
+            0.9984918515866218,
+            0.998491851586622,
+            0.9984918515866218
+          ]
+        },
+        {
+          "object": "east-wall",
+          "side": 0,
+          "area": 32.92999999999999,
+          "receivedOverEmitted": [
+            0.9973905189456738,
+            0.9973905189456738,
+            0.9973905189456749
+          ]
+        },
+        {
+          "object": "window-below",
+          "side": 0,
+          "area": 8.366,
+          "receivedOverEmitted": [
+            0.8648320222639012,
+            0.8648320222639014,
+            0.8648320222639013
+          ]
+        },
+        {
+          "object": "window-below",
+          "side": 1,
+          "area": 8.365999999999998,
+          "receivedOverEmitted": [
+            1.0002230753803574,
+            1.0002230753803574,
+            1.000223075380357
+          ]
+        },
+        {
+          "object": "window-above",
+          "side": 0,
+          "area": 5.340000000000002,
+          "receivedOverEmitted": [
+            0.8809992559113653,
+            0.8809992559113651,
+            0.880999255911365
+          ]
+        },
+        {
+          "object": "window-above",
+          "side": 1,
+          "area": 5.3400000000000025,
+          "receivedOverEmitted": [
+            1.0002786866318787,
+            1.000278686631879,
+            1.0002786866318785
+          ]
+        },
+        {
+          "object": "window-rear",
+          "side": 0,
+          "area": 2.4840000000000004,
+          "receivedOverEmitted": [
+            0.8827709863333244,
+            0.8827709863333238,
+            0.8827709863333238
+          ]
+        },
+        {
+          "object": "window-rear",
+          "side": 1,
+          "area": 2.4840000000000013,
+          "receivedOverEmitted": [
+            0.999071213507929,
+            0.9990712135079293,
+            0.9990712135079296
+          ]
+        },
+        {
+          "object": "window-front",
+          "side": 0,
+          "area": 8.100000000000001,
+          "receivedOverEmitted": [
+            0.881424038779619,
+            0.8814240387796195,
+            0.8814240387796193
+          ]
+        },
+        {
+          "object": "window-front",
+          "side": 1,
+          "area": 8.100000000000001,
+          "receivedOverEmitted": [
+            0.9998743809724527,
+            0.9998743809724527,
+            0.999874380972453
+          ]
+        },
+        {
+          "object": "exterior-wall",
+          "side": 1,
+          "area": 420,
+          "receivedOverEmitted": [
+            0.11945963409095327,
+            0.11945963409095327,
+            0.11945963409095327
+          ]
+        },
+        {
+          "object": "bench-seat-top",
+          "side": 0,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            1.0239674225874897,
+            1.0239674225874897,
+            1.0239674225874897
+          ]
+        },
+        {
+          "object": "bench-seat-top",
+          "side": 1,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            1.0006275716784356,
+            1.0006275716784359,
+            1.0006275716784359
+          ]
+        },
+        {
+          "object": "bench-seat-bottom",
+          "side": 0,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            0.9770474669306789,
+            0.9770474669306788,
+            0.9770474669306788
+          ]
+        },
+        {
+          "object": "bench-seat-bottom",
+          "side": 1,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            1.023967350719402,
+            1.023967350719402,
+            1.023967350719402
+          ]
+        },
+        {
+          "object": "bench-seat-left",
+          "side": 0,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            0.9818482958899716,
+            0.9818482958899716,
+            0.9818482958899718
+          ]
+        },
+        {
+          "object": "bench-seat-left",
+          "side": 1,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            0.5436313328648466,
+            0.5436313328648464,
+            0.5436313328648464
+          ]
+        },
+        {
+          "object": "bench-seat-right",
+          "side": 0,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            0.5436313321452222,
+            0.5436313321452222,
+            0.5436313321452222
+          ]
+        },
+        {
+          "object": "bench-seat-right",
+          "side": 1,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            1.043826638538371,
+            1.0438266385383708,
+            1.0438266385383708
+          ]
+        },
+        {
+          "object": "bench-seat-front",
+          "side": 0,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.004239232210025,
+            1.0042392322100255,
+            1.0042392322100255
+          ]
+        },
+        {
+          "object": "bench-seat-front",
+          "side": 1,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.0050129992526944,
+            1.0050129992526948,
+            1.0050129992526948
+          ]
+        },
+        {
+          "object": "bench-seat-back",
+          "side": 0,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.0050129881961585,
+            1.005012988196159,
+            1.005012988196159
+          ]
+        },
+        {
+          "object": "bench-seat-back",
+          "side": 1,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            0.985396046005255,
+            0.9853960460052548,
+            0.985396046005255
+          ]
+        },
+        {
+          "object": "bench-left-leg-left",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            1.1919462834448418,
+            1.1919462834448418,
+            1.1919462834448418
+          ]
+        },
+        {
+          "object": "bench-left-leg-left",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.8071014746888386,
+            0.8071014746888386,
+            0.8071014746888387
+          ]
+        },
+        {
+          "object": "bench-left-leg-right",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.807101502976988,
+            0.807101502976988,
+            0.807101502976988
+          ]
+        },
+        {
+          "object": "bench-left-leg-right",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.9961911971412328,
+            0.9961911971412328,
+            0.9961911971412328
+          ]
+        },
+        {
+          "object": "bench-left-leg-front",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.8266539737853216,
+            0.8266539737853216,
+            0.8266539737853216
+          ]
+        },
+        {
+          "object": "bench-left-leg-front",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.7941461419659509,
+            0.7941461419659509,
+            0.7941461419659508
+          ]
+        },
+        {
+          "object": "bench-left-leg-back",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.7941461209391452,
+            0.7941461209391452,
+            0.7941461209391454
+          ]
+        },
+        {
+          "object": "bench-left-leg-back",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.860077486803168,
+            0.8600774868031682,
+            0.860077486803168
+          ]
+        },
+        {
+          "object": "bench-right-leg-left",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.8588429139710464,
+            0.8588429139710464,
+            0.8588429139710464
+          ]
+        },
+        {
+          "object": "bench-right-leg-left",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            1.269926201641392,
+            1.269926201641392,
+            1.269926201641392
+          ]
+        },
+        {
+          "object": "bench-right-leg-right",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            1.2355925372933456,
+            1.2355925372933456,
+            1.2355925372933458
+          ]
+        },
+        {
+          "object": "bench-right-leg-right",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.9059522731617109,
+            0.9059522731617109,
+            0.9059522731617109
+          ]
+        },
+        {
+          "object": "bench-right-leg-front",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.8032036953561521,
+            0.8032036953561521,
+            0.8032036953561521
+          ]
+        },
+        {
+          "object": "bench-right-leg-front",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            1.5149307429821686,
+            1.514930742982169,
+            1.5149307429821686
+          ]
+        },
+        {
+          "object": "bench-right-leg-back",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            1.922240365231162,
+            1.922240365231162,
+            1.9222403652311622
+          ]
+        },
+        {
+          "object": "bench-right-leg-back",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.8633490571473598,
+            0.8633490571473597,
+            0.8633490571473598
+          ]
+        },
+        {
+          "object": "print-paper",
+          "side": 0,
+          "area": 3.3712000000000013,
+          "receivedOverEmitted": [
+            1.0004092798722057,
+            1.0004092798722057,
+            1.000409279872206
+          ]
+        },
+        {
+          "object": "print-paper",
+          "side": 1,
+          "area": 3.3712,
+          "receivedOverEmitted": [
+            1.000568894920625,
+            1.000568894920625,
+            1.000568894920625
+          ]
+        },
+        {
+          "object": "print-clay",
+          "side": 0,
+          "area": 1.9039999999999968,
+          "receivedOverEmitted": [
+            1.0030175059925592,
+            1.0030175059925595,
+            1.0030175059925592
+          ]
+        },
+        {
+          "object": "print-clay",
+          "side": 1,
+          "area": 1.904,
+          "receivedOverEmitted": [
+            1.0015337427830842,
+            1.0015337427830842,
+            1.0015337427830842
+          ]
+        },
+        {
+          "object": "print-ink",
+          "side": 0,
+          "area": 0.4408,
+          "receivedOverEmitted": [
+            0.9955003099743591,
+            0.9955003099743593,
+            0.9955003099743589
+          ]
+        },
+        {
+          "object": "print-ink",
+          "side": 1,
+          "area": 0.4408,
+          "receivedOverEmitted": [
+            1.0015957233639028,
+            1.0015957233639028,
+            1.0015957233639028
+          ]
+        },
+        {
+          "object": "window-slat-0",
+          "side": "solid",
+          "area": 2.77213541690896,
+          "receivedOverEmitted": [
+            0.8157362484513047,
+            0.8157362484513043,
+            0.8157362484513047
+          ]
+        },
+        {
+          "object": "interior-slat-0",
+          "side": "solid",
+          "area": 2.84731274754851,
+          "receivedOverEmitted": [
+            0.9381312295549424,
+            0.9381312295549424,
+            0.9381312295549421
+          ]
+        }
+      ],
+      "indirectEmitted": [
+        53.84862890278534,
+        50.196236777725495,
+        42.032266068175026
+      ],
+      "receivedFromIndirect": [
+        30.155776075950406,
+        27.256867579033567,
+        25.795800044039012
+      ],
+      "receivedFromLampLitSurfaces": [
+        55.410833189102505,
+        48.131101663572174,
+        37.283734747356185
+      ],
+      "totalIndirectReceived": [
+        85.56654063745222,
+        75.38796028451877,
+        63.079531841893974
+      ]
+    },
+    "cavity": {
+      "surfaces": [
+        {
+          "object": "floor",
+          "side": 0,
+          "area": 60.519999999999996,
+          "receivedOverEmitted": [
+            0.09022067116327841,
+            0.09022067116327841,
+            0.09022067116327841
+          ]
+        },
+        {
+          "object": "floor",
+          "side": 1,
+          "area": 60.52,
+          "receivedOverEmitted": [
+            1.0033916382435217,
+            1.0033916382435204,
+            1.0033916382435213
+          ]
+        },
+        {
+          "object": "ceiling",
+          "side": 0,
+          "area": 60.519999999999996,
+          "receivedOverEmitted": [
+            0.9999296002759952,
+            0.9999296002759968,
+            0.9999296002759887
+          ]
+        },
+        {
+          "object": "ceiling",
+          "side": 1,
+          "area": 60.51999999999999,
+          "receivedOverEmitted": [
+            0.12376771688292032,
+            0.12376771688292033,
+            0.12376771688292033
+          ]
+        },
+        {
+          "object": "north-wall",
+          "side": 0,
+          "area": 25.160000000000018,
+          "receivedOverEmitted": [
+            0.9981915584018316,
+            0.9981915584018304,
+            0.9981915584018322
+          ]
+        },
+        {
+          "object": "north-wall",
+          "side": 1,
+          "area": 25.159999999999997,
+          "receivedOverEmitted": [
+            0.1868142762339692,
+            0.1868142762339692,
+            0.1868142762339692
+          ]
+        },
+        {
+          "object": "south-wall",
+          "side": 0,
+          "area": 25.16,
+          "receivedOverEmitted": [
+            0.15769675425032767,
+            0.15769675425032764,
+            0.15769675425032767
+          ]
+        },
+        {
+          "object": "south-wall",
+          "side": 1,
+          "area": 25.159999999999997,
+          "receivedOverEmitted": [
+            0.9979329384767238,
+            0.9979329384767206,
+            0.9979329384767225
+          ]
+        },
+        {
+          "object": "east-wall",
+          "side": 0,
+          "area": 32.92999999999999,
+          "receivedOverEmitted": [
+            0.9990228504619508,
+            0.9990228504619545,
+            0.9990228504619588
+          ]
+        },
+        {
+          "object": "window-below",
+          "side": 0,
+          "area": 8.366,
+          "receivedOverEmitted": [
+            0.8697568575258203,
+            0.8697568575258198,
+            0.8697568575258201
+          ]
+        },
+        {
+          "object": "window-below",
+          "side": 1,
+          "area": 8.366,
+          "receivedOverEmitted": [
+            0.998107012690464,
+            0.9981070126904741,
+            0.998107012690461
+          ]
+        },
+        {
+          "object": "window-above",
+          "side": 0,
+          "area": 5.340000000000002,
+          "receivedOverEmitted": [
+            0.8844692297529052,
+            0.884469229752902,
+            0.8844692297529139
+          ]
+        },
+        {
+          "object": "window-above",
+          "side": 1,
+          "area": 5.340000000000001,
+          "receivedOverEmitted": [
+            1.0000510021975861,
+            1.000051002197591,
+            1.0000510021975826
+          ]
+        },
+        {
+          "object": "window-rear",
+          "side": 0,
+          "area": 2.4840000000000004,
+          "receivedOverEmitted": [
+            0.8829923545252871,
+            0.882992354525284,
+            0.8829923545252945
+          ]
+        },
+        {
+          "object": "window-rear",
+          "side": 1,
+          "area": 2.4840000000000004,
+          "receivedOverEmitted": [
+            0.9943515767923091,
+            0.9943515767923043,
+            0.9943515767923174
+          ]
+        },
+        {
+          "object": "window-front",
+          "side": 0,
+          "area": 8.100000000000001,
+          "receivedOverEmitted": [
+            0.8814142110324665,
+            0.8814142110324649,
+            0.881414211032465
+          ]
+        },
+        {
+          "object": "window-front",
+          "side": 1,
+          "area": 8.100000000000001,
+          "receivedOverEmitted": [
+            0.9971749060159172,
+            0.9971749060159152,
+            0.9971749060159161
+          ]
+        },
+        {
+          "object": "exterior-wall",
+          "side": 1,
+          "area": 420,
+          "receivedOverEmitted": [
+            0.11940114745213964,
+            0.11940114745213894,
+            0.11940114745213948
+          ]
+        },
+        {
+          "object": "bench-seat-top",
+          "side": 0,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            1.0239673870134531,
+            1.0239673870134531,
+            1.0239673870134531
+          ]
+        },
+        {
+          "object": "bench-seat-top",
+          "side": 1,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            1.0018071477527475,
+            1.001807147752743,
+            1.0018071477527457
+          ]
+        },
+        {
+          "object": "bench-seat-bottom",
+          "side": 0,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            1.005655872583898,
+            1.0056558725838978,
+            1.005655872583898
+          ]
+        },
+        {
+          "object": "bench-seat-bottom",
+          "side": 1,
+          "area": 1.4300000000000002,
+          "receivedOverEmitted": [
+            1.0239673507857707,
+            1.0239673507857712,
+            1.0239673507857712
+          ]
+        },
+        {
+          "object": "bench-seat-left",
+          "side": 0,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            0.9316296196218222,
+            0.9316296196218178,
+            0.9316296196218296
+          ]
+        },
+        {
+          "object": "bench-seat-left",
+          "side": 1,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            0.5436313330124117,
+            0.5436313330124117,
+            0.5436313330124118
+          ]
+        },
+        {
+          "object": "bench-seat-right",
+          "side": 0,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            0.5436313322672558,
+            0.5436313322672558,
+            0.5436313322672571
+          ]
+        },
+        {
+          "object": "bench-seat-right",
+          "side": 1,
+          "area": 0.07800000000000001,
+          "receivedOverEmitted": [
+            1.022385899905202,
+            1.0223858999052022,
+            1.0223858999052013
+          ]
+        },
+        {
+          "object": "bench-seat-front",
+          "side": 0,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.0282105542079385,
+            1.0282105542079418,
+            1.0282105542079363
+          ]
+        },
+        {
+          "object": "bench-seat-front",
+          "side": 1,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.0050129933784446,
+            1.0050129933784449,
+            1.005012993378445
+          ]
+        },
+        {
+          "object": "bench-seat-back",
+          "side": 0,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.005012989082591,
+            1.0050129890825912,
+            1.0050129890825903
+          ]
+        },
+        {
+          "object": "bench-seat-back",
+          "side": 1,
+          "area": 0.26399999999999996,
+          "receivedOverEmitted": [
+            1.010923050059442,
+            1.0109230500594397,
+            1.0109230500594435
+          ]
+        },
+        {
+          "object": "bench-left-leg-left",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.9249967653630611,
+            0.9249967653630575,
+            0.9249967653630595
+          ]
+        },
+        {
+          "object": "bench-left-leg-left",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            1.1172257785632929,
+            1.1172257785632926,
+            1.1172257785632933
+          ]
+        },
+        {
+          "object": "bench-left-leg-right",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            1.0669666324026972,
+            1.0669666324026985,
+            1.0669666324026972
+          ]
+        },
+        {
+          "object": "bench-left-leg-right",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.8846152741494456,
+            0.8846152741494459,
+            0.8846152741494454
+          ]
+        },
+        {
+          "object": "bench-left-leg-front",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            1.0107774489582424,
+            1.0107774489582513,
+            1.0107774489582433
+          ]
+        },
+        {
+          "object": "bench-left-leg-front",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.9646202892014294,
+            0.9646202892014293,
+            0.9646202892014312
+          ]
+        },
+        {
+          "object": "bench-left-leg-back",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.9624094118499803,
+            0.9624094118499807,
+            0.9624094118499816
+          ]
+        },
+        {
+          "object": "bench-left-leg-back",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.9677778380376262,
+            0.9677778380376328,
+            0.9677778380376284
+          ]
+        },
+        {
+          "object": "bench-right-leg-left",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            1.0468008352647387,
+            1.0468008352647347,
+            1.0468008352647469
+          ]
+        },
+        {
+          "object": "bench-right-leg-left",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.8071014811609558,
+            0.8071014811609557,
+            0.8071014811609556
+          ]
+        },
+        {
+          "object": "bench-right-leg-right",
+          "side": 0,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            0.8071014896554819,
+            0.807101489655482,
+            0.8071014896554831
+          ]
+        },
+        {
+          "object": "bench-right-leg-right",
+          "side": 1,
+          "area": 0.265,
+          "receivedOverEmitted": [
+            1.094843089690855,
+            1.0948430896908548,
+            1.0948430896908545
+          ]
+        },
+        {
+          "object": "bench-right-leg-front",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.8347831920080807,
+            0.8347831920080747,
+            0.8347831920080786
+          ]
+        },
+        {
+          "object": "bench-right-leg-front",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.7941461392007754,
+            0.7941461392007751,
+            0.7941461392007744
+          ]
+        },
+        {
+          "object": "bench-right-leg-back",
+          "side": 0,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.7941461391296876,
+            0.7941461391296873,
+            0.7941461391296872
+          ]
+        },
+        {
+          "object": "bench-right-leg-back",
+          "side": 1,
+          "area": 0.065,
+          "receivedOverEmitted": [
+            0.8271783945172515,
+            0.8271783945172502,
+            0.8271783945172515
+          ]
+        },
+        {
+          "object": "print-paper",
+          "side": 0,
+          "area": 3.371199999999999,
+          "receivedOverEmitted": [
+            0.9993669970414859,
+            0.9993669970414786,
+            0.9993669970414865
+          ]
+        },
+        {
+          "object": "print-paper",
+          "side": 1,
+          "area": 3.3712000000000004,
+          "receivedOverEmitted": [
+            1.00274130982622,
+            1.00274130982622,
+            1.00274130982622
+          ]
+        },
+        {
+          "object": "print-clay",
+          "side": 0,
+          "area": 1.9040000000000001,
+          "receivedOverEmitted": [
+            0.9988385554873056,
+            0.9988385554873036,
+            0.9988385554873084
+          ]
+        },
+        {
+          "object": "print-clay",
+          "side": 1,
+          "area": 1.904,
+          "receivedOverEmitted": [
+            1.001495972222395,
+            1.001495972222395,
+            1.001495972222395
+          ]
+        },
+        {
+          "object": "print-ink",
+          "side": 0,
+          "area": 0.4408,
+          "receivedOverEmitted": [
+            0.9996512535479952,
+            0.9996512535479951,
+            0.9996512535479906
+          ]
+        },
+        {
+          "object": "print-ink",
+          "side": 1,
+          "area": 0.4408,
+          "receivedOverEmitted": [
+            1.001567098136118,
+            1.001567098136118,
+            1.0015670981361176
+          ]
+        },
+        {
+          "object": "window-slat-0",
+          "side": "solid",
+          "area": 1.9524038050063086,
+          "receivedOverEmitted": [
+            0.9121772730957464,
+            0.9121772730957475,
+            0.9121772730957467
+          ]
+        },
+        {
+          "object": "window-slat-1",
+          "side": "solid",
+          "area": 1.9524038050062331,
+          "receivedOverEmitted": [
+            0.9411097545530497,
+            0.9411097545530493,
+            0.9411097545530489
+          ]
+        },
+        {
+          "object": "window-slat-2",
+          "side": "solid",
+          "area": 1.9524038050061778,
+          "receivedOverEmitted": [
+            0.9400869981889236,
+            0.9400869981889262,
+            0.9400869981889248
+          ]
+        },
+        {
+          "object": "window-slat-3",
+          "side": "solid",
+          "area": 1.9524038050061978,
+          "receivedOverEmitted": [
+            0.9417466718807156,
+            0.9417466718807146,
+            0.9417466718807173
+          ]
+        },
+        {
+          "object": "window-slat-4",
+          "side": "solid",
+          "area": 1.9524038050061785,
+          "receivedOverEmitted": [
+            0.9409506526183671,
+            0.940950652618368,
+            0.9409506526183691
+          ]
+        },
+        {
+          "object": "window-slat-5",
+          "side": "solid",
+          "area": 1.9524038050061687,
+          "receivedOverEmitted": [
+            0.9425530404746454,
+            0.9425530404746486,
+            0.9425530404746462
+          ]
+        },
+        {
+          "object": "window-slat-6",
+          "side": "solid",
+          "area": 1.9524038050061536,
+          "receivedOverEmitted": [
+            0.9438396174495832,
+            0.9438396174495809,
+            0.9438396174495822
+          ]
+        },
+        {
+          "object": "window-slat-7",
+          "side": "solid",
+          "area": 1.9524038050061137,
+          "receivedOverEmitted": [
+            0.9405752800271312,
+            0.94057528002713,
+            0.940575280027132
+          ]
+        },
+        {
+          "object": "window-slat-8",
+          "side": "solid",
+          "area": 1.9524038050063168,
+          "receivedOverEmitted": [
+            0.8982263186418001,
+            0.8982263186418021,
+            0.8982263186418004
+          ]
+        }
+      ],
+      "indirectEmitted": [
+        56.46447520810069,
+        47.983257598859765,
+        30.501174772240983
+      ],
+      "receivedFromIndirect": [
+        30.306272337029462,
+        23.77412471705198,
+        14.375651853547154
+      ],
+      "receivedFromLampLitSurfaces": [
+        56.51519095381517,
+        47.538168589893274,
+        34.2037150891193
+      ],
+      "totalIndirectReceived": [
+        86.82019472936322,
+        71.31215652751438,
+        48.579366005957944
+      ]
+    }
+  },
+  "energyAuditDescription": "Emit unit exitance on one side at a time and integrate the common receiver measure over the complete room. A ratio above unity exceeds all power the isolated surface sends. Whole-room colored totals are reported separately.",
+  "worstContactResidualSamples": {
+    "slat": {
+      "id": "floor",
+      "side": 1,
+      "point": [
+        -1.275,
+        0,
+        -1.6187500000000001
+      ],
+      "cell": [
+        0.25,
+        0.375,
+        0.25,
+        0.375
+      ],
+      "channel": 0,
+      "true": 0.005788724966814838,
+      "represented": 0.2706898764254581
+    },
+    "blind": {
+      "id": "window-slat-8",
+      "side": 4,
+      "point": [
+        -3.3993835892761424,
+        2.9835174250695515,
+        0.75
+      ],
+      "cell": [
+        0.5,
+        0.625,
+        0.5,
+        1
+      ],
+      "channel": 0,
+      "true": 0.03263228546108602,
+      "represented": 1.7078737467637417
+    }
+  },
+  "residualWitnessConvention": "True denotes direct numerical evaluation of the settled source integral at the observation, not an independent path-traced ground truth. Compare with the reconstructed field, then multiply by receiver reflectance. Witnesses obtained by contracting the same weak operator in a different summation order."
 }
