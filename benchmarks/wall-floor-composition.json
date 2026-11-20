@@ -1,0 +1,2282 @@
+{
+  "playableBaselineCommit": "baf6ef3fe9c457648cd099e38c31f25a84dbd8c3",
+  "playableKernelSHA256": "b9f62e91e96458428cba8b1ab31c8f5b7cd9cd56edb475fb322cce7891e5ecdb",
+  "device": "M1 Pro, Chrome 136, ANGLE Metal",
+  "framebuffer": [
+    3840,
+    2160
+  ],
+  "method": "120 fresh moving poses per population. New scene geometry, visibility, coefficients and equilibrium on every pose. Reuse allocated storage and compiled mathematics. GPU readback and a pose-marked compositor swap of the scaled framebuffer. Camera overlaps lighting. Physical monitor scanout, JS object overhead and driver allocations are unmeasured.",
+  "replays": {
+    "oneSlat": {
+      "priorSwapMs": {
+        "median": 586.57,
+        "p95": 623.86
+      },
+      "sheetOnlySwapMs": {
+        "median": 589.36,
+        "p95": 626.65
+      },
+      "playable": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 1,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 572.74,
+          "p95": 639.82
+        },
+        "throughBothMs": {
+          "median": 572.74,
+          "p95": 639.82
+        },
+        "finishedMs": {
+          "median": 570.1,
+          "p95": 636.6
+        },
+        "cameraMs": {
+          "median": 6.8,
+          "p95": 8.7
+        },
+        "peakCountedMiB": 119.54117393493652,
+        "meanWorkCounts": [
+          6910444.225,
+          3940061.6,
+          2213315.566666667,
+          324710.5,
+          1245790.2666666666,
+          120384.19166666667,
+          5.225,
+          143723.79166666666,
+          448816.3,
+          200213.075,
+          4662191.791666667,
+          413768.4583333333,
+          707259.0166666667,
+          636915.0833333334,
+          158866.575,
+          527.1,
+          46819.2,
+          0.008333333333333333,
+          1395562.05,
+          676829.1666666666
+        ],
+        "meanGpuApertures": 143723.79166666666,
+        "workerMs": {
+          "median": 331.95,
+          "p95": 348.0
+        },
+        "assemblyMs": {
+          "median": 7.5,
+          "p95": 11.4
+        },
+        "solveMs": {
+          "median": 124.6,
+          "p95": 165.3
+        },
+        "operatorConstructionMs": {
+          "median": 521.8,
+          "p95": 559.9
+        },
+        "modalBuildMs": {
+          "median": 85.1,
+          "p95": 92.5
+        },
+        "modalEquilibriumMs": {
+          "median": 37.4,
+          "p95": 57.8
+        },
+        "meanModalWork": {
+          "fullLinks": 658510.4583333334,
+          "activeLinks": 644947.2916666666,
+          "activeModes": 2592.975,
+          "allModes": 2886,
+          "applications": 38.208333333333336,
+          "checks": 5.058333333333334,
+          "linkReads": 27794884.375,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1824573.4666666666
+        },
+        "preparationMs": {
+          "median": 558.45,
+          "p95": 622.2
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 1.1
+        },
+        "markAndFinishMs": {
+          "median": 11.55,
+          "p95": 13.3
+        },
+        "syncToSwapMs": {
+          "median": 2.74,
+          "p95": 3.41
+        },
+        "beforeSync": 0
+      },
+      "previousMinusCurrentSwapMs": {
+        "median": 13.83,
+        "p95": -15.96
+      },
+      "measuredWork": [
+        {
+          "tick": 0,
+          "sheetFunctionCalls": 260327,
+          "sheetTestsReplaced": 644376,
+          "lampEventFunctionCalls": 318190,
+          "lampBlockerEventConstructionsReplaced": 572786,
+          "additionalEarlyDarkPairs": 382580,
+          "workerMsBeforeAfter": [
+            387.2999978065491,
+            350.5999984741211
+          ],
+          "regionPreparationMsBeforeAfter": [
+            105.59999990463257,
+            115.19999980926514
+          ]
+        },
+        {
+          "tick": 30,
+          "sheetFunctionCalls": 249801,
+          "sheetTestsReplaced": 603758,
+          "lampEventFunctionCalls": 309228,
+          "lampBlockerEventConstructionsReplaced": 544998,
+          "additionalEarlyDarkPairs": 379749,
+          "workerMsBeforeAfter": [
+            363.09999990463257,
+            343.90000200271606
+          ],
+          "regionPreparationMsBeforeAfter": [
+            71.89999961853027,
+            82.19999980926514
+          ]
+        },
+        {
+          "tick": 60,
+          "sheetFunctionCalls": 247302,
+          "sheetTestsReplaced": 596213,
+          "lampEventFunctionCalls": 306834,
+          "lampBlockerEventConstructionsReplaced": 538668,
+          "additionalEarlyDarkPairs": 376789,
+          "workerMsBeforeAfter": [
+            344.7000012397766,
+            326.7000012397766
+          ],
+          "regionPreparationMsBeforeAfter": [
+            70.90000009536743,
+            81
+          ]
+        },
+        {
+          "tick": 90,
+          "sheetFunctionCalls": 245595,
+          "sheetTestsReplaced": 604220,
+          "lampEventFunctionCalls": 313937,
+          "lampBlockerEventConstructionsReplaced": 553428,
+          "additionalEarlyDarkPairs": 376725,
+          "workerMsBeforeAfter": [
+            349.50000047683716,
+            334.0000023841858
+          ],
+          "regionPreparationMsBeforeAfter": [
+            71.80000019073486,
+            84.09999990463257
+          ]
+        },
+        {
+          "tick": 119,
+          "sheetFunctionCalls": 245394,
+          "sheetTestsReplaced": 601261,
+          "lampEventFunctionCalls": 322783,
+          "lampBlockerEventConstructionsReplaced": 565900,
+          "additionalEarlyDarkPairs": 381234,
+          "workerMsBeforeAfter": [
+            363.40000009536743,
+            335.0000009536743
+          ],
+          "regionPreparationMsBeforeAfter": [
+            70.59999990463257,
+            81.09999990463257
+          ]
+        }
+      ]
+    },
+    "twoSlats": {
+      "priorSwapMs": {
+        "median": 633.81,
+        "p95": 667.72
+      },
+      "sheetOnlySwapMs": {
+        "median": 629.99,
+        "p95": 675.01
+      },
+      "playable": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 2,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 618.67,
+          "p95": 654.49
+        },
+        "throughBothMs": {
+          "median": 618.67,
+          "p95": 654.49
+        },
+        "finishedMs": {
+          "median": 616.05,
+          "p95": 651.3
+        },
+        "cameraMs": {
+          "median": 9.45,
+          "p95": 13.2
+        },
+        "peakCountedMiB": 121.04484939575195,
+        "meanWorkCounts": [
+          7291848.716666667,
+          4138520.6666666665,
+          2307984.033333333,
+          429749.425,
+          1853147.0583333333,
+          123709.55,
+          5.383333333333334,
+          144604.76666666666,
+          632360.1333333333,
+          196674.5,
+          4719325.691666666,
+          417112.39166666666,
+          716741.2833333333,
+          647211.725,
+          214184.40833333333,
+          528.1333333333333,
+          45321.175,
+          0.008333333333333333,
+          1548111.7,
+          793615.6416666667
+        ],
+        "meanGpuApertures": 144604.76666666666,
+        "workerMs": {
+          "median": 367.8,
+          "p95": 382.4
+        },
+        "assemblyMs": {
+          "median": 7.3,
+          "p95": 8.7
+        },
+        "solveMs": {
+          "median": 133.8,
+          "p95": 149.9
+        },
+        "operatorConstructionMs": {
+          "median": 559.7,
+          "p95": 585
+        },
+        "modalBuildMs": {
+          "median": 85.8,
+          "p95": 92
+        },
+        "modalEquilibriumMs": {
+          "median": 45.55,
+          "p95": 52.7
+        },
+        "meanModalWork": {
+          "fullLinks": 686608.4083333333,
+          "activeLinks": 672816.4333333333,
+          "activeModes": 2614.991666666667,
+          "allModes": 2910,
+          "applications": 36.325,
+          "checks": 4.983333333333333,
+          "linkReads": 27699010.066666666,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1865592.65
+        },
+        "preparationMs": {
+          "median": 603.6,
+          "p95": 642.1
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 1.1
+        },
+        "markAndFinishMs": {
+          "median": 11.8,
+          "p95": 13.3
+        },
+        "syncToSwapMs": {
+          "median": 2.46,
+          "p95": 3.39
+        },
+        "beforeSync": 0
+      },
+      "previousMinusCurrentSwapMs": {
+        "median": 15.14,
+        "p95": 13.23
+      },
+      "measuredWork": [
+        {
+          "tick": 0,
+          "sheetFunctionCalls": 291795,
+          "sheetTestsReplaced": 731562,
+          "lampEventFunctionCalls": 360181,
+          "lampBlockerEventConstructionsReplaced": 675494,
+          "additionalEarlyDarkPairs": 387392,
+          "workerMsBeforeAfter": [
+            410.2999973297119,
+            377.30000257492065
+          ],
+          "regionPreparationMsBeforeAfter": [
+            72.59999990463257,
+            82.69999980926514
+          ]
+        },
+        {
+          "tick": 30,
+          "sheetFunctionCalls": 278654,
+          "sheetTestsReplaced": 669528,
+          "lampEventFunctionCalls": 358513,
+          "lampBlockerEventConstructionsReplaced": 634622,
+          "additionalEarlyDarkPairs": 384597,
+          "workerMsBeforeAfter": [
+            409.0999984741211,
+            367.99999618530273
+          ],
+          "regionPreparationMsBeforeAfter": [
+            74,
+            83.19999980926514
+          ]
+        },
+        {
+          "tick": 60,
+          "sheetFunctionCalls": 276265,
+          "sheetTestsReplaced": 662560,
+          "lampEventFunctionCalls": 356102,
+          "lampBlockerEventConstructionsReplaced": 628212,
+          "additionalEarlyDarkPairs": 381669,
+          "workerMsBeforeAfter": [
+            385.1999988555908,
+            361.20000076293945
+          ],
+          "regionPreparationMsBeforeAfter": [
+            74.59999990463257,
+            83.09999990463257
+          ]
+        },
+        {
+          "tick": 90,
+          "sheetFunctionCalls": 284111,
+          "sheetTestsReplaced": 710792,
+          "lampEventFunctionCalls": 355299,
+          "lampBlockerEventConstructionsReplaced": 640875,
+          "additionalEarlyDarkPairs": 381573,
+          "workerMsBeforeAfter": [
+            390.2000012397766,
+            361.300000667572
+          ],
+          "regionPreparationMsBeforeAfter": [
+            73.39999961853027,
+            84.2000002861023
+          ]
+        },
+        {
+          "tick": 119,
+          "sheetFunctionCalls": 268102,
+          "sheetTestsReplaced": 651421,
+          "lampEventFunctionCalls": 366155,
+          "lampBlockerEventConstructionsReplaced": 671980,
+          "additionalEarlyDarkPairs": 386026,
+          "workerMsBeforeAfter": [
+            392,
+            367.29999685287476
+          ],
+          "regionPreparationMsBeforeAfter": [
+            71.30000019073486,
+            83.40000009536743
+          ]
+        }
+      ]
+    },
+    "crowded": {
+      "priorSwapMs": {
+        "median": 2006.41,
+        "p95": 2186.29
+      },
+      "sheetOnlySwapMs": {
+        "median": 2024.33,
+        "p95": 2155.16
+      },
+      "playable": {
+        "mode": "function",
+        "extra": 4,
+        "slats": 0,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 1936.48,
+          "p95": 2117.29
+        },
+        "throughBothMs": {
+          "median": 1936.48,
+          "p95": 2117.29
+        },
+        "finishedMs": {
+          "median": 1932.2,
+          "p95": 2108.5
+        },
+        "cameraMs": {
+          "median": 79.9,
+          "p95": 147
+        },
+        "peakCountedMiB": 148.8734474182129,
+        "meanWorkCounts": [
+          15883504.008333333,
+          8579956.433333334,
+          4710458.216666667,
+          2649115.775,
+          28776211.858333334,
+          164086.70833333334,
+          888.0166666666667,
+          157506.45,
+          9381447.533333333,
+          208151.75833333333,
+          5969610.833333333,
+          494036,
+          891741.9083333333,
+          788611.175,
+          1461898.325,
+          506.64166666666665,
+          30821.925,
+          11.175,
+          3486122.1666666665,
+          3562667.216666667
+        ],
+        "meanGpuApertures": 157506.45,
+        "workerMs": {
+          "median": 1582.2,
+          "p95": 1732.7
+        },
+        "assemblyMs": {
+          "median": 9.3,
+          "p95": 12.7
+        },
+        "solveMs": {
+          "median": 160.3,
+          "p95": 180.5
+        },
+        "operatorConstructionMs": {
+          "median": 1866.4,
+          "p95": 2033.1
+        },
+        "modalBuildMs": {
+          "median": 106.4,
+          "p95": 110.5
+        },
+        "modalEquilibriumMs": {
+          "median": 50.95,
+          "p95": 58.6
+        },
+        "meanModalWork": {
+          "fullLinks": 951189.0583333333,
+          "activeLinks": 925611.9416666667,
+          "activeModes": 3015.25,
+          "allModes": 3390,
+          "applications": 34.49166666666667,
+          "checks": 5.083333333333333,
+          "linkReads": 36636020.11666667,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 2637205.8916666666
+        },
+        "preparationMs": {
+          "median": 1916.8,
+          "p95": 2095.4
+        },
+        "applyAndDrawMs": {
+          "median": 1.0,
+          "p95": 1.9
+        },
+        "markAndFinishMs": {
+          "median": 13.65,
+          "p95": 17.1
+        },
+        "syncToSwapMs": {
+          "median": 3.57,
+          "p95": 5.93
+        },
+        "beforeSync": 0
+      },
+      "previousMinusCurrentSwapMs": {
+        "median": 69.93,
+        "p95": 69.0
+      },
+      "measuredWork": [
+        {
+          "tick": 0,
+          "sheetFunctionCalls": 1033009,
+          "sheetTestsReplaced": 2812530,
+          "lampEventFunctionCalls": 846441,
+          "lampBlockerEventConstructionsReplaced": 2635928,
+          "additionalEarlyDarkPairs": 580439,
+          "workerMsBeforeAfter": [
+            1724.2999997138977,
+            1567.7999963760376
+          ],
+          "regionPreparationMsBeforeAfter": [
+            118,
+            137.69999980926514
+          ]
+        },
+        {
+          "tick": 30,
+          "sheetFunctionCalls": 970624,
+          "sheetTestsReplaced": 2603809,
+          "lampEventFunctionCalls": 843448,
+          "lampBlockerEventConstructionsReplaced": 2539044,
+          "additionalEarlyDarkPairs": 575490,
+          "workerMsBeforeAfter": [
+            1678.4000024795532,
+            1554.7000012397766
+          ],
+          "regionPreparationMsBeforeAfter": [
+            119,
+            140.19999980926514
+          ]
+        },
+        {
+          "tick": 60,
+          "sheetFunctionCalls": 979579,
+          "sheetTestsReplaced": 2583028,
+          "lampEventFunctionCalls": 850044,
+          "lampBlockerEventConstructionsReplaced": 2495435,
+          "additionalEarlyDarkPairs": 573575,
+          "workerMsBeforeAfter": [
+            1683.0999970436096,
+            1543.8999972343445
+          ],
+          "regionPreparationMsBeforeAfter": [
+            120.40000009536743,
+            142.59999990463257
+          ]
+        },
+        {
+          "tick": 90,
+          "sheetFunctionCalls": 1012181,
+          "sheetTestsReplaced": 2783385,
+          "lampEventFunctionCalls": 834436,
+          "lampBlockerEventConstructionsReplaced": 2481148,
+          "additionalEarlyDarkPairs": 579361,
+          "workerMsBeforeAfter": [
+            1651.5999989509583,
+            1523.000002861023
+          ],
+          "regionPreparationMsBeforeAfter": [
+            119.90000009536743,
+            141
+          ]
+        },
+        {
+          "tick": 119,
+          "sheetFunctionCalls": 998511,
+          "sheetTestsReplaced": 2459564,
+          "lampEventFunctionCalls": 848417,
+          "lampBlockerEventConstructionsReplaced": 2773991,
+          "additionalEarlyDarkPairs": 582077,
+          "workerMsBeforeAfter": [
+            1697.1999969482422,
+            1560.3999996185303
+          ],
+          "regionPreparationMsBeforeAfter": [
+            116,
+            137.90000009536743
+          ]
+        }
+      ]
+    }
+  },
+  "kernelOutputChecks": {
+    "posesAgainstPreviousPlayable": [
+      {
+        "pop": 1,
+        "tick": 0,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 148,
+          "large": 0,
+          "mean": 5.947788065843621e-06
+        },
+        "total": {
+          "max": 1,
+          "changed": 140,
+          "large": 0,
+          "mean": 5.626286008230453e-06
+        },
+        "repeat": null,
+        "gl": 0
+      },
+      {
+        "pop": 1,
+        "tick": 59,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 148,
+          "large": 0,
+          "mean": 5.947788065843621e-06
+        },
+        "total": {
+          "max": 1,
+          "changed": 135,
+          "large": 0,
+          "mean": 5.4253472222222224e-06
+        },
+        "gl": 0
+      },
+      {
+        "pop": 1,
+        "tick": 119,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 138,
+          "large": 0,
+          "mean": 5.54591049382716e-06
+        },
+        "total": {
+          "max": 1,
+          "changed": 132,
+          "large": 0,
+          "mean": 5.304783950617284e-06
+        },
+        "gl": 0
+      },
+      {
+        "pop": 1,
+        "tick": 0,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 148,
+          "large": 0,
+          "mean": 5.947788065843621e-06
+        },
+        "total": {
+          "max": 1,
+          "changed": 140,
+          "large": 0,
+          "mean": 5.626286008230453e-06
+        },
+        "repeat": true,
+        "gl": 0
+      },
+      {
+        "pop": 2,
+        "tick": 0,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 137,
+          "large": 0,
+          "mean": 5.505722736625514e-06
+        },
+        "total": {
+          "max": 1,
+          "changed": 133,
+          "large": 0,
+          "mean": 5.34497170781893e-06
+        },
+        "repeat": null,
+        "gl": 0
+      },
+      {
+        "pop": 2,
+        "tick": 59,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 131,
+          "large": 0,
+          "mean": 5.264596193415638e-06
+        },
+        "total": {
+          "max": 1,
+          "changed": 109,
+          "large": 0,
+          "mean": 4.380465534979424e-06
+        },
+        "gl": 0
+      },
+      {
+        "pop": 2,
+        "tick": 119,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 151,
+          "large": 0,
+          "mean": 6.06835133744856e-06
+        },
+        "total": {
+          "max": 1,
+          "changed": 137,
+          "large": 0,
+          "mean": 5.505722736625514e-06
+        },
+        "gl": 0
+      },
+      {
+        "pop": 2,
+        "tick": 0,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 137,
+          "large": 0,
+          "mean": 5.505722736625514e-06
+        },
+        "total": {
+          "max": 1,
+          "changed": 133,
+          "large": 0,
+          "mean": 5.34497170781893e-06
+        },
+        "repeat": true,
+        "gl": 0
+      },
+      {
+        "pop": 0,
+        "tick": 0,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 313,
+          "large": 0,
+          "mean": 1.2578768004115226e-05
+        },
+        "total": {
+          "max": 1,
+          "changed": 304,
+          "large": 0,
+          "mean": 1.2217078189300412e-05
+        },
+        "repeat": null,
+        "gl": 0
+      },
+      {
+        "pop": 0,
+        "tick": 59,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 249,
+          "large": 0,
+          "mean": 1.0006751543209876e-05
+        },
+        "total": {
+          "max": 1,
+          "changed": 238,
+          "large": 0,
+          "mean": 9.56468621399177e-06
+        },
+        "gl": 0
+      },
+      {
+        "pop": 0,
+        "tick": 119,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 325,
+          "large": 0,
+          "mean": 1.306102109053498e-05
+        },
+        "total": {
+          "max": 1,
+          "changed": 318,
+          "large": 0,
+          "mean": 1.2779706790123457e-05
+        },
+        "gl": 0
+      },
+      {
+        "pop": 0,
+        "tick": 0,
+        "direct": {
+          "max": 0,
+          "changed": 0,
+          "large": 0,
+          "mean": 0
+        },
+        "indirect": {
+          "max": 1,
+          "changed": 313,
+          "large": 0,
+          "mean": 1.2578768004115226e-05
+        },
+        "total": {
+          "max": 1,
+          "changed": 304,
+          "large": 0,
+          "mean": 1.2217078189300412e-05
+        },
+        "repeat": true,
+        "gl": 0
+      }
+    ],
+    "measure": "Full 3840 by 2160 direct, indirect and total RGB channels. Repeat includes pixels, work counts, iterations, modal counts and equilibrium bound. Only ticks 0, 59, 119 and restored 0 were compared at full resolution per family."
+  },
+  "movingFilletArithmetic": {
+    "queries": 294,
+    "floatDisagreements": 66,
+    "exactDisagreements": 0,
+    "axialCancellations": 294,
+    "planeDisagreements": 0,
+    "maxStep": 3.612101291305958e-05,
+    "method": "node scripts/probe-shadow.mjs. Two physical floor edges at 21 increments of 0.0001 radians, seven binary64 positions per root compared with rational segment-hit and authored conic decisions. Maximum step in metres."
+  },
+  "wholeShadowAudit": [
+    {
+      "slatPopulation": 1,
+      "poseTime": 0.5,
+      "additionalDarkChartDomainPairs": 29443,
+      "bySourcePlaneCylinderSphere": [
+        28591,
+        483,
+        369
+      ],
+      "northWallFloorEitherDirection": 2398,
+      "probabilities": "Uniform reservoir sample of new planar decisions, seed 31. For each, find a single sheet strictly containing the exact plane crossings for all sixteen source/receiver corner pairs. Rationalize the stored binary geometry, before arithmetic.",
+      "verifiedPlanarPairs": 48,
+      "failedPlanarPairs": 0,
+      "exampleWitness": {
+        "domain": 17,
+        "tile": 1532,
+        "blocker": 25
+      }
+    },
+    {
+      "slatPopulation": 2,
+      "poseTime": 0.5,
+      "additionalDarkChartDomainPairs": 29893,
+      "bySourcePlaneCylinderSphere": [
+        28776,
+        632,
+        485
+      ],
+      "northWallFloorEitherDirection": 2398,
+      "probabilities": "Uniform reservoir sample of new planar decisions, seed 31. For each, find a single sheet strictly containing the exact plane crossings for all sixteen source/receiver corner pairs. Rationalize the stored binary geometry, before arithmetic.",
+      "verifiedPlanarPairs": 48,
+      "failedPlanarPairs": 0,
+      "exampleWitness": {
+        "domain": 17,
+        "tile": 1532,
+        "blocker": 25
+      }
+    },
+    {
+      "slatPopulation": 0,
+      "poseTime": 0.5,
+      "additionalDarkChartDomainPairs": 52908,
+      "bySourcePlaneCylinderSphere": [
+        41277,
+        5868,
+        5763
+      ],
+      "northWallFloorEitherDirection": 2398,
+      "probabilities": "Uniform reservoir sample of new planar decisions, seed 31. For each, find a single sheet strictly containing the exact plane crossings for all sixteen source/receiver corner pairs. Rationalize the stored binary geometry, before arithmetic.",
+      "verifiedPlanarPairs": 48,
+      "failedPlanarPairs": 0,
+      "exampleWitness": {
+        "domain": 354,
+        "tile": 861,
+        "blocker": 24
+      }
+    }
+  ],
+  "regionPathProbe": {
+    "transport": "Direct lamp or directly lit filleted bodies to north wall, then to finite floor region; reported RGB includes receiving reflectance. This probe runs separately from the timed playable renderer. Numeric refinement is an estimator.",
+    "observations": [
+      {
+        "case": "one",
+        "roomOptions": {
+          "slats": 1,
+          "angle": 0.3,
+          "radius": 0.044
+        },
+        "reference": {
+          "path": {
+            "via": [
+              "north-wall"
+            ],
+            "region": [
+              0.5,
+              0.75,
+              0.4,
+              0.6
+            ]
+          },
+          "paths": 2097152,
+          "arrivals": 104264,
+          "fromLamp": {
+            "mean": [
+              0.0016025605731516408,
+              0.0011354727963427999,
+              0.0005878661224439143
+            ],
+            "standardError": [
+              1.2711566318354154e-05,
+              9.006609793858239e-06,
+              4.662974571415769e-06
+            ]
+          },
+          "fromRoundedSurfaces": {
+            "mean": [
+              2.0832553552819254e-05,
+              8.16545287931718e-06,
+              1.951146479093306e-06
+            ],
+            "standardError": [
+              1.6528461829042894e-07,
+              6.478436543578669e-08,
+              1.5480315469152297e-08
+            ]
+          }
+        },
+        "playableModalPath": {
+          "directWallRGB": [
+            0.001642678147386631,
+            0.0011638975654044306,
+            0.0006025824228462179
+          ],
+          "reflectedWallRGB": [
+            1.9227233414252774e-05,
+            7.536237362628491e-06,
+            1.800794544164161e-06
+          ]
+        },
+        "wholeRegion32Panels": {
+          "panels": 32,
+          "hiddenArea": 3.3862003776880085,
+          "blockerTests": 65048,
+          "wholeBundleBlockers": 17,
+          "wallRows": 144,
+          "wallPoints": 10406,
+          "lampIntervalEnds": 680,
+          "edges": 85312,
+          "curvedFallback": 0,
+          "rectangularJobs": 0,
+          "emittingQueries": 10406,
+          "minAperture": 5.666824593464348e-07,
+          "maxAperture": 0.01409772024151077,
+          "directWallRGB": [
+            0.0015988631648083372,
+            0.0011328530472605413,
+            0.0005865098048467655
+          ],
+          "reflectedWallRGB": [
+            2.0735062627805767e-05,
+            8.127240686446138e-06,
+            1.942015621726197e-06
+          ],
+          "ms": {
+            "lamp": 2.6999998092651367,
+            "visibility": 123.7000002861023,
+            "apertures": 9.400000095367432,
+            "incident": 346.7999997138977,
+            "total": 482.59999990463257
+          }
+        },
+        "lowerPanelRefinements": [
+          {
+            "panels": 4,
+            "wallPoints": 3242,
+            "directWallRGB": [
+              0.0016040741596482003,
+              0.0011365452277507368,
+              0.0005884213502709495
+            ],
+            "reflectedWallRGB": [
+              2.093302776271404e-05,
+              8.204834389817291e-06,
+              1.960556746556633e-06
+            ],
+            "ms": {
+              "lamp": 4,
+              "visibility": 61,
+              "apertures": 6.899999618530273,
+              "incident": 120,
+              "total": 191.89999961853027
+            }
+          },
+          {
+            "panels": 8,
+            "wallPoints": 3770,
+            "directWallRGB": [
+              0.0015984611288824575,
+              0.0011325681900984238,
+              0.0005863623263022477
+            ],
+            "reflectedWallRGB": [
+              2.0870650885616114e-05,
+              8.180385373069994e-06,
+              1.9547146195308778e-06
+            ],
+            "ms": {
+              "lamp": 2.3999996185302734,
+              "visibility": 56.10000038146973,
+              "apertures": 6.699999809265137,
+              "incident": 130.30000019073486,
+              "total": 195.5
+            }
+          },
+          {
+            "panels": 16,
+            "wallPoints": 5536,
+            "directWallRGB": [
+              0.001598824021210563,
+              0.0011328253125894353,
+              0.0005864954458294357
+            ],
+            "reflectedWallRGB": [
+              2.0805999696974113e-05,
+              8.155044925337067e-06,
+              1.9486594838141593e-06
+            ],
+            "ms": {
+              "lamp": 2.1999998092651367,
+              "visibility": 76.19999980926514,
+              "apertures": 5.700000286102295,
+              "incident": 190.59999990463257,
+              "total": 274.69999980926514
+            }
+          }
+        ],
+        "accuracy": {
+          "fromLamp": {
+            "playablePercentError": [
+              2.5033421455074034,
+              2.5033421455082916,
+              2.503342145508247
+            ],
+            "regionPercentError": [
+              -0.23071878874645346,
+              -0.2307187887456652,
+              -0.2307187887456763
+            ],
+            "regionDeviationInStandardErrors": [
+              -0.2908696104558679,
+              -0.2908696104548749,
+              -0.290869610454891
+            ]
+          },
+          "fromRoundedSurfaces": {
+            "playablePercentError": [
+              -7.7058250900271075,
+              -7.705825090026175,
+              -7.70582509002673
+            ],
+            "regionPercentError": [
+              -0.46797395607939274,
+              -0.4679739560782048,
+              -0.46797395607900416
+            ],
+            "regionDeviationInStandardErrors": [
+              -0.5898366467603245,
+              -0.5898366467588163,
+              -0.5898366467598374
+            ]
+          }
+        },
+        "withoutWholeWallUmbra": {
+          "panels": 16,
+          "wallPoints": 2572,
+          "edges": 17503,
+          "curvedFallback": 0,
+          "ms": {
+            "lamp": 0.39999961853027344,
+            "visibility": 74,
+            "apertures": 4.100000381469727,
+            "incident": 72.69999980926514,
+            "total": 151.19999980926514
+          }
+        }
+      },
+      {
+        "case": "thin",
+        "roomOptions": {
+          "slats": 1,
+          "angle": 0.3,
+          "radius": 0.001
+        },
+        "reference": {
+          "path": {
+            "via": [
+              "north-wall"
+            ],
+            "region": [
+              0.5,
+              0.75,
+              0.4,
+              0.6
+            ]
+          },
+          "paths": 2097152,
+          "arrivals": 104264,
+          "fromLamp": {
+            "mean": [
+              0.0015846598605412127,
+              0.0011227894865541918,
+              0.000581299617135113
+            ],
+            "standardError": [
+              1.2633014215171355e-05,
+              8.950952754895793e-06,
+              4.634159360882369e-06
+            ]
+          },
+          "fromRoundedSurfaces": {
+            "mean": [
+              2.4765682109118477e-05,
+              9.707067824087784e-06,
+              2.3195175438784043e-06
+            ],
+            "standardError": [
+              1.8675974971209052e-07,
+              7.320168082903089e-08,
+              1.749164485108356e-08
+            ]
+          }
+        },
+        "playableModalPath": {
+          "directWallRGB": [
+            0.0016262985839566892,
+            0.0011522920454619951,
+            0.0005965739195782585
+          ],
+          "reflectedWallRGB": [
+            2.3148697715867865e-05,
+            9.073280428020231e-06,
+            2.1680731519251833e-06
+          ]
+        },
+        "wholeRegion32Panels": {
+          "panels": 32,
+          "hiddenArea": 3.3862003776880085,
+          "blockerTests": 65082,
+          "wholeBundleBlockers": 17,
+          "wallRows": 144,
+          "wallPoints": 10408,
+          "lampIntervalEnds": 668,
+          "edges": 85348,
+          "curvedFallback": 0,
+          "rectangularJobs": 0,
+          "emittingQueries": 10408,
+          "minAperture": 5.666824593464348e-07,
+          "maxAperture": 0.01409772024151077,
+          "directWallRGB": [
+            0.0015827990183459538,
+            0.001121471011779267,
+            0.000580617005754223
+          ],
+          "reflectedWallRGB": [
+            2.4772098240152815e-05,
+            9.709582667767213e-06,
+            2.3201184693216315e-06
+          ],
+          "ms": {
+            "lamp": 3.6999998092651367,
+            "visibility": 127.40000009536743,
+            "apertures": 15.5,
+            "incident": 276.2999997138977,
+            "total": 422.8999996185303
+          }
+        },
+        "lowerPanelRefinements": [
+          {
+            "panels": 4,
+            "wallPoints": 3218,
+            "directWallRGB": [
+              0.0015878920721530663,
+              0.001125079626732843,
+              0.0005824852869556613
+            ],
+            "reflectedWallRGB": [
+              2.4932434986414602e-05,
+              9.77242768305082e-06,
+              2.3351353743373653e-06
+            ],
+            "ms": {
+              "lamp": 3.700000286102295,
+              "visibility": 60.799999713897705,
+              "apertures": 7.100000381469727,
+              "incident": 86.59999990463257,
+              "total": 158.2000002861023
+            }
+          },
+          {
+            "panels": 8,
+            "wallPoints": 3746,
+            "directWallRGB": [
+              0.0015824690003798185,
+              0.0011212371819764322,
+              0.0005804959455051822
+            ],
+            "reflectedWallRGB": [
+              2.4913285322455648e-05,
+              9.764921849533335e-06,
+              2.3333418448348678e-06
+            ],
+            "ms": {
+              "lamp": 2.1999998092651367,
+              "visibility": 56.700000286102295,
+              "apertures": 6.099999904632568,
+              "incident": 95.5,
+              "total": 160.5
+            }
+          },
+          {
+            "panels": 16,
+            "wallPoints": 5536,
+            "directWallRGB": [
+              0.001582749478434559,
+              0.001121435910939608,
+              0.0005805988330647747
+            ],
+            "reflectedWallRGB": [
+              2.4848445343659658e-05,
+              9.739507404289627e-06,
+              2.3272690273086145e-06
+            ],
+            "ms": {
+              "lamp": 2.3000001907348633,
+              "visibility": 76.90000009536743,
+              "apertures": 5.5,
+              "incident": 142,
+              "total": 226.7000002861023
+            }
+          }
+        ],
+        "accuracy": {
+          "fromLamp": {
+            "playablePercentError": [
+              2.6276126790550247,
+              2.6276126790557797,
+              2.6276126790558685
+            ],
+            "regionPercentError": [
+              -0.11742849311671133,
+              -0.11742849311594528,
+              -0.11742849311585646
+            ],
+            "regionDeviationInStandardErrors": [
+              -0.14729993678184244,
+              -0.14729993678088316,
+              -0.1472999367807811
+            ]
+          },
+          "fromRoundedSurfaces": {
+            "playablePercentError": [
+              -6.529133282605026,
+              -6.52913328260496,
+              -6.529133282604738
+            ],
+            "regionPercentError": [
+              0.02590734632734737,
+              0.025907346327480596,
+              0.025907346327835867
+            ],
+            "regionDeviationInStandardErrors": [
+              0.03435499910568957,
+              0.03435499910586241,
+              0.034354999106332454
+            ]
+          }
+        },
+        "withoutWholeWallUmbra": {
+          "panels": 32,
+          "wallPoints": 6760,
+          "edges": 47323,
+          "curvedFallback": 0,
+          "ms": {
+            "lamp": 1.200000286102295,
+            "visibility": 179,
+            "apertures": 5.900000095367432,
+            "incident": 153.19999980926514,
+            "total": 339.30000019073486
+          }
+        }
+      },
+      {
+        "case": "two",
+        "roomOptions": {
+          "slats": 1,
+          "angle": 0.3,
+          "radius": 0.044,
+          "secondBlind": true,
+          "secondAngle": -0.4,
+          "secondRadius": 0.033
+        },
+        "reference": {
+          "path": {
+            "via": [
+              "north-wall"
+            ],
+            "region": [
+              0.5,
+              0.75,
+              0.4,
+              0.6
+            ]
+          },
+          "paths": 2097152,
+          "arrivals": 104264,
+          "fromLamp": {
+            "mean": [
+              0.001409306988764659,
+              0.0009985455615515381,
+              0.0005169750514883012
+            ],
+            "standardError": [
+              1.1948103293774431e-05,
+              8.465668309369438e-06,
+              4.382913988740671e-06
+            ]
+          },
+          "fromRoundedSurfaces": {
+            "mean": [
+              3.059005362767564e-05,
+              1.1989967568751123e-05,
+              2.8650196568359676e-06
+            ],
+            "standardError": [
+              3.5536702248135764e-07,
+              1.392883819824445e-07,
+              3.3283155276302836e-08
+            ]
+          }
+        },
+        "playableModalPath": {
+          "directWallRGB": [
+            0.001443889879627965,
+            0.0010230488049559117,
+            0.0005296610680391363
+          ],
+          "reflectedWallRGB": [
+            2.906462938092888e-05,
+            1.1392067758907918e-05,
+            2.722150654213822e-06
+          ]
+        },
+        "wholeRegion32Panels": {
+          "panels": 32,
+          "hiddenArea": 3.3862003776880076,
+          "blockerTests": 80526,
+          "wholeBundleBlockers": 18,
+          "wallRows": 152,
+          "wallPoints": 11034,
+          "lampIntervalEnds": 776,
+          "edges": 90542,
+          "curvedFallback": 0,
+          "rectangularJobs": 0,
+          "emittingQueries": 11034,
+          "minAperture": 5.666824593464348e-07,
+          "maxAperture": 0.01409772024151077,
+          "directWallRGB": [
+            0.0014063018621115364,
+            0.0009964163193741495,
+            0.0005158726830770123
+          ],
+          "reflectedWallRGB": [
+            3.0201280766697415e-05,
+            1.1837585554274294e-05,
+            2.828607759612623e-06
+          ],
+          "ms": {
+            "lamp": 3.8000001907348633,
+            "visibility": 149.59999990463257,
+            "apertures": 9.799999713897705,
+            "incident": 903.2000002861023,
+            "total": 1066.4000000953674
+          }
+        },
+        "lowerPanelRefinements": [
+          {
+            "panels": 4,
+            "wallPoints": 3626,
+            "directWallRGB": [
+              0.001409362156467155,
+              0.0009985846498870939,
+              0.0005169952886162441
+            ],
+            "reflectedWallRGB": [
+              3.0339671034473087e-05,
+              1.1891828506661914e-05,
+              2.84156918957016e-06
+            ],
+            "ms": {
+              "lamp": 3.9000000953674316,
+              "visibility": 73.19999980926514,
+              "apertures": 7.199999809265137,
+              "incident": 303.2000002861023,
+              "total": 387.5
+            }
+          },
+          {
+            "panels": 8,
+            "wallPoints": 4154,
+            "directWallRGB": [
+              0.001406032869296223,
+              0.0009962257281232994,
+              0.000515774008639395
+            ],
+            "reflectedWallRGB": [
+              3.0296368669115932e-05,
+              1.1874855867038538e-05,
+              2.837513553400125e-06
+            ],
+            "ms": {
+              "lamp": 2.6999998092651367,
+              "visibility": 68,
+              "apertures": 6.800000190734863,
+              "incident": 338.19999980926514,
+              "total": 415.69999980926514
+            }
+          },
+          {
+            "panels": 16,
+            "wallPoints": 5986,
+            "directWallRGB": [
+              0.0014062692430933227,
+              0.0009963932076063663,
+              0.0005158607174664285
+            ],
+            "reflectedWallRGB": [
+              3.0241446033190804e-05,
+              1.18533285878926e-05,
+              2.8323695796939686e-06
+            ],
+            "ms": {
+              "lamp": 3.299999713897705,
+              "visibility": 92.5,
+              "apertures": 8.900000095367432,
+              "incident": 490,
+              "total": 594.6999998092651
+            }
+          }
+        ],
+        "accuracy": {
+          "fromLamp": {
+            "playablePercentError": [
+              2.4538933773130545,
+              2.453893377313765,
+              2.4538933773136318
+            ],
+            "regionPercentError": [
+              -0.21323435398250545,
+              -0.21323435398182822,
+              -0.21323435398193924
+            ],
+            "regionDeviationInStandardErrors": [
+              -0.25151495423448733,
+              -0.2515149542336863,
+              -0.2515149542338231
+            ]
+          },
+          "fromRoundedSurfaces": {
+            "playablePercentError": [
+              -4.986667448554815,
+              -4.986667448554938,
+              -4.986667448555149
+            ],
+            "regionPercentError": [
+              -1.2709126492883693,
+              -1.2709126492883582,
+              -1.270912649288991
+            ],
+            "regionDeviationInStandardErrors": [
+              -1.0940037662009572,
+              -1.0940037662009394,
+              -1.0940037662014939
+            ]
+          }
+        },
+        "withoutWholeWallUmbra": {
+          "panels": 32,
+          "wallPoints": 7356,
+          "edges": 50920,
+          "curvedFallback": 0,
+          "ms": {
+            "lamp": 1.3000001907348633,
+            "visibility": 214.59999990463257,
+            "apertures": 7.599999904632568,
+            "incident": 512.4000000953674,
+            "total": 735.9000000953674
+          }
+        }
+      },
+      {
+        "case": "edit",
+        "roomOptions": {
+          "slats": 1,
+          "angle": 0.3,
+          "radius": 0.044,
+          "secondBlind": true,
+          "secondAngle": -0.4,
+          "secondRadius": 0.033,
+          "layout": "alternate",
+          "floor": "blue"
+        },
+        "reference": {
+          "path": {
+            "via": [
+              "north-wall"
+            ],
+            "region": [
+              0.5,
+              0.75,
+              0.4,
+              0.6
+            ]
+          },
+          "paths": 2097152,
+          "arrivals": 79005,
+          "fromLamp": {
+            "mean": [
+              0.00010690715933234132,
+              0.00021736277474856603,
+              0.0008859123074089524
+            ],
+            "standardError": [
+              8.358067167135261e-07,
+              1.699355480333871e-06,
+              6.926116656507068e-06
+            ]
+          },
+          "fromRoundedSurfaces": {
+            "mean": [
+              1.168017756271078e-06,
+              1.313721521323118e-06,
+              2.471250546135161e-06
+            ],
+            "standardError": [
+              1.893181437212146e-08,
+              2.1293453669533212e-08,
+              4.005526145064585e-08
+            ]
+          }
+        },
+        "playableModalPath": {
+          "directWallRGB": [
+            0.00010766567520480188,
+            0.0002189049831072816,
+            0.000892197934592157
+          ],
+          "reflectedWallRGB": [
+            1.0678242979900694e-06,
+            1.2010294824111727e-06,
+            2.259264780365129e-06
+          ]
+        },
+        "wholeRegion32Panels": {
+          "panels": 32,
+          "hiddenArea": 3.3771730818355348,
+          "blockerTests": 121188,
+          "wholeBundleBlockers": 18,
+          "wallRows": 132,
+          "wallPoints": 8790,
+          "lampIntervalEnds": 676,
+          "edges": 140432,
+          "curvedFallback": 0,
+          "rectangularJobs": 0,
+          "emittingQueries": 8790,
+          "minAperture": 3.307429823655363e-05,
+          "maxAperture": 0.011717422668928898,
+          "directWallRGB": [
+            0.00010845437591502819,
+            0.00022050856303487123,
+            0.0008987336958116609
+          ],
+          "reflectedWallRGB": [
+            1.1965301641878777e-06,
+            1.3457906946759533e-06,
+            2.531576087641457e-06
+          ],
+          "ms": {
+            "lamp": 2.8000001907348633,
+            "visibility": 240,
+            "apertures": 13.300000190734863,
+            "incident": 676.3999996185303,
+            "total": 932.5
+          }
+        },
+        "lowerPanelRefinements": [
+          {
+            "panels": 4,
+            "wallPoints": 1962,
+            "directWallRGB": [
+              0.00010853627180251319,
+              0.00022067507309327526,
+              0.0008994123461013351
+            ],
+            "reflectedWallRGB": [
+              1.2043334009188026e-06,
+              1.354567342097925e-06,
+              2.54808589918275e-06
+            ],
+            "ms": {
+              "lamp": 3.3999996185302734,
+              "visibility": 70.60000038146973,
+              "apertures": 7.099999904632568,
+              "incident": 159,
+              "total": 240.09999990463257
+            }
+          },
+          {
+            "panels": 8,
+            "wallPoints": 2662,
+            "directWallRGB": [
+              0.00010844238791906284,
+              0.00022048418913809035,
+              0.0008986343543528363
+            ],
+            "reflectedWallRGB": [
+              1.2016231896502236e-06,
+              1.3515190469399552e-06,
+              2.5423517302956264e-06
+            ],
+            "ms": {
+              "lamp": 1.700000286102295,
+              "visibility": 79.39999961853027,
+              "apertures": 8,
+              "incident": 204.40000009536743,
+              "total": 293.5
+            }
+          },
+          {
+            "panels": 16,
+            "wallPoints": 4266,
+            "directWallRGB": [
+              0.00010846120074945969,
+              0.00022052243923323338,
+              0.00089879025147039
+            ],
+            "reflectedWallRGB": [
+              1.1990899347946605e-06,
+              1.3486697825303322e-06,
+              2.5369919595115763e-06
+            ],
+            "ms": {
+              "lamp": 1.9000000953674316,
+              "visibility": 118.90000009536743,
+              "apertures": 8.400000095367432,
+              "incident": 334.8999996185303,
+              "total": 464.09999990463257
+            }
+          }
+        ],
+        "accuracy": {
+          "fromLamp": {
+            "playablePercentError": [
+              0.7095089582378478,
+              0.7095089582379144,
+              0.7095089582385805
+            ],
+            "regionPercentError": [
+              1.4472525435617056,
+              1.4472525435618389,
+              1.447252543562394
+            ],
+            "regionDeviationInStandardErrors": [
+              1.8511655287608622,
+              1.8511655287610314,
+              1.8511655287617435
+            ]
+          },
+          "fromRoundedSurfaces": {
+            "playablePercentError": [
+              -8.578076638224951,
+              -8.578076638224452,
+              -8.578076638225163
+            ],
+            "regionPercentError": [
+              2.4410937045876935,
+              2.4410937045879155,
+              2.44109370458776
+            ],
+            "regionDeviationInStandardErrors": [
+              1.5060578640991953,
+              1.5060578640993354,
+              1.506057864099233
+            ]
+          }
+        },
+        "withoutWholeWallUmbra": {
+          "panels": 32,
+          "wallPoints": 7422,
+          "edges": 100081,
+          "curvedFallback": 0,
+          "ms": {
+            "lamp": 1,
+            "visibility": 231.59999990463257,
+            "apertures": 13.099999904632568,
+            "incident": 487.7000002861023,
+            "total": 733.4000000953674
+          }
+        }
+      },
+      {
+        "case": "window",
+        "roomOptions": {
+          "slats": 1,
+          "angle": 0.3,
+          "radius": 0.044,
+          "secondBlind": true,
+          "secondAngle": -0.4,
+          "secondRadius": 0.033
+        },
+        "reference": {
+          "path": {
+            "via": [
+              "north-wall"
+            ],
+            "region": [
+              0,
+              0.1,
+              0.25,
+              0.55
+            ]
+          },
+          "paths": 2097152,
+          "arrivals": 147390,
+          "fromLamp": {
+            "mean": [
+              0.006105203684616848,
+              0.004325760171661408,
+              0.0022395674004057993
+            ],
+            "standardError": [
+              2.759294176164763e-05,
+              1.955060873599667e-05,
+              1.012189863646775e-05
+            ]
+          },
+          "fromRoundedSurfaces": {
+            "mean": [
+              6.766807008170924e-05,
+              2.6522933748165656e-05,
+              6.337692417408869e-06
+            ],
+            "standardError": [
+              5.740944637535355e-07,
+              2.2502000439701377e-07,
+              5.376884733691652e-08
+            ]
+          }
+        },
+        "playableModalPath": {
+          "directWallRGB": [
+            0.006085954072147418,
+            0.0043121211169727435,
+            0.0022325060791487114
+          ],
+          "reflectedWallRGB": [
+            6.474432663171406e-05,
+            2.537695376488513e-05,
+            6.063858884531261e-06
+          ]
+        },
+        "wholeRegion32Panels": {
+          "panels": 32,
+          "hiddenArea": 3.3439647049372696,
+          "blockerTests": 125356,
+          "wholeBundleBlockers": 19,
+          "wallRows": 124,
+          "wallPoints": 7802,
+          "lampIntervalEnds": 620,
+          "edges": 32382,
+          "curvedFallback": 2374,
+          "rectangularJobs": 725,
+          "emittingQueries": 7790,
+          "minAperture": 0,
+          "maxAperture": 0.016523948606381872,
+          "directWallRGB": [
+            0.006111803170453543,
+            0.004330436148821351,
+            0.0022419882849663724
+          ],
+          "reflectedWallRGB": [
+            6.792459565271927e-05,
+            2.6623480589776368e-05,
+            6.361718226986406e-06
+          ],
+          "ms": {
+            "lamp": 2.5,
+            "visibility": 141.5,
+            "apertures": 24.699999809265137,
+            "incident": 661.5,
+            "total": 830.1999998092651
+          }
+        },
+        "lowerPanelRefinements": [
+          {
+            "panels": 4,
+            "wallPoints": 1538,
+            "directWallRGB": [
+              0.006112521916997448,
+              0.004330945407043313,
+              0.002242251942235161
+            ],
+            "reflectedWallRGB": [
+              6.556105986830571e-05,
+              2.5697077591349932e-05,
+              6.140352924251073e-06
+            ],
+            "ms": {
+              "lamp": 3.3000001907348633,
+              "visibility": 40.30000019073486,
+              "apertures": 12,
+              "incident": 135.19999980926514,
+              "total": 190.80000019073486
+            }
+          },
+          {
+            "panels": 8,
+            "wallPoints": 2120,
+            "directWallRGB": [
+              0.00611187077509963,
+              0.004330484049186444,
+              0.0022420130843292295
+            ],
+            "reflectedWallRGB": [
+              6.875006671268266e-05,
+              2.6947029262111663e-05,
+              6.439030638456131e-06
+            ],
+            "ms": {
+              "lamp": 1.700000286102295,
+              "visibility": 43.19999980926514,
+              "apertures": 9.900000095367432,
+              "incident": 183.59999990463257,
+              "total": 238.40000009536743
+            }
+          },
+          {
+            "panels": 16,
+            "wallPoints": 3560,
+            "directWallRGB": [
+              0.006111810656123441,
+              0.00433044145269234,
+              0.0022419910309291837
+            ],
+            "reflectedWallRGB": [
+              6.791614252007422e-05,
+              2.6620167330260534e-05,
+              6.3609265189533e-06
+            ],
+            "ms": {
+              "lamp": 1.8000001907348633,
+              "visibility": 71.19999980926514,
+              "apertures": 14.099999904632568,
+              "incident": 304.6000003814697,
+              "total": 391.7000002861023
+            }
+          }
+        ],
+        "accuracy": {
+          "fromLamp": {
+            "playablePercentError": [
+              -0.31529844807525187,
+              -0.3152984480742971,
+              -0.31529844807565155
+            ],
+            "regionPercentError": [
+              0.10809607963324641,
+              0.1080960796342012,
+              0.10809607963280232
+            ],
+            "regionDeviationInStandardErrors": [
+              0.23917297016398126,
+              0.23917297016607977,
+              0.23917297016303501
+            ]
+          },
+          "fromRoundedSurfaces": {
+            "playablePercentError": [
+              -4.320713515938557,
+              -4.320713515938945,
+              -4.320713515938712
+            ],
+            "regionPercentError": [
+              0.3790939666230786,
+              0.379093966623012,
+              0.37909396662325623
+            ],
+            "regionDeviationInStandardErrors": [
+              0.4468351241933594,
+              0.44683512419328225,
+              0.44683512419358007
+            ]
+          }
+        },
+        "withoutWholeWallUmbra": {
+          "panels": 32,
+          "wallPoints": 7356,
+          "edges": 25030,
+          "curvedFallback": 2063,
+          "ms": {
+            "lamp": 1.4000000953674316,
+            "visibility": 189,
+            "apertures": 26.5,
+            "incident": 530.0999999046326,
+            "total": 747
+          }
+        }
+      }
+    ]
+  },
+  "eqReferenceAfterEdits": [
+    {
+      "editIndex": 0,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.13526182233659464,
+        0.092314961443432,
+        0.04082197934243219
+      ],
+      "reference": [
+        0.13626427721034712,
+        0.09251017293802735,
+        0.0405473224343759
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0011580210174344727,
+        0.0009357860916813741,
+        0.0005194991569553928
+      ]
+    },
+    {
+      "editIndex": 0,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.18237145317356668,
+        0.12794652335104342,
+        0.062402822403111874
+      ],
+      "reference": [
+        0.18538983347106397,
+        0.13081553517434108,
+        0.06425280014189219
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0014142366202338928,
+        0.0011656036724803462,
+        0.0006999275705363403
+      ]
+    },
+    {
+      "editIndex": 1,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.13587402984565652,
+        0.0928584243987707,
+        0.041072629296447394
+      ],
+      "reference": [
+        0.13734700106476533,
+        0.09332425053687868,
+        0.04089423258197503
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0011620392680547738,
+        0.0009382333338818397,
+        0.0005208317663452137
+      ]
+    },
+    {
+      "editIndex": 1,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.18333654953897538,
+        0.12888476782883282,
+        0.06291367939337345
+      ],
+      "reference": [
+        0.1869446298143092,
+        0.13203566660034766,
+        0.06482143031427046
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0014161064674029528,
+        0.0011648254408375847,
+        0.0006983806500770322
+      ]
+    },
+    {
+      "editIndex": 2,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.12120916111328925,
+        0.08110950147680834,
+        0.035184229412898886
+      ],
+      "reference": [
+        0.1233994384634713,
+        0.08213051304921129,
+        0.035303875768324416
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0010848125638211333,
+        0.000859903870086542,
+        0.00046937897614731376
+      ]
+    },
+    {
+      "editIndex": 2,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.17124413222037715,
+        0.12001589983003663,
+        0.05904169783822327
+      ],
+      "reference": [
+        0.17343719353695528,
+        0.12233172124129438,
+        0.06054350090325766
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0013961161121126232,
+        0.0011505240304387704,
+        0.000693032781530485
+      ]
+    },
+    {
+      "editIndex": 3,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.003425580869780605,
+        0.007975564049264021,
+        0.04906367912852318
+      ],
+      "reference": [
+        0.0036451869333426995,
+        0.008496198176834655,
+        0.05202002677079449
+      ],
+      "paths": 131072,
+      "standardError": [
+        5.732899290620622e-05,
+        0.0001408811029104701,
+        0.0006965336755433732
+      ]
+    },
+    {
+      "editIndex": 3,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.04736974271151013,
+        0.0364956283304852,
+        0.03209585353575112
+      ],
+      "reference": [
+        0.04562187704887825,
+        0.036374680301681894,
+        0.03466783886192994
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0007009626061376506,
+        0.0005724109583159177,
+        0.0004143795704772845
+      ]
+    }
+  ],
+  "contactsAndDiscreteDisplayBounds": [
+    {
+      "angle": 24,
+      "areas": {
+        "north-wall-covered": [
+          0.023319355860341857,
+          0.010189699136024181,
+          0.0022814025773960052
+        ],
+        "north-wall-exposed": [
+          0.11561611310703013,
+          0.06944920272070709,
+          0.027690387054373437
+        ],
+        "bench-seat-bottom-all": [
+          0.09170229420454626,
+          0.035189980477721566,
+          0.00863328526609274
+        ]
+      },
+      "changed": 21523834,
+      "max": 6,
+      "channels": 24883200,
+      "equilibriumError": 0.002400061129004843
+    },
+    {
+      "angle": -46,
+      "areas": {
+        "north-wall-covered": [
+          0.006546212745147707,
+          0.002592856048579637,
+          0.0005820381793505627
+        ],
+        "north-wall-exposed": [
+          0.03867124461501948,
+          0.02246235052013139,
+          0.009960720980816396
+        ],
+        "bench-seat-bottom-all": [
+          0.011778392523243607,
+          0.002819160099519072,
+          0.00037970483734837924
+        ]
+      },
+      "changed": 23751100,
+      "max": 12,
+      "channels": 24883200,
+      "equilibriumError": 0.00271115205780873
+    }
+  ],
+  "maximumDifferenceFromPriorPhysicalProbes": 2.0944388889887477e-08,
+  "editRoundTrip": {
+    "restoredCodeDifferences": {
+      "total": 0,
+      "indirect": 0,
+      "direct": 0
+    },
+    "lampOffPixelRGBA": [
+      [
+        0,
+        0,
+        0,
+        255
+      ],
+      [
+        0,
+        0,
+        0,
+        255
+      ],
+      [
+        0,
+        0,
+        0,
+        255
+      ],
+      [
+        0,
+        0,
+        0,
+        255
+      ],
+      [
+        0,
+        0,
+        0,
+        255
+      ]
+    ]
+  },
+  "nextReductionEligibility": [
+    {
+      "slats": 1,
+      "tick": 30,
+      "darkAtLampFullyVisiblePlanarPairs": 416592,
+      "generatorEvaluationsOnThesePairs": 1767108,
+      "totalGeneratorEvaluations": 6911404
+    },
+    {
+      "slats": 2,
+      "tick": 30,
+      "darkAtLampFullyVisiblePlanarPairs": 420053,
+      "generatorEvaluationsOnThesePairs": 1782366,
+      "totalGeneratorEvaluations": 7293404
+    },
+    {
+      "slats": 0,
+      "tick": 30,
+      "darkAtLampFullyVisiblePlanarPairs": 467121,
+      "generatorEvaluationsOnThesePairs": 1958970,
+      "totalGeneratorEvaluations": 15931513
+    }
+  ]
+}

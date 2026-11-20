@@ -94,6 +94,15 @@ export function referencePath({
       receiver.axisV,
       2 * point[1] - 1,
     );
+  const region = path.region;
+  if (
+    region &&
+    (region.length !== 4 ||
+      !region.every((x) => Number.isFinite(x) && x >= 0 && x <= 1) ||
+      region[0] >= region[1] ||
+      region[2] >= region[3])
+  )
+    throw RangeError('Expected increasing U and V bounds in the unit square');
   const sum = [
       [0, 0, 0],
       [0, 0, 0],
@@ -111,7 +120,17 @@ export function referencePath({
   }
   let wallHits = 0;
   for (let it = 0; it < paths; it++) {
-    let p = origin,
+    let p = region
+        ? advance(
+            advance(
+              receiver.center,
+              receiver.axisU,
+              2 * (region[0] + random() * (region[1] - region[0])) - 1,
+            ),
+            receiver.axisV,
+            2 * (region[2] + random() * (region[3] - region[2])) - 1,
+          )
+        : origin,
       f = receiver,
       weight = f.color.slice(),
       skip = target,

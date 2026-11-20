@@ -286,24 +286,9 @@ export function compileSurfaces(scene) {
     new Int32Array(domains, i * 104 + 96, 2)[0] = g.object;
   });
   const tileBuffer = new ArrayBuffer(168 * tiles.length);
-  tiles.forEach((c, k) => {
-    new Float64Array(tileBuffer, k * 168, 18).set([
-      ...c.c,
-      ...c.ax,
-      ...c.u,
-      ...c.v,
-      ...c.n,
-      c.width,
-      c.height,
-      c.r,
-    ]);
-    new Int32Array(tileBuffer, k * 168 + 144, 6).set([c.type, c.object, c.slot, 0, 0, 0]);
-  });
+  tiles.forEach((chart, k) => writeChart(tileBuffer, k * 168, chart));
   const points = new ArrayBuffer(56 * receivers.length);
-  receivers.forEach(({ p, n, object, group }, k) => {
-    new Float64Array(points, k * 56, 6).set([...p, ...n]);
-    new Int32Array(points, k * 56 + 48, 2).set([object, group || 0]);
-  });
+  receivers.forEach((receiver, k) => writeReceiver(points, k * 56, receiver));
   return {
     shapes,
     receivers,
@@ -324,4 +309,13 @@ export function compileSurfaces(scene) {
       lampRGB: scene.lampRGB,
     },
   };
+}
+
+export function writeChart(buffer, offset, c) {
+  new Float64Array(buffer, offset, 18).set([...c.c, ...c.ax, ...c.u, ...c.v, ...c.n, c.width, c.height, c.r]);
+  new Int32Array(buffer, offset + 144, 6).set([c.type, c.object, c.slot, 0, 0, 0]);
+}
+export function writeReceiver(buffer, offset, { p, n, object, group = 0 }) {
+  new Float64Array(buffer, offset, 6).set([...p, ...n]);
+  new Int32Array(buffer, offset + 48, 2).set([object, group]);
 }

@@ -1,3 +1,4 @@
+import { compilePlaneShadows } from './plane-shadow.js';
 import { equilibriumSolve } from './krylov.js';
 import { modalEquilibrium } from './modal-equilibrium.js';
 import { ReceiverRegions } from './receiver-regions.js';
@@ -28,6 +29,7 @@ export class FunctionLighting {
         worker: new Worker(new URL('./function-worker.js', import.meta.url), { type: 'module' }),
       });
     const flags = this.regions ? await this.regions.build(packet, integrationTolerance) : Array(20).fill(0);
+    if (packet.lampIds) packet.planeField = compilePlaneShadows(geometry);
     const prepared = performance.now();
     const parts = await Promise.all(
       this.pool.slice(0, count).map(
@@ -51,6 +53,8 @@ export class FunctionLighting {
         (packet.regions?.byteLength || 0) +
         (packet.moments?.byteLength || 0) +
         (packet.lampIds?.byteLength || 0) +
+        (packet.planeField?.byteLength || 0) +
+        (packet.lampEvents?.byteLength || 0) +
         packet.domains.byteLength +
         packet.jacobians.byteLength +
         packet.shapes.byteLength +
@@ -103,6 +107,7 @@ export class FunctionLighting {
     bytes += solveBytes + 2 * direct.byteLength;
     return {
       geometry,
+      lampReuse: parts.reduce((s, p) => s.map((x, i) => x + p.lampReuse[i]), [0, 0, 0, 0]),
       rows: parts,
       modal,
       incident: H,

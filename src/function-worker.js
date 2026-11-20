@@ -28,7 +28,9 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       workspace = space(engine.transportBytes(shapes.length / 19)),
       regions = space(packet.regions?.byteLength || 0),
       moments = space(packet.moments?.byteLength || 0),
-      catalog = space(packet.lampIds?.byteLength || 0);
+      catalog = space(packet.lampIds?.byteLength || 0),
+      planeField = space(packet.planeField?.byteLength || 0),
+      eventField = space(packet.lampEvents?.byteLength || 0);
     if (cursor > engine.memory.buffer.byteLength)
       engine.memory.grow(Math.ceil((cursor - engine.memory.buffer.byteLength) / 65536));
     const mem = engine.memory.buffer;
@@ -37,6 +39,8 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
     new Uint8Array(mem, dest, points.byteLength).set(new Uint8Array(points));
     new Float64Array(mem, light, 3).set(lamp);
     new Uint8Array(mem, counts, 160).fill(0);
+    if (packet.lampEvents) new Float64Array(mem, eventField, packet.lampEvents.length).set(packet.lampEvents);
+    if (packet.planeField) new Float64Array(mem, planeField, packet.planeField.length).set(packet.planeField);
     if (packet.regions) {
       new Uint8Array(mem, regions, packet.regions.length).set(packet.regions);
       new Float64Array(mem, moments, packet.moments.length).set(packet.moments);
@@ -77,6 +81,8 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
         packet.regions ? regions : 0,
         moments,
         packet.regions ? catalog : 0,
+        packet.planeField ? planeField : 0,
+        packet.lampEvents ? eventField : 0,
       );
       kernelMs += performance.now() - begin;
       local.fill(0);
@@ -116,6 +122,7 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       weights: Float64Array.from(weights),
       jobs: Uint32Array.from(angular),
       counts: Array.from(new BigInt64Array(mem, counts, 20), Number),
+      lampReuse: Array.from(new BigUint64Array(mem, engine.lampReuse(workspace), 4), Number),
       bytes: mem.byteLength,
       ms: kernelMs,
     };

@@ -40,7 +40,19 @@ export class ReceiverRegions {
     packet.regions = new Uint8Array(buffer, m, nt * ng).slice();
     packet.moments = new Float64Array(buffer, v, nt * 6).slice();
     packet.lampIds = new Int32Array(buffer, ids, nt * (ns + 1)).slice();
+    const address = offset;
+    let capacity = nt * 12;
+    for (;;) {
+      const end = address + capacity * 8;
+      if (memory.buffer.byteLength < end) memory.grow(Math.ceil((end - memory.buffer.byteLength) / 65536));
+      const used = this.wasm.compileLampEvents(s, ns, t, nt, l, ids, address, capacity);
+      if (used <= capacity) {
+        packet.lampEvents = new Float64Array(memory.buffer, address, used).slice();
+        break;
+      }
+      capacity = used;
+    }
     this.packet = null;
-    return Array.from(new BigInt64Array(buffer, counts, 20), Number);
+    return Array.from(new BigInt64Array(memory.buffer, counts, 20), Number);
   }
 }

@@ -88,3 +88,27 @@ The independent reference can condition on a sequence of diffuse reflections. Th
 node scripts/probe-light.mjs ceiling 0 0 front 17.188733853924695 2097152 \
   '{"slats":1,"radius":0.044}' '{"via":["floor","north-wall"],"point":[0.5,0.5]}'
 ```
+
+## A reflection over a finite receiving region
+
+Let \(R\) be a region on the receiving floor and \(W\) an intermediate wall. Write \(K(w,y)\) for the reciprocal diffuse kernel, including geometric visibility and the Lambertian factor of \(1/\pi\). For incident wall irradiance \(H_W(w)\), the mean reflected contribution on \(R\), in the room's unit-lamp convention, is
+
+$$
+\frac{\rho_R\rho_W}{|R|}\int_W H_W(w) A_R(w)\,dw,
+\qquad A_R(w)=\int_R K(w,y)\,dy .
+$$
+
+The point lamp and the illuminated rounded bodies produce separate functions \(H_W\). The first keeps the indicator of the filleted lamp shadow. The second integrates the directly illuminated planes, cylinder generators and spherical corners as seen from the wall. RGB reflectances multiply channel by channel. A slat or bench occluding the next segment enters \(A_R\) through the current geometry. A different receiving region changes this function.
+
+For fixed \(w\), project sheet blockers onto \(R\), clip to the wall's forward hemisphere and take the union of their shadows. Each visible contour edge has endpoint directions \(a,b\) of unit length. Its signed contribution is the wall-normal component of \((a\times b)\operatorname{atan2}(|a\times b|,a\cdot b)/(2\pi |a\times b|)\), with orientation toward the wall. Contributions on shared internal edges cancel. The GPU evaluates these angular measures. Thus both coordinates of \(y\) disappear from numerical integration for this **region mean**. A curved obstruction that survives the geometric bounds requires the clipped native generator integral. The outer wall integral remains numerical because the incident function and the visible outline both vary with \(w\). Successive refinements estimate convergence. They do not bound missed features between evaluations.
+
+There is a useful zero contribution for the playable equilibrium as well. In a sheet blocker's own coordinates let the receiver have depth \(-d\), \(d>0\), and horizontal coordinate \(u_r\). For a source with depth \(z>0\), a ray crosses inside the edge \(\sigma u\le1\) when \(1-\sigma u_s+z(1-\sigma u_r)/d\ge0\). The slope \((1-\sigma u_r)/d\) attains its minimum at a corner of a rectangular receiver because it is a ratio of affine functions with positive denominator. The four limiting edge planes and the depth plane therefore suffice for *all* receiver positions. Strict enclosure of the source support proves it sends zero across that entire pair. Ambiguous pairs continue to the existing classification. A single support test can also cover every chart of one rounded object. This proof and the lamp-shadow boundary functions are rebuilt from each pose.
+
+In the room browser, import `comparePlanePath` from `/scripts/probe-wall-floor.js` and call it with a renderer and a scene from `buildRoom`. The default checks the north wall and a finite region of the floor. Supply `{panels:[4,8,16,32]}` to inspect the refinements or `{tolerance:{relative:0.005,absolute:1e-9}}` to request an estimated tolerance with a refinement limit. It also isolates these paths in the playable field and integrates that field over the same receiver region. To measure the paths independently:
+
+```sh
+node scripts/probe-light.mjs floor 2 2 back 17.188733853924695 2097152 \
+  '{"slats":1,"radius":0.044}' '{"via":["north-wall"],"region":[0.5,0.75,0.4,0.6]}'
+```
+
+[Finite-region composition](src/plane-composition.js) · [Current-pose shadow functions](src/plane-shadow.js) · [Room measurements](benchmarks/wall-floor-composition.json)

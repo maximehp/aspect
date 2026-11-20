@@ -165,6 +165,8 @@ typedef struct {
   LampSlice *cache;
   Tangents *tangents;
   int receiver;
+  const double *field, *lampGeometry;
+  unsigned long long *reuse;
   double lift[5];
 } Pair;
 // Each catalog entry refers to an immutable cone and carries just the
@@ -355,10 +357,11 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
   *hi = end;
   return end > start;
 }
-static int shadows(Pair *w, int eyeId, Vec p, Vec ax, double lo, double hi, Interval *out) {
+static int shadowIntervals(Pair *w, int eyeId, Vec p, Vec ax, double lo, double hi, Interval *out,
+                           int first) {
   int used = 0;
   Vec eye = eyeId ? w->lamp : w->y.p;
-  for (int j = 0; j < w->count[eyeId]; j++) {
+  for (int j = first; j < w->count[eyeId]; j++) {
     const Cone *c = blockerCone(w, eyeId, j);
     double a = lo, b = hi;
     for (int k = 0; k < c->n; k++) {
@@ -374,6 +377,9 @@ static int shadows(Pair *w, int eyeId, Vec p, Vec ax, double lo, double hi, Inte
   clear:;
   }
   return used;
+}
+static int shadows(Pair *w, int eyeId, Vec p, Vec ax, double lo, double hi, Interval *out) {
+  return shadowIntervals(w, eyeId, p, ax, lo, hi, out, 0);
 }
 static int openings(Interval *blocked, int n, double a, double b, Interval *open) {
   for (int i = 1; i < n; i++) {
@@ -398,6 +404,47 @@ static int openings(Interval *blocked, int n, double a, double b, Interval *open
     open[count++] = (Interval){a, b, id};
   return count;
 }
+// Evaluate the plane-wide sheet shadow at this generator. Rounded blockers
+// continue through their authored quadrics, then share the same interval union.
+static int sheetIntervals(Pair *w, double t, Vec p, Interval *result) {
+  const double *tile = w->field + 4 * w->source;
+  if (!tile[0])
+    return -1;
+  const double *program = w->field + (int)tile[0], *bands = program + 1;
+  const int count = (int)program[0], capacity = w->count[1];
+  const double at = t + tile[2], width = w->c->width;
+  int lo = 0, hi = count - 1;
+  while (lo < hi) {
+    int m = (lo + hi) / 2;
+    if (at > bands[4 * m + 1])
+      lo = m + 1;
+    else
+      hi = m;
+  }
+  const double *band = bands + 4 * lo;
+  if (at <= band[0] + 2e-10 || at >= band[1] - 2e-10)
+    return -1;
+  const double h = (at - band[0]) / (band[1] - band[0]);
+  const double *lines = bands + 4 * count + (int)band[2];
+  int n = 0;
+  for (int j = 0; j < (int)band[3]; j++, lines += 4) {
+    double left = high(-width, lines[0] + h * (lines[2] - lines[0]) - tile[1]);
+    double right = low(width, lines[1] + h * (lines[3] - lines[1]) - tile[1]);
+    if (right > left) {
+      if (n == capacity)
+        return -1;
+      result[n++] = (Interval){left, right, -1};
+    }
+  }
+  int sheets = (int)tile[3];
+  if (n > sheets)
+    return -1;
+  w->reuse[0]++;
+  w->reuse[1] += sheets;
+  if (sheets == capacity)
+    return n;
+  return n + shadowIntervals(w, 1, p, w->c->ax, -width, width, result + n, sheets);
+}
 static int litGenerator(Pair *w, double t, Vec p, Interval *lit) {
   const Chart *c = w->c;
   if (!w->count[1]) {
@@ -420,7 +467,9 @@ static int litGenerator(Pair *w, double t, Vec p, Interval *lit) {
     return entry->count;
   }
   Interval blocked[w->count[1] + 1];
-  int n = shadows(w, 1, p, c->ax, -c->width, c->width, blocked);
+  int n = w->field ? sheetIntervals(w, t, p, blocked) : -1;
+  if (n < 0)
+    n = shadows(w, 1, p, c->ax, -c->width, c->width, blocked);
   n = openings(blocked, n, -c->width, c->width, lit);
   w->stats->sliceMisses++;
   if (n <= 3) {
@@ -812,37 +861,58 @@ static int footprint(const Chart *c, const Cone *k, UV *poly) {
   }
   return n;
 }
+static int projectedEdges(Pair *w, int side, double *cuts, int *nc, int capacity, double a, double b,
+                          Edge *edges) {
+  int ne = 0;
+  for (int j = 0; j < w->count[side]; j++) {
+    UV poly[24];
+    int n = footprint(w->c, blockerCone(w, side, j), poly);
+    for (int i = 0; i < n; i++) {
+      UV p = poly[i], q = poly[(i + 1) % n];
+      if (*nc < capacity)
+        insert(cuts, nc, p.t, a, b);
+      if (absd(q.t - p.t) > 1e-12)
+        edges[ne++] = (Edge){p, q};
+    }
+  }
+  return ne;
+}
+static void addCrossing(Edge u, Edge v, double *cuts, int *nc, int capacity, double a, double b) {
+  double lo = high(low(u.a.t, u.b.t), low(v.a.t, v.b.t)),
+         hi = low(high(u.a.t, u.b.t), high(v.a.t, v.b.t));
+  if (hi <= lo)
+    return;
+  double p = (u.b.x - u.a.x) / (u.b.t - u.a.t), q = (v.b.x - v.a.x) / (v.b.t - v.a.t);
+  if (p == q)
+    return;
+  double t = (v.a.x - q * v.a.t - u.a.x + p * u.a.t) / (p - q);
+  if (t > lo && t < hi && *nc < capacity)
+    insert(cuts, nc, t, a, b);
+}
 static int planarEvents(Pair *w, double *cuts, int capacity, double a, double b) {
-  const Chart *c = w->c;
-  int nc = 0, ne = 0;
-  Edge edges[16 * (w->count[0] + w->count[1]) + 1];
+  const double *field = w->lampGeometry;
+  int nc = 0;
+  Edge edges[16 * (w->count[0] + (field ? 0 : w->count[1])) + 1];
   insert(cuts, &nc, w->warpCenter, a, b);
-  for (int e = 0; e < 2; e++)
-    for (int o = 0; o < w->count[e]; o++) {
-      UV poly[24];
-      int n = footprint(c, blockerCone(w, e, o), poly);
-      for (int i = 0; i < n; i++) {
-        UV p = poly[i], q = poly[(i + 1) % n];
-        if (nc < capacity)
-          insert(cuts, &nc, p.t, a, b);
-        if (absd(q.t - p.t) > 1e-12)
-          edges[ne++] = (Edge){p, q};
-      }
-    }
+  int ne = projectedEdges(w, 0, cuts, &nc, capacity, a, b, edges);
+  int local = ne;
+  if (field) {
+    int n = (int)field[0];
+    for (int j = 0; j < n && nc < capacity; j++)
+      insert(cuts, &nc, field[2 + j], a, b);
+    w->reuse[2]++;
+    w->reuse[3] += w->count[1];
+  } else
+    ne += projectedEdges(w, 1, cuts, &nc, capacity, a, b, edges + ne);
   for (int i = 0; i < ne; i++)
-    for (int j = 0; j < i; j++) {
-      Edge u = edges[i], v = edges[j];
-      double lo = high(low(u.a.t, u.b.t), low(v.a.t, v.b.t)),
-             hi = low(high(u.a.t, u.b.t), high(v.a.t, v.b.t));
-      if (hi <= lo)
-        continue;
-      double p = (u.b.x - u.a.x) / (u.b.t - u.a.t), q = (v.b.x - v.a.x) / (v.b.t - v.a.t);
-      if (p == q)
-        continue;
-      double t = (v.a.x - q * v.a.t - u.a.x + p * u.a.t) / (p - q);
-      if (t > lo && t < hi && nc < capacity)
-        insert(cuts, &nc, t, a, b);
-    }
+    for (int j = 0; j < i; j++)
+      addCrossing(edges[i], edges[j], cuts, &nc, capacity, a, b);
+  if (field) {
+    const Edge *lamp = (const Edge *)(field + 2 + (int)field[0]);
+    for (int i = 0; i < (int)field[1]; i++)
+      for (int j = 0; j < local; j++)
+        addCrossing(lamp[i], edges[j], cuts, &nc, capacity, a, b);
+  }
   return nc;
 }
 typedef struct {
@@ -859,6 +929,14 @@ static int cylinderEvents(Pair *w, double *cuts, int cap) {
   const Chart *c = w->c;
   int nc = 0;
   for (int e = 0; e < 2; e++) {
+    if (e && w->lampGeometry) {
+      const double *field = w->lampGeometry;
+      for (int j = 0; j < (int)field[0] && nc < cap; j++)
+        insert(cuts, &nc, field[2 + j], 0, PI / 2);
+      w->reuse[2]++;
+      w->reuse[3] += w->count[1];
+      continue;
+    }
     Vec eye = e ? w->lamp : w->y.p, rel = minus(eye, c->c);
     angularCuts((Constraint){-c->r, dp(c->u, rel), dp(c->v, rel), 0}, cuts, &nc, cap);
     for (int j = 0; j < w->count[e]; j++) {
@@ -902,17 +980,71 @@ static int cylinderEvents(Pair *w, double *cuts, int cap) {
   return nc;
 }
 
+// Once per pose, retain the lamp-side boundary events and affine edges of
+// each generator family. Receiver crossings with these edges remain local.
+int compileLampEvents(const Shape *shapes, int ns, const Chart *tiles, int nt, const Vec *light,
+                      const int *ids, double *out, int limit) {
+  Cone cones[ns];
+  for (int j = 0; j < ns; j++)
+    cones[j] = shadow(shapes + j, j, *light);
+  int end = nt;
+  for (int k = 0; k < nt; k++) {
+    if (k < limit)
+      out[k] = 0;
+    const int *row = ids + k * (ns + 1);
+    int count = row[0] > 0 ? row[0] : 0;
+    const Chart *c = tiles + k;
+    if (c->type == 2 || (!c->type && !count))
+      continue;
+    Pair w = {.s = shapes,
+              .c = c,
+              .lamp = *light,
+              .y = {.p = *light},
+              .cone = {cones, cones},
+              .blockers = {0, row + 1},
+              .count = {0, count}};
+    int cap = 32 + 32 * count, nc = 0, ne = 0;
+    double cuts[cap];
+    Edge edges[16 * count + 1];
+    if (c->type == 1)
+      nc = cylinderEvents(&w, cuts, cap);
+    else {
+      ne = projectedEdges(&w, 1, cuts, &nc, cap, -c->height, c->height, edges);
+      for (int i = 0; i < ne; i++)
+        for (int j = 0; j < i; j++)
+          addCrossing(edges[i], edges[j], cuts, &nc, cap, -c->height, c->height);
+    }
+    if (nc == cap || (!ne && !nc))
+      continue;
+    int size = 2 + nc + 4 * ne;
+    if (end + size <= limit) {
+      out[k] = end;
+      out[end] = nc;
+      out[end + 1] = ne;
+      for (int j = 0; j < nc; j++)
+        out[end + 2 + j] = cuts[j];
+      for (int j = 0; j < ne; j++)
+        ((Edge *)(out + end + 2 + nc))[j] = edges[j];
+    }
+    end += size;
+  }
+  return end;
+}
+
 #include "plane-transfer.h"
 // The lamp cones and both interval caches belong to a single fresh pose.
 typedef struct {
   LampSlice slices[SLICE_SLOTS];
   Tangents tangents[TANGENT_SLOTS];
+  unsigned long long reuse[4];
   Cone lamps[];
 } TransportWorkspace;
 
 unsigned transportBytes(int ns) { return sizeof(TransportWorkspace) + ns * sizeof(Cone); }
 
 void prepareTransport(TransportWorkspace *workspace, const Shape *s, int ns, const Vec *lamp) {
+  for (int i = 0; i < 4; i++)
+    workspace->reuse[i] = 0;
   for (int j = 0; j < SLICE_SLOTS; j++)
     workspace->slices[j].source = 0;
   for (int j = 0; j < TANGENT_SLOTS; j++)
@@ -921,12 +1053,54 @@ void prepareTransport(TransportWorkspace *workspace, const Shape *s, int ns, con
     workspace->lamps[j] = shadow(s + j, j, *lamp);
 }
 
+const unsigned long long *lampReuse(TransportWorkspace *ws) { return ws->reuse; }
+
+// A lamp and an authored source define the lit subset before a receiving
+// surface is chosen. Offsets along a straight generator are in metres.
+int lampBlockers(TransportWorkspace *ws, const Shape *shapes, int n, const Chart *chart, int *ids) {
+  int hidden = 0;
+  int count = candidates(chart, shapes, -1, ws->lamps, n, ids, &hidden);
+  return hidden ? -1 : count;
+}
+
+int lampEvents(TransportWorkspace *ws, const Chart *chart, const int *ids, int count, double *cuts,
+               int capacity) {
+  if (count <= 0)
+    return 0;
+  Pair w = {.c = chart, .cone = {0, ws->lamps}, .blockers = {0, ids}, .count = {0, count}};
+  return planarEvents(&w, cuts, capacity, -chart->height, chart->height);
+}
+
+int lampIntervals(TransportWorkspace *ws, const Shape *shapes, const Chart *chart, const Vec *lamp,
+                  const int *ids, int count, double transverse, double *ends, Counts *stats) {
+  if (count < 0)
+    return 0;
+  Pair w = {.s = shapes,
+            .c = chart,
+            .lamp = *lamp,
+            .cone = {0, ws->lamps},
+            .count = {0, count},
+            .blockers = {0, ids},
+            .stats = stats,
+            .tangents = ws->tangents,
+            .source = chart->object};
+  Vec normal, p = cp(chart, 0, transverse, &normal);
+  Interval dark[count + 1], open[count + 1];
+  int n = shadows(&w, 1, p, chart->ax, -chart->width, chart->width, dark);
+  int visible = openings(dark, n, -chart->width, chart->width, open);
+  for (int i = 0; i < visible; i++) {
+    ends[2 * i] = open[i].lo;
+    ends[2 * i + 1] = open[i].hi;
+  }
+  return visible;
+}
+
 // Emit only integrated tiles, in authored order. out and tileIds hold at most
 // one receiver's contributions and can immediately be reused for the next.
 int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Chart *tiles, int nt,
                  const Receiver *receivers, int i, const Vec *lamp, double tolerance, float *output,
                  int *tileIds, Counts *stats, const unsigned char *modes, const Moments *moments,
-                 const int *lampIds) {
+                 const int *lampIds, const double *planeField, const double *eventField) {
   Cone eyes[ns];
   int localEye[ns], localLamp[ns];
   Receiver y = receivers[i];
@@ -971,6 +1145,9 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
               .c = c,
               .source = k,
               .receiver = i,
+              .field = planeField,
+              .lampGeometry = eventField && eventField[k] ? eventField + (int)eventField[k] : 0,
+              .reuse = workspace->reuse,
               .tangents = workspace->tangents,
               .cache = workspace->slices,
               .y = y,

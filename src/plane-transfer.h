@@ -172,6 +172,66 @@ static Moments lampPanel(Pair *w, double a, double b, double tol, int depth) {
     M.v[k] = l.v[k] + r.v[k];
   return M;
 }
+// A sheet edge has one limiting plane for a whole receiver parallelogram.
+// The signed slope (1 - sign*u_r)/depth_r is linear-fractional with strictly
+// positive denominator, so its minimum is attained at a receiver corner.
+typedef struct {
+  Vec n[5], center;
+  double margin[5];
+  int valid;
+} Umbra;
+static Umbra sharedShadow(const Domain *g, const Shape *b) {
+  Umbra result = {0};
+  if (b->r)
+    return result;
+  Vec d = minus(b->c, g->c), z = b->ax[2];
+  if (dp(d, z) < 0)
+    z = scale3(z, -1);
+  if (dp(d, z) - radiusOn(g->a, g->b, z) <= 1e-8)
+    return result;
+  result.center = b->c;
+  result.n[0] = z;
+  result.valid = 1;
+  for (int axis = 0; axis < 2; axis++)
+    for (int k = 0; k < 2; k++) {
+      Vec u = scale3(b->ax[axis], k ? 1 : -1);
+      double slope = FAR;
+      for (int i = 0; i < 4; i++) {
+        Vec delta = plus(d, plus(scale3(g->a, i & 1 ? 1 : -1), scale3(g->b, i & 2 ? 1 : -1)));
+        slope = low(slope, (1 + dp(u, delta)) / dp(z, delta));
+      }
+      result.n[1 + 2 * axis + k] = minus(scale3(z, slope), u);
+    }
+  for (int k = 0; k < 5; k++)
+    result.margin[k] = 1 + length(result.n[k]);
+  return result;
+}
+static int shadowClass(const Umbra *shadow, const Obstacle *o) {
+  Vec d = minus(o->c, shadow->center);
+  int inside = 1;
+  for (int i = 0; i < 5; i++) {
+    Vec n = shadow->n[i];
+    double mid = (i != 0) + dp(d, n), ext = obstacleRadius(o, n);
+    double eps = 1e-8 * (shadow->margin[i] + absd(mid) + ext);
+    if (mid + ext < -eps)
+      return -1;
+    inside &= mid - ext > eps;
+  }
+  return inside;
+}
+static int coversChart(const Umbra *shadow, const Chart *c) {
+  Vec d = minus(c->c, shadow->center);
+  for (int i = 0; i < 5; i++) {
+    Vec n = shadow->n[i];
+    double mid = (i != 0) + dp(d, n);
+    double ext = c->type == 2 ? c->r * length(n)
+                              : c->width * absd(dp(c->ax, n)) +
+                                    (c->type ? c->r * length(n) : c->height * absd(dp(c->v, n)));
+    if (mid - ext <= 1e-8 * (shadow->margin[i] + absd(mid) + ext))
+      return 0;
+  }
+  return 1;
+}
 void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Domain *groups, int ng,
                   const Vec *lamp, double tol, unsigned char *modes, Moments *moments,
                   Counts *stats, int *lampIds) {
@@ -186,14 +246,51 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
       obs[j].b = scale3(v, 1 / dp(s[j].ax[1], v));
     }
   }
+  unsigned char needed[nt];
+  for (int k = 0; k < nt; k++)
+    needed[k] = 0;
+  for (int g = 0; g < ng; g++) {
+    const Domain *domain = groups + g;
+    Umbra shadows[ns];
+    int nearby[ns], last = -1, n = 0;
+    for (int j = 0; j < ns; j++)
+      shadows[j] = sharedShadow(domain, s + j);
+    for (int k = 0; k < nt; k++) {
+      const Chart *c = tiles + k;
+      int obj = c->object, mode = 2;
+      if (obj != last) {
+        last = obj;
+        n = 0;
+        if (obj == domain->object)
+          n = -1;
+        else
+          for (int j = 0; j < ns; j++)
+            if (j != obj && j != domain->object && shadows[j].valid) {
+              int type = shadowClass(shadows + j, obs + obj);
+              if (type > 0) {
+                n = -1;
+                break;
+              }
+              if (!type)
+                nearby[n++] = j;
+            }
+      }
+      if (n >= 0) {
+        mode = qualify(c, domain, obs, ns, *lamp, tol);
+        if (mode != 1 && mode != 2)
+          for (int i = 0; i < n; i++) {
+            if (coversChart(shadows + nearby[i], c)) {
+              mode = 2;
+              break;
+            }
+          }
+      }
+      modes[g * nt + k] = mode;
+      needed[k] |= mode == 1;
+    }
+  }
   for (int k = 0; k < nt; k++) {
     const Chart *c = tiles + k;
-    int needed = 0;
-    for (int g = 0; g < ng; g++) {
-      int mode = qualify(c, groups + g, obs, ns, *lamp, tol);
-      modes[g * nt + k] = mode;
-      needed |= mode == 1;
-    }
     Moments M = {0};
     {
       int hidden = 0;
@@ -208,7 +305,7 @@ void buildRegions(const Shape *s, int ns, const Chart *tiles, int nt, const Doma
       if (!c->type && dp(c->n, minus(*lamp, c->c)) <= 0)
         hidden = 1;
       ids[0] = hidden ? -1 : w.count[1];
-      if (needed && !hidden) {
+      if (needed[k] && !hidden) {
         stats->momentTiles++;
         int cap = 32 + 32 * w.count[1];
         double cuts[cap + 1];

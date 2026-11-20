@@ -1,7 +1,7 @@
 // The entire clear source rectangle lies above the receiver horizon. The
 // projected solid angle is half the receiver-normal component of the contour
 // integral of the unit directions. Each great-circle edge contributes once.
-const vertex = `#version 300 es
+const preamble = `#version 300 es
 precision highp float;
 layout(location=0) in vec3 relativeCenter;
 layout(location=1) in vec3 axisU;
@@ -13,20 +13,32 @@ float edge(vec3 a, vec3 b) {
   float sine = length(axis);
   return sine == 0. ? 0. : dot(normal,axis) * atan(sine,dot(a,b)) / sine;
 }
-void main() {
+`;
+const vertex =
+  preamble +
+  `void main() {
   vec3 a=normalize(relativeCenter-axisU-axisV), b=normalize(relativeCenter+axisU-axisV);
   vec3 c=normalize(relativeCenter+axisU+axisV), d=normalize(relativeCenter-axisU+axisV);
   measure=abs(edge(a,b)+edge(b,c)+edge(c,d)+edge(d,a))*(0.5/3.141592653589793);
   gl_Position=vec4(0,0,0,1); gl_PointSize=1.;
 }`;
 
+// A clipped aperture can have any number of directed boundary edges.
+// Integrate the signed projected area. Adjacent cell edges cancel.
+const boundaryVertex =
+  preamble +
+  `void main() {
+  measure=edge(normalize(relativeCenter),normalize(axisU))*(0.5/3.141592653589793);
+  gl_Position=vec4(0,0,0,1); gl_PointSize=1.;
+}`;
+
 export class AngularMeasure {
-  constructor(gl) {
+  constructor(gl, { boundary = false } = {}) {
     this.gl = gl;
     this.stats = { polygons: 0, batches: 0 };
     this.program = gl.createProgram();
     for (const [type, source] of [
-      [gl.VERTEX_SHADER, vertex],
+      [gl.VERTEX_SHADER, boundary ? boundaryVertex : vertex],
       [
         gl.FRAGMENT_SHADER,
         '#version 300 es\nprecision highp float; out vec4 color; void main(){color=vec4(0);}',
@@ -49,6 +61,8 @@ export class AngularMeasure {
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.input);
     for (let i = 0; i < 4; i++) {
+      // The boundary program has no third input.
+      if (boundary && i === 2) continue;
       gl.enableVertexAttribArray(i);
       gl.vertexAttribPointer(i, 3, gl.FLOAT, false, 48, 12 * i);
     }
@@ -69,6 +83,12 @@ export class AngularMeasure {
       a[k + 6 + j] = tile.v[j] * tile.height;
       a[k + 9 + j] = receiver.n[j];
     }
+  }
+  putEdge(index, from, to, normal, orientation) {
+    const k = 12 * index;
+    this.packed.set(from, k);
+    this.packed.set(to, k + 3);
+    for (let d = 0; d < 3; d++) this.packed[k + 9 + d] = orientation * normal[d];
   }
   integrate(count) {
     if (!count) return;
