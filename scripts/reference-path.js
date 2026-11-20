@@ -1,3 +1,4 @@
+import { fieldValue } from '../src/field-domain.js';
 // Isolate named bounces in the independent reference. The planar sequence
 // uses cosine-direction sampling. At its endpoint, sample the small rounded
 // sources by true area to resolve their much weaker contribution.
@@ -85,7 +86,8 @@ export function referencePath({
     );
   }
   const via = path.via.map((id) => faces.findIndex((f) => f.id === id));
-  if (!via.length || via.some((i) => i < 0)) throw Error('Supply a sequence of existing planar surface IDs.');
+  if (!via.length || via.some((i) => i < 0))
+    throw Error('Supply a sequence of existing planar surface IDs.');
   const wall = via.at(-1),
     point = path.point ?? [0.5, 0.5];
   const receiver = faces[target],
@@ -257,5 +259,112 @@ export function referencePath({
     }),
     fromLamp: { mean: mean[0], standardError: se[0] },
     fromRoundedSurfaces: { mean: mean[1], standardError: se[1] },
+  };
+}
+
+// Replace only the upstream source radiance with the playable field. The last
+// leg still uses independent geometry, cosine directions and shadow decisions.
+export function referenceTransfer({
+  room,
+  faces,
+  target,
+  side,
+  region,
+  paths,
+  trace,
+  random,
+  dot,
+  scale,
+  advance,
+  snapshot,
+}) {
+  if (JSON.stringify(room) !== JSON.stringify(snapshot.scene))
+    throw Error('The field belongs to a different scene.');
+  const solids = [...room.rectangles, ...room.roundedBoxes];
+  const zero = () => [0, 0, 0],
+    sum = zero(),
+    squares = zero(),
+    initial = zero();
+  const components = new Float64Array(3 * solids.length);
+  for (let j = 0; j < paths; j++) {
+    const a = region[0] + random() * (region[1] - region[0]),
+      b = region[2] + random() * (region[3] - region[2]);
+    const face = faces[target],
+      origin = advance(advance(face.center, face.axisU, 2 * a - 1), face.axisV, 2 * b - 1),
+      z = random(),
+      phi = random() * Math.PI * 2;
+    const d = advance(
+      advance(
+        scale(face.tangent, Math.sqrt(z) * Math.cos(phi)),
+        face.bitangent,
+        Math.sqrt(z) * Math.sin(phi),
+      ),
+      face.normal,
+      (side === 'front' ? 1 : -1) * Math.sqrt(1 - z),
+    );
+    const [id, t, f] = trace(origin, d, target);
+    if (id < 0) continue;
+    const obj = solids[id],
+      point = advance(origin, d, t),
+      delta = point.map((v, k) => v - obj.center[k]);
+    let uv, slot;
+    if (!obj.axes) {
+      uv = [0.5 + 0.5 * dot(delta, f.dualU), 0.5 + 0.5 * dot(delta, f.dualV)];
+      slot = Number(dot(f.normal, d) > 0);
+    } else {
+      const normal = obj.axes.map((ax) => dot(f.normal, ax)),
+        local = obj.axes.map((ax) => dot(delta, ax)),
+        core = obj.halfSize.map((h) => h - obj.radius);
+      const active = normal.map((v) => Number(Math.abs(v) > 1e-10)),
+        count = active.reduce((a, b) => a + b, 0);
+      if (count === 1) {
+        const k = active.indexOf(1),
+          i = (k + 1) % 3,
+          l = (k + 2) % 3;
+        slot = 2 * k + Number(normal[k] < 0);
+        uv = [0.5 + (0.5 * local[i]) / core[i], 0.5 + (0.5 * local[l]) / core[l]];
+      } else if (count === 2) {
+        const k = active.indexOf(0),
+          i = (k + 1) % 3,
+          l = (k + 2) % 3;
+        slot = 6 + 4 * k + 2 * Number(normal[i] < 0) + Number(normal[l] < 0);
+        uv = [
+          0.5 + (0.5 * local[k]) / core[k],
+          (Math.atan2(Math.abs(normal[l]), Math.abs(normal[i])) * 2) / Math.PI,
+        ];
+      } else {
+        slot = 18 + Number(normal[0] < 0) + 2 * Number(normal[1] < 0) + 4 * Number(normal[2] < 0);
+        uv = [
+          (Math.asin(Math.min(1, Math.abs(normal[2]))) * 2) / Math.PI,
+          (Math.atan2(Math.abs(normal[1]), Math.abs(normal[0])) * 2) / Math.PI,
+        ];
+      }
+    }
+    const rgb = fieldValue(snapshot.charts[id][slot], ...uv, snapshot.indirect),
+      L = room.lightPosition.map((x, i) => x - point[i]),
+      r2 = dot(L, L);
+    const litCos = (slot === 1 && !obj.axes ? -1 : 1) * dot(f.normal, L);
+    const direct = litCos > 0 && !trace(point, L, id, true) ? litCos / (r2 * Math.sqrt(r2)) : 0;
+    for (let c = 0; c < 3; c++) {
+      const w = face.color[c] * f.color[c],
+        term = w * (rgb[c] + room.lampRGB[c] * direct);
+      sum[c] += term;
+      squares[c] += term * term;
+      initial[c] += w * room.lampRGB[c] * direct;
+      components[3 * id + c] += term;
+    }
+  }
+  const mean = sum.map((v) => v / paths),
+    standardError = mean.map((v, c) => Math.sqrt((squares[c] / paths - v * v) / (paths - 1)));
+  return {
+    region,
+    paths,
+    mean,
+    standardError,
+    first: initial.map((v) => v / paths),
+    sources: solids
+      .map((shape, i) => [shape.id, components[3 * i] / paths])
+      .filter(([, red]) => red > 0)
+      .sort((a, b) => b[1] - a[1]),
   };
 }

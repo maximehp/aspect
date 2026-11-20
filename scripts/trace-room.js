@@ -122,3 +122,12 @@ export async function traceRoom(renderer, scene) {
     refinement: solution.history.at(-1),
   };
 }
+
+// Serialize the incident functions for an independent last-leg measurement.
+export function referenceSnapshot(scene, { illumination }) {
+  return {
+    scene,
+    charts: illumination.geometry.maps.map((m) => m.map(({ domain, empty }) => ({ domain, empty }))),
+    indirect: Array.from(illumination.indirect),
+  };
+}

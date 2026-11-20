@@ -102,6 +102,13 @@ if (measurement && (!Array.isArray(region) || region.length !== 4 ||
     region[0] >= region[1] || region[2] >= region[3])) {
   throw RangeError('Expected observation bounds in the unit square');
 }
+if (measurement?.representedFieldFile) {
+  const {readFile}=await import('node:fs/promises');
+  const {referenceTransfer}=await import('./reference-path.js');
+  const snapshot=JSON.parse(await readFile(measurement.representedFieldFile,'utf8'));
+  console.log(JSON.stringify(referenceTransfer({room,faces,target,side,region,paths,trace,random,dot,scale,advance,snapshot})));
+  process.exit(0);
+}
 // One value per complete path in each bin gives the sampling error of the
 // individual bounce orders, including covariance within the final tail.
 const binsByDepth = measurement?.orders && Array.from({ length: 4 }, () => ({
