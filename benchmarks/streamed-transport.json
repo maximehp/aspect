@@ -1,0 +1,1473 @@
+{
+  "rendererCommit": "4851bc18ffe54bc46d8c69d3f4924595cff2aa7d",
+  "baselineCommit": "4677253223c2ba87099fcde5bd65b44308bc27a5",
+  "baselineEvidence": "moving-room-4k.json",
+  "device": "M1 Pro, Chrome 136, ANGLE Metal",
+  "framebuffer": [
+    3840,
+    2160
+  ],
+  "timingEndpoint": "GPU-complete readback and separately marked compositor swap. The 4K framebuffer is scaled to the window.",
+  "replays": {
+    "oneSlat": {
+      "prior": {
+        "finishedMs": {
+          "median": 618.65,
+          "p95": 666.9
+        },
+        "startToSwapMs": {
+          "median": 620.99,
+          "p95": 669.75
+        },
+        "cameraMs": {
+          "median": 6.9,
+          "p95": 8.8
+        },
+        "peakCountedMiB": 253.46230125427246,
+        "workerMs": {
+          "median": 379.8,
+          "p95": 397.4
+        },
+        "modalBuildMs": {
+          "median": 84.5,
+          "p95": 88.2
+        },
+        "modalEquilibriumMs": {
+          "median": 45.2,
+          "p95": 54.2
+        }
+      },
+      "streamed": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 1,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 586.57,
+          "p95": 623.86
+        },
+        "finishedMs": {
+          "median": 582.3,
+          "p95": 620.1
+        },
+        "cameraMs": {
+          "median": 6.8,
+          "p95": 8.4
+        },
+        "peakCountedMiB": 118.46230125427246,
+        "meanGpuApertures": 143723.79166666666,
+        "workerMs": {
+          "median": 351.2,
+          "p95": 362.2
+        },
+        "assemblyMs": {
+          "median": 7.0,
+          "p95": 8.1
+        },
+        "solveMs": {
+          "median": 131.7,
+          "p95": 147.2
+        },
+        "operatorConstructionMs": {
+          "median": 527.85,
+          "p95": 556.3
+        },
+        "modalBuildMs": {
+          "median": 84.4,
+          "p95": 88.1
+        },
+        "modalEquilibriumMs": {
+          "median": 44.9,
+          "p95": 51
+        },
+        "meanModalWork": {
+          "fullLinks": 658511.0333333333,
+          "activeLinks": 644947.8666666667,
+          "activeModes": 2592.975,
+          "allModes": 2886,
+          "applications": 38.208333333333336,
+          "checks": 5.058333333333334,
+          "linkReads": 27794907.783333335,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1824573.4666666666
+        },
+        "preparationMs": {
+          "median": 570.45,
+          "p95": 610.7
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 1.1
+        },
+        "markAndFinishMs": {
+          "median": 11.3,
+          "p95": 13.1
+        },
+        "syncToSwapMs": {
+          "median": 3.93,
+          "p95": 4.62
+        },
+        "beforeSync": 0
+      },
+      "meanGeometricWork": {
+        "generatorSlices": 6910444.225,
+        "litEndpoints": 4127026.066666667,
+        "analyticLengthIntegrals": 2306797.8,
+        "sphericalEvaluations": 324710.5,
+        "roundedFeatures": 1245768.8,
+        "adaptiveSplits": 120384.19166666667,
+        "exhaustedEstimates": 5.225,
+        "gpuApertures": 143723.79166666666,
+        "reusedCylinderRoots": 448337.13333333336,
+        "regionalEvaluations": 200213.075,
+        "regionalDark": 4283359.566666666,
+        "facingFallback": 416415.75833333336,
+        "expansionFallback": 900766.7833333333,
+        "blockerFallback": 806738.8166666667,
+        "individualFallback": 171720,
+        "wallMoments": 527.1,
+        "lampMomentSlices": 46819.2,
+        "exactConicRefinements": 0.008333333333333333,
+        "lampSliceHits": 1395244.9583333333,
+        "lampSliceMisses": 677146.2583333333
+      }
+    },
+    "twoSlats": {
+      "prior": {
+        "finishedMs": {
+          "median": 669.35,
+          "p95": 715.3
+        },
+        "startToSwapMs": {
+          "median": 671.41,
+          "p95": 718.81
+        },
+        "cameraMs": {
+          "median": 9.7,
+          "p95": 12.8
+        },
+        "peakCountedMiB": 257.1463508605957,
+        "workerMs": {
+          "median": 423.9,
+          "p95": 438.4
+        },
+        "modalBuildMs": {
+          "median": 85.75,
+          "p95": 89.9
+        },
+        "modalEquilibriumMs": {
+          "median": 46.5,
+          "p95": 54.3
+        }
+      },
+      "streamed": {
+        "mode": "function",
+        "extra": 0,
+        "slats": 2,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 633.81,
+          "p95": 667.72
+        },
+        "finishedMs": {
+          "median": 629.5,
+          "p95": 664.3
+        },
+        "cameraMs": {
+          "median": 9.8,
+          "p95": 12.9
+        },
+        "peakCountedMiB": 119.8963508605957,
+        "meanGpuApertures": 144604.76666666666,
+        "workerMs": {
+          "median": 392.15,
+          "p95": 406.2
+        },
+        "assemblyMs": {
+          "median": 7.1,
+          "p95": 9.8
+        },
+        "solveMs": {
+          "median": 133.4,
+          "p95": 150.9
+        },
+        "operatorConstructionMs": {
+          "median": 573.05,
+          "p95": 600.4
+        },
+        "modalBuildMs": {
+          "median": 85.4,
+          "p95": 90.3
+        },
+        "modalEquilibriumMs": {
+          "median": 45.2,
+          "p95": 49.5
+        },
+        "meanModalWork": {
+          "fullLinks": 686608.4166666666,
+          "activeLinks": 672816.4416666667,
+          "activeModes": 2614.991666666667,
+          "allModes": 2910,
+          "applications": 36.325,
+          "checks": 4.983333333333333,
+          "linkReads": 27699010.408333335,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 1865592.65
+        },
+        "preparationMs": {
+          "median": 617.7,
+          "p95": 654
+        },
+        "applyAndDrawMs": {
+          "median": 0.4,
+          "p95": 1.3
+        },
+        "markAndFinishMs": {
+          "median": 11.35,
+          "p95": 13.3
+        },
+        "syncToSwapMs": {
+          "median": 3.93,
+          "p95": 4.6
+        },
+        "beforeSync": 0
+      },
+      "meanGeometricWork": {
+        "generatorSlices": 7291848.716666667,
+        "litEndpoints": 4325567.966666667,
+        "analyticLengthIntegrals": 2401507.683333333,
+        "sphericalEvaluations": 429749.425,
+        "roundedFeatures": 1852993.5,
+        "adaptiveSplits": 123709.55,
+        "exhaustedEstimates": 5.383333333333334,
+        "gpuApertures": 144604.76666666666,
+        "reusedCylinderRoots": 631593.5583333333,
+        "regionalEvaluations": 196674.5,
+        "regionalDark": 4335634.633333334,
+        "facingFallback": 420141.69166666665,
+        "expansionFallback": 910883.7166666667,
+        "blockerFallback": 817035.4583333334,
+        "individualFallback": 230880,
+        "wallMoments": 528.1333333333333,
+        "lampMomentSlices": 45321.175,
+        "exactConicRefinements": 0.008333333333333333,
+        "lampSliceHits": 1547382.7,
+        "lampSliceMisses": 794344.6416666667
+      }
+    },
+    "crowded": {
+      "prior": {
+        "finishedMs": {
+          "median": 2182.0,
+          "p95": 2404.3
+        },
+        "startToSwapMs": {
+          "median": 2184.63,
+          "p95": 2415.12
+        },
+        "cameraMs": {
+          "median": 80.95,
+          "p95": 150.8
+        },
+        "peakCountedMiB": 342.2439079284668,
+        "workerMs": {
+          "median": 1843.15,
+          "p95": 2036.4
+        },
+        "modalBuildMs": {
+          "median": 107.8,
+          "p95": 114
+        },
+        "modalEquilibriumMs": {
+          "median": 50.8,
+          "p95": 60
+        }
+      },
+      "streamed": {
+        "mode": "function",
+        "extra": 4,
+        "slats": 0,
+        "matched": 120,
+        "optionalOpticsRequests": [],
+        "missing": [],
+        "startToSwapMs": {
+          "median": 2006.41,
+          "p95": 2186.29
+        },
+        "finishedMs": {
+          "median": 1997.3,
+          "p95": 2178.2
+        },
+        "cameraMs": {
+          "median": 79.9,
+          "p95": 152
+        },
+        "peakCountedMiB": 146.8689079284668,
+        "meanGpuApertures": 157506.45,
+        "workerMs": {
+          "median": 1668.25,
+          "p95": 1853.3
+        },
+        "assemblyMs": {
+          "median": 9.6,
+          "p95": 13.4
+        },
+        "solveMs": {
+          "median": 159.65,
+          "p95": 190.2
+        },
+        "operatorConstructionMs": {
+          "median": 1932.45,
+          "p95": 2119
+        },
+        "modalBuildMs": {
+          "median": 107.4,
+          "p95": 112.2
+        },
+        "modalEquilibriumMs": {
+          "median": 48.5,
+          "p95": 68.7
+        },
+        "meanModalWork": {
+          "fullLinks": 951189.0583333333,
+          "activeLinks": 925611.9416666667,
+          "activeModes": 3015.25,
+          "allModes": 3390,
+          "applications": 34.49166666666667,
+          "checks": 5.083333333333333,
+          "linkReads": 36636020.075,
+          "receiverRowReads": 0,
+          "reconstructions": 1,
+          "finalAuditLinks": 2637205.8916666666
+        },
+        "preparationMs": {
+          "median": 1982.05,
+          "p95": 2165.2
+        },
+        "applyAndDrawMs": {
+          "median": 1.6,
+          "p95": 1.9
+        },
+        "markAndFinishMs": {
+          "median": 13.6,
+          "p95": 16.8
+        },
+        "syncToSwapMs": {
+          "median": 8.02,
+          "p95": 11.07
+        },
+        "beforeSync": 0
+      },
+      "meanGeometricWork": {
+        "generatorSlices": 15883504.008333333,
+        "litEndpoints": 9209700.916666666,
+        "analyticLengthIntegrals": 5025330.458333333,
+        "sphericalEvaluations": 2649115.775,
+        "roundedFeatures": 28785122.275,
+        "adaptiveSplits": 164086.70833333334,
+        "exhaustedEstimates": 888.0166666666667,
+        "gpuApertures": 157506.45,
+        "reusedCylinderRoots": 9390763.791666666,
+        "regionalEvaluations": 208151.75833333333,
+        "regionalDark": 5392599.341666667,
+        "facingFallback": 500508.1583333333,
+        "expansionFallback": 1100346.6916666667,
+        "blockerFallback": 996764.05,
+        "individualFallback": 1615680,
+        "wallMoments": 506.64166666666665,
+        "lampMomentSlices": 30821.925,
+        "exactConicRefinements": 11.175,
+        "lampSliceHits": 3483979.6083333334,
+        "lampSliceMisses": 3564809.775
+      }
+    }
+  },
+  "framebufferComparisons": [
+    {
+      "pop": 1,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 59,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 119,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "gl": 0
+    },
+    {
+      "pop": 1,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "repeat": true,
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 59,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 119,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "gl": 0
+    },
+    {
+      "pop": 2,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "repeat": true,
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "repeat": null,
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 59,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 119,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "gl": 0
+    },
+    {
+      "pop": 0,
+      "tick": 0,
+      "direct": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "indirect": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "total": {
+        "max": 0,
+        "changed": 0,
+        "large": 0,
+        "mean": 0
+      },
+      "repeat": true,
+      "gl": 0
+    }
+  ],
+  "physicalReferenceAreas": [
+    {
+      "editIndex": 0,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.1352618408916361,
+        0.09231496981761343,
+        0.04082198178390169
+      ],
+      "reference": [
+        0.13626427721034712,
+        0.09251017293802735,
+        0.0405473224343759
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0011580210174344727,
+        0.0009357860916813741,
+        0.0005194991569553928
+      ]
+    },
+    {
+      "editIndex": 0,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.18237147391331762,
+        0.1279465335700388,
+        0.062402825377649004
+      ],
+      "reference": [
+        0.18538983347106397,
+        0.13081553517434108,
+        0.06425280014189219
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0014142366202338928,
+        0.0011656036724803462,
+        0.0006999275705363403
+      ]
+    },
+    {
+      "editIndex": 1,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.1358740486596299,
+        0.09285843338901643,
+        0.04107263192947391
+      ],
+      "reference": [
+        0.13734700106476533,
+        0.09332425053687868,
+        0.04089423258197503
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0011620392680547738,
+        0.0009382333338818397,
+        0.0005208317663452137
+      ]
+    },
+    {
+      "editIndex": 1,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.18333657048336427,
+        0.12888477845214205,
+        0.06291368202108105
+      ],
+      "reference": [
+        0.1869446298143092,
+        0.13203566660034766,
+        0.06482143031427046
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0014161064674029528,
+        0.0011648254408375847,
+        0.0006983806500770322
+      ]
+    },
+    {
+      "editIndex": 2,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.12120917883738373,
+        0.08110951024041689,
+        0.03518423086669603
+      ],
+      "reference": [
+        0.1233994384634713,
+        0.08213051304921129,
+        0.035303875768324416
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0010848125638211333,
+        0.000859903870086542,
+        0.00046937897614731376
+      ]
+    },
+    {
+      "editIndex": 2,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.17124415264990647,
+        0.12001590937313054,
+        0.059041700680487114
+      ],
+      "reference": [
+        0.17343719353695528,
+        0.12233172124129438,
+        0.06054350090325766
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0013961161121126232,
+        0.0011505240304387704,
+        0.000693032781530485
+      ]
+    },
+    {
+      "editIndex": 3,
+      "slatAngleRadians": 0.3,
+      "surface": "floor",
+      "engine": [
+        0.003425581304958979,
+        0.007975564730304991,
+        0.04906368149013686
+      ],
+      "reference": [
+        0.0036451869333426995,
+        0.008496198176834655,
+        0.05202002677079449
+      ],
+      "paths": 131072,
+      "standardError": [
+        5.732899290620622e-05,
+        0.0001408811029104701,
+        0.0006965336755433732
+      ]
+    },
+    {
+      "editIndex": 3,
+      "slatAngleRadians": 0.3,
+      "surface": "north-wall",
+      "engine": [
+        0.047369745673508296,
+        0.03649562962946055,
+        0.032095854608265445
+      ],
+      "reference": [
+        0.04562187704887825,
+        0.036374680301681894,
+        0.03466783886192994
+      ],
+      "paths": 131072,
+      "standardError": [
+        0.0007009626061376506,
+        0.0005724109583159177,
+        0.0004143795704772845
+      ]
+    }
+  ],
+  "restoredAfterEdits": {
+    "total": {
+      "changed": 930044,
+      "max": 180,
+      "repeat": 0,
+      "mae": 29.26976936246142
+    },
+    "indirect": {
+      "changed": 970567,
+      "max": 106,
+      "repeat": 0,
+      "mae": 27.645938826195987
+    },
+    "direct": {
+      "changed": 150890,
+      "max": 203,
+      "repeat": 0,
+      "mae": 10.444013430748457
+    }
+  },
+  "lampOffPixelRGBA": [
+    [
+      0,
+      0,
+      0,
+      255
+    ],
+    [
+      0,
+      0,
+      0,
+      255
+    ],
+    [
+      0,
+      0,
+      0,
+      255
+    ],
+    [
+      0,
+      0,
+      0,
+      255
+    ],
+    [
+      0,
+      0,
+      0,
+      255
+    ]
+  ],
+  "contactAreas": [
+    {
+      "angle": 24,
+      "areas": {
+        "north-wall-covered": [
+          0.023319359615543437,
+          0.010189700464757208,
+          0.002281402778413849
+        ],
+        "north-wall-exposed": [
+          0.11561613183576529,
+          0.06944921165959604,
+          0.027690389272104036
+        ],
+        "bench-seat-bottom-all": [
+          0.09170230168774146,
+          0.03518998250563078,
+          0.008633285523794288
+        ]
+      },
+      "changed": 21523838,
+      "max": 6,
+      "channels": 24883200,
+      "equilibriumError": 0.0024000612484311686
+    },
+    {
+      "angle": -46,
+      "areas": {
+        "north-wall-covered": [
+          0.006546216572884423,
+          0.002592857395137515,
+          0.0005820383830426705
+        ],
+        "north-wall-exposed": [
+          0.038671263417138224,
+          0.022462359521915824,
+          0.009960723216275662
+        ],
+        "bench-seat-bottom-all": [
+          0.011778400143632496,
+          0.002819162159730454,
+          0.00037970509869131113
+        ]
+      },
+      "changed": 23751100,
+      "max": 12,
+      "channels": 24883200,
+      "equilibriumError": 0.0027111530311451615
+    }
+  ],
+  "planarExchangeReciprocity": [
+    {
+      "angle": 24,
+      "left": "north-wall@0",
+      "right": "print-paper@1",
+      "intoLeft": 3.606955362760117,
+      "intoRight": 3.3699625955331904,
+      "differenceOverMean": 0.06793623449311703
+    },
+    {
+      "angle": 24,
+      "left": "floor@1",
+      "right": "bench-seat-bottom@0",
+      "intoLeft": 1.0589505793051999,
+      "intoRight": 1.2728118881578374,
+      "differenceOverMean": -0.1834331857012169
+    },
+    {
+      "angle": 24,
+      "left": "north-wall@0",
+      "right": "floor@1",
+      "intoLeft": 5.960613644509237,
+      "intoRight": 6.058569837743919,
+      "differenceOverMean": -0.01629997468285911
+    },
+    {
+      "angle": 24,
+      "left": "print-paper@0",
+      "right": "print-clay@1",
+      "intoLeft": 1.9851589682206103,
+      "intoRight": 1.9036989455257027,
+      "differenceOverMean": 0.04189405964510206
+    },
+    {
+      "angle": -46,
+      "left": "north-wall@0",
+      "right": "print-paper@1",
+      "intoLeft": 3.606955362760117,
+      "intoRight": 3.3699625953487984,
+      "differenceOverMean": 0.06793623454777026
+    },
+    {
+      "angle": -46,
+      "left": "floor@1",
+      "right": "bench-seat-bottom@0",
+      "intoLeft": 1.0589505793051999,
+      "intoRight": 1.2728118762537168,
+      "differenceOverMean": -0.18343317642727464
+    },
+    {
+      "angle": -46,
+      "left": "north-wall@0",
+      "right": "floor@1",
+      "intoLeft": 5.962496233563728,
+      "intoRight": 6.060794112104819,
+      "differenceOverMean": -0.016351244245965228
+    },
+    {
+      "angle": -46,
+      "left": "print-paper@0",
+      "right": "print-clay@1",
+      "intoLeft": 1.9851589682206103,
+      "intoRight": 1.9036989456085252,
+      "differenceOverMean": 0.041894059601615095
+    }
+  ],
+  "reciprocityMetric": "For two planar sides A and B, project unit outgoing radiance on B and integrate K across A with the physical areas of its bilinear basis. Repeat in reverse. Report both integrated transfers without material tint, in square metres (kernel includes 1/pi). Exact values agree even under occlusion.",
+  "runScopedConclusions": {
+    "retainedResult": "Changing coefficient storage and sharing lamp blocker descriptions preserved the prior framebuffer bytes at the tested poses. Mathematical work counts have not been reduced by that change. Fresh pose construction and contact bias remain open."
+  },
+  "unoccludedPlanePairBounds": [
+    {
+      "receiver": "north-wall",
+      "source": "print-paper",
+      "gap": 0.040000000000000036,
+      "unobstructedIntegratedTransfer": 3.369979197203331,
+      "sourceArea": 3.3712
+    },
+    {
+      "receiver": "print-paper",
+      "source": "print-clay",
+      "gap": 0.006000000000000227,
+      "unobstructedIntegratedTransfer": 1.9038191724207556,
+      "sourceArea": 1.904
+    },
+    {
+      "receiver": "floor",
+      "source": "bench-seat-bottom",
+      "gap": 0.5,
+      "unobstructedIntegratedTransfer": 1.4032711881139908,
+      "sourceArea": 1.4300000000000002
+    }
+  ],
+  "blockerProjectionExperiment": {
+    "production": false,
+    "ticks": [
+      0,
+      30,
+      60,
+      90,
+      119
+    ],
+    "axes": "World x/y/z, receiver normal, and the three cross products of the source-to-region center segment with world axes. Compare the hull of source-solid and receiver-region support with each obstacle.",
+    "samples": [
+      {
+        "pop": 1,
+        "tick": 0,
+        "worker": [
+          387.2999978065491,
+          365.89999628067017
+        ],
+        "build": [
+          105.59999990463257,
+          104.90000009536743
+        ],
+        "sum": [
+          1056.6850997949828,
+          1056.685043525058
+        ],
+        "res": [
+          0.0002359132202478567,
+          0.00023591331514538912
+        ],
+        "generatorSlices": [
+          7006299,
+          7005969
+        ],
+        "gpuApertures": [
+          143984,
+          145470
+        ]
+      },
+      {
+        "pop": 1,
+        "tick": 30,
+        "worker": [
+          363.09999990463257,
+          338.9999990463257
+        ],
+        "build": [
+          71.89999961853027,
+          75
+        ],
+        "sum": [
+          1052.9700737742621,
+          1052.9700242267875
+        ],
+        "res": [
+          0.000240175001289937,
+          0.00024017515616044782
+        ],
+        "generatorSlices": [
+          6911404,
+          6911005
+        ],
+        "gpuApertures": [
+          143757,
+          145187
+        ]
+      },
+      {
+        "pop": 1,
+        "tick": 60,
+        "worker": [
+          344.7000012397766,
+          330.2999997138977
+        ],
+        "build": [
+          70.90000009536743,
+          75.09999990463257
+        ],
+        "sum": [
+          1056.0882061910236,
+          1056.0881886168156
+        ],
+        "res": [
+          0.00024227183584669138,
+          0.00024227201344530246
+        ],
+        "generatorSlices": [
+          6879331,
+          6879121
+        ],
+        "gpuApertures": [
+          143846,
+          145304
+        ]
+      },
+      {
+        "pop": 1,
+        "tick": 90,
+        "worker": [
+          349.50000047683716,
+          341.4999976158142
+        ],
+        "build": [
+          71.80000019073486,
+          75.90000009536743
+        ],
+        "sum": [
+          1060.9696090105797,
+          1060.9695638009855
+        ],
+        "res": [
+          0.00028679792352604523,
+          0.00028679794030328785
+        ],
+        "generatorSlices": [
+          6887278,
+          6887122
+        ],
+        "gpuApertures": [
+          143648,
+          145100
+        ]
+      },
+      {
+        "pop": 1,
+        "tick": 119,
+        "worker": [
+          363.40000009536743,
+          338.2999997138977
+        ],
+        "build": [
+          70.59999990463257,
+          75.2000002861023
+        ],
+        "sum": [
+          1034.6888763234367,
+          1034.6889061566967
+        ],
+        "res": [
+          0.0002503368845134141,
+          0.0002503366972548692
+        ],
+        "generatorSlices": [
+          6934874,
+          6934187
+        ],
+        "gpuApertures": [
+          143677,
+          145300
+        ]
+      },
+      {
+        "pop": 2,
+        "tick": 0,
+        "worker": [
+          410.2999973297119,
+          385.6000003814697
+        ],
+        "build": [
+          72.59999990463257,
+          75.89999961853027
+        ],
+        "sum": [
+          995.9874021821537,
+          995.9873554763251
+        ],
+        "res": [
+          0.00021758642711568955,
+          0.0002175865156716795
+        ],
+        "generatorSlices": [
+          7387680,
+          7387344
+        ],
+        "gpuApertures": [
+          144633,
+          146164
+        ]
+      },
+      {
+        "pop": 2,
+        "tick": 30,
+        "worker": [
+          409.0999984741211,
+          377.10000133514404
+        ],
+        "build": [
+          74,
+          73.5
+        ],
+        "sum": [
+          1010.9346973084388,
+          1010.934493306858
+        ],
+        "res": [
+          0.00020910016303163795,
+          0.00020910012555563163
+        ],
+        "generatorSlices": [
+          7293404,
+          7293035
+        ],
+        "gpuApertures": [
+          144756,
+          146216
+        ]
+      },
+      {
+        "pop": 2,
+        "tick": 60,
+        "worker": [
+          385.1999988555908,
+          369.6000008583069
+        ],
+        "build": [
+          74.59999990463257,
+          77.69999980926514
+        ],
+        "sum": [
+          1020.4450704855011,
+          1020.4447638049753
+        ],
+        "res": [
+          0.00022719607718484067,
+          0.0002271966831906551
+        ],
+        "generatorSlices": [
+          7258711,
+          7258441
+        ],
+        "gpuApertures": [
+          144723,
+          146207
+        ]
+      },
+      {
+        "pop": 2,
+        "tick": 90,
+        "worker": [
+          390.2000012397766,
+          369.9999942779541
+        ],
+        "build": [
+          73.39999961853027,
+          77.5
+        ],
+        "sum": [
+          1016.4707769984739,
+          1016.4705244788557
+        ],
+        "res": [
+          0.00021786699441342686,
+          0.000217865007231522
+        ],
+        "generatorSlices": [
+          7263732,
+          7263612
+        ],
+        "gpuApertures": [
+          144386,
+          145846
+        ]
+      },
+      {
+        "pop": 2,
+        "tick": 119,
+        "worker": [
+          392,
+          373.0000014305115
+        ],
+        "build": [
+          71.30000019073486,
+          77.09999990463257
+        ],
+        "sum": [
+          988.3344845654505,
+          988.3344960994788
+        ],
+        "res": [
+          0.00024138764950265416,
+          0.0002413876435317831
+        ],
+        "generatorSlices": [
+          7303875,
+          7303188
+        ],
+        "gpuApertures": [
+          144554,
+          146209
+        ]
+      },
+      {
+        "pop": 0,
+        "tick": 0,
+        "worker": [
+          1724.2999997138977,
+          1641.7999954223633
+        ],
+        "build": [
+          118,
+          130.80000019073486
+        ],
+        "sum": [
+          854.6771624723718,
+          854.672831168243
+        ],
+        "res": [
+          0.00021605746030763418,
+          0.00021605014442292562
+        ],
+        "generatorSlices": [
+          16059878,
+          16059128
+        ],
+        "gpuApertures": [
+          156452,
+          159518
+        ]
+      },
+      {
+        "pop": 0,
+        "tick": 30,
+        "worker": [
+          1678.4000024795532,
+          1632.9000005722046
+        ],
+        "build": [
+          119,
+          138.30000019073486
+        ],
+        "sum": [
+          879.3311608761779,
+          879.3287917129351
+        ],
+        "res": [
+          0.00017255141261862,
+          0.00017255143751849619
+        ],
+        "generatorSlices": [
+          15931513,
+          15931081
+        ],
+        "gpuApertures": [
+          158150,
+          161012
+        ]
+      },
+      {
+        "pop": 0,
+        "tick": 60,
+        "worker": [
+          1683.0999970436096,
+          1602.9000005722046
+        ],
+        "build": [
+          120.40000009536743,
+          138.30000019073486
+        ],
+        "sum": [
+          927.777011472062,
+          927.7737851038701
+        ],
+        "res": [
+          0.0001776670223626863,
+          0.0001776668506059589
+        ],
+        "generatorSlices": [
+          15757237,
+          15757465
+        ],
+        "gpuApertures": [
+          157729,
+          160230
+        ]
+      },
+      {
+        "pop": 0,
+        "tick": 90,
+        "worker": [
+          1651.5999989509583,
+          1587.3000044822693
+        ],
+        "build": [
+          119.90000009536743,
+          135.7999997138977
+        ],
+        "sum": [
+          964.7303827029567,
+          964.7141770916053
+        ],
+        "res": [
+          0.0001830201098885363,
+          0.0001830542751216196
+        ],
+        "generatorSlices": [
+          15733303,
+          15732682
+        ],
+        "gpuApertures": [
+          157208,
+          159786
+        ]
+      },
+      {
+        "pop": 0,
+        "tick": 119,
+        "worker": [
+          1697.1999969482422,
+          1636.7999987602234
+        ],
+        "build": [
+          116,
+          132
+        ],
+        "sum": [
+          795.3792404932653,
+          795.3687816017664
+        ],
+        "res": [
+          0.0001900635881147561,
+          0.00019005542696082895
+        ],
+        "generatorSlices": [
+          16007518,
+          16005355
+        ],
+        "gpuApertures": [
+          157191,
+          160301
+        ]
+      }
+    ]
+  }
+}
