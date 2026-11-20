@@ -1,4 +1,4 @@
-import { roundedBoxGLSL } from './rounded-box.js';
+import { roundedBoxGLSL, roundedBoxExtent } from './rounded-box.js';
 
 const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const scale = (a, k) => a.map((x) => x * k);
@@ -28,11 +28,12 @@ export function pathScene(scene) {
       ],
     });
   }
-  for (const b of scene.roundedBoxes || [])
+  for (const b of scene.roundedBoxes || []) {
+    const extent = roundedBoxExtent(b);
     objects.push({
       center: b.center,
-      lo: b.bounds.min,
-      hi: b.bounds.max,
+      lo: b.center.map((x,i)=>x-extent[i]),
+      hi: b.center.map((x,i)=>x+extent[i]),
       data: [
         ...b.center,
         b.radius,
@@ -46,6 +47,7 @@ export function pathScene(scene) {
         0,
       ],
     });
+  }
   const bounds = [];
   function split(indices) {
     const lo = [Infinity, Infinity, Infinity],

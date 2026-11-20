@@ -1,3 +1,4 @@
+import { exactBoxGeometry } from './rounded-box.js';
 import { exact, addQ, subQ, mulQ, approximate } from './authored-scalar.js';
 const zero = exact(0),
   sq = (x) => mulQ(x, x);
@@ -8,12 +9,9 @@ const subV = (a, b) => a.map((v, i) => subQ(v, b[i]));
 // Substituting source position p+x*u retains an exact root description
 // A*x²+2*B*x+C=0. signs and root ordering need no decimal root expansion.
 export function filletBoundary(shape, lamp, axis, signs, endpoint = false) {
-  const values = shape.definition ?? {},
-    frame = (values.axes ?? shape.axes).map((a) => a.map(exact)),
-    half = (values.halfSize ?? shape.halfSize).map(exact),
-    r = exact(values.radius ?? shape.radius),
+  const { axes: frame, halfSize: half, radius: r, center } = exactBoxGeometry(shape),
     eye = lamp.map(exact),
-    origin = subV(eye, (values.center ?? shape.center).map(exact));
+    origin = subV(eye, center);
   const directions = [],
     q = [];
   for (let d = 0; d < 3; d++)

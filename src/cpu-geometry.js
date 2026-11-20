@@ -1,3 +1,4 @@
+import { roundedBoxExtent } from './rounded-box.js';
 import { shadowVolume } from './visibility.js';
 export const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 export const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -105,7 +106,7 @@ function shapeRecord(s) {
       ...s.axes.flat(),
       ...s.halfSize,
       s.radius,
-      ...s.center.map((_,i)=>s.axes.reduce((extent,axis,j)=>extent+Math.abs(axis[i])*(s.halfSize[j]-s.radius),s.radius)),
+      ...roundedBoxExtent(s),
     ];
   const normal = unit(cross(s.axisU, s.axisV));
   const u = cross(s.axisV, normal),

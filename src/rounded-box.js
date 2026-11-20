@@ -1,4 +1,4 @@
-import {scalarValue} from './authored-scalar.js';
+import {exact, scalarValue} from './authored-scalar.js';
 // A box with a circular fillet on every edge and a spherical octant at each
 // corner. halfSize is measured to its exterior, in an orthonormal local frame.
 export function roundedBox(id, center, axes, halfSize, radius, color) {
@@ -13,10 +13,31 @@ export function roundedBox(id, center, axes, halfSize, radius, color) {
   if (!(radius > 0 && radius <= Math.min(...halfSize))) {
     throw new RangeError('Fillet radius must fit within every box half-extent.');
   }
-  const core = halfSize.map(h => h - radius);
-  const extent = center.map((_, k) => radius + core.reduce((sum, h, i) => sum + h * Math.abs(axes[i][k]), 0));
+  const extent = roundedBoxExtent({ axes, halfSize, radius });
   return { id, center, axes, halfSize, radius, color, ...(Object.keys(definition).length?{definition}:{}),
     bounds: { min: center.map((x,k) => x-extent[k]), max: center.map((x,k) => x+extent[k]) } };
+}
+
+export function roundedBoxExtent({ axes, halfSize, radius }) {
+  return [0, 1, 2].map(k =>
+    radius + axes.reduce((sum, axis, i) => sum + Math.abs(axis[k]) * (halfSize[i] - radius), 0));
+}
+
+// A plain scene edit can copy a shape and replace one coordinate. Reuse its
+// authored rational only while it still describes the current numeric pose.
+export function exactBoxGeometry(shape) {
+  function coordinate(current, authored) {
+    if (Array.isArray(current) || ArrayBuffer.isView(current))
+      return Array.from(current, (value, i) => coordinate(value, authored?.[i]));
+    return exact(authored !== undefined && scalarValue(authored) === current ? authored : current);
+  }
+  const saved = shape.definition;
+  return {
+    center: coordinate(shape.center, saved?.center),
+    axes: coordinate(shape.axes, saved?.axes),
+    halfSize: coordinate(shape.halfSize, saved?.halfSize),
+    radius: coordinate(shape.radius, saved?.radius),
+  };
 }
 
 const dot = (a,b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];

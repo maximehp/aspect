@@ -1,3 +1,4 @@
+import { exactBoxGeometry } from './rounded-box.js';
 import { exact, addQ, subQ, mulQ, approximate } from './authored-scalar.js';
 const zero = exact(0),
   two = exact(2);
@@ -10,13 +11,10 @@ const dot = (a, b) => a.reduce((s, x, i) => addQ(s, mulQ(x, b[i])), zero);
 // interval the exact squared distance minus r² is A*t²+2*B*t+C.
 // Compare a rational endpoint with either quadratic root by sign and squaring.
 export function exactRoundedHit(box, origin, vector, tMin, tMax, endpoint = false) {
-  const def = box.definition ?? {},
-    r = exact(def.radius ?? box.radius),
+  const { center, axes, halfSize, radius: r } = exactBoxGeometry(box),
     eye = Array.from(origin, exact),
     p = Array.from(vector, exact);
-  const center = Array.from(def.center ?? box.center, exact),
-    axes = Array.from(def.axes ?? box.axes, (a) => Array.from(a, exact));
-  const H = Array.from(def.halfSize ?? box.halfSize, (h) => subQ(exact(h), r));
+  const H = halfSize.map((h) => subQ(h, r));
   const O = axes.map((a) =>
     dot(
       a,

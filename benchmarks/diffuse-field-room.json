@@ -2062,5 +2062,302 @@
       "elapsed": 11239.299999713898
     }
   },
-  "parallelOverlapTrialDescription": "Exploratory fresh solves in the same architecture. Clip projected UV bounds to the receiving domain before placing gap-scale breaks. Baseline cutover does not enable this trial."
+  "parallelOverlapTrialDescription": "Exploratory fresh solves in the same architecture. Clip projected UV bounds to the receiving domain before placing gap-scale breaks. Baseline cutover does not enable this trial.",
+  "freshPoseRevisit": [
+    {
+      "options": {
+        "angle": 0.3,
+        "slats": 1,
+        "radius": "0.044"
+      },
+      "ms": 6025,
+      "field": "6f038c9fda2a20281a043fc55abb358c3d49c1c64ecf4518cee7c73314ca9b04",
+      "pixels": "c3603ae24d0bb37336e3124efa56df9abe8f151e79cdbebee4b62c0e8548e41a",
+      "counts": [
+        31822656,
+        30771566,
+        22634069,
+        4381935,
+        2661818,
+        1428922,
+        3,
+        1329669,
+        0,
+        748071,
+        27152469,
+        930186,
+        1430532,
+        1331271,
+        6595479,
+        1205,
+        213474,
+        0,
+        8583393,
+        6786937
+      ],
+      "gpuApertures": 1329669,
+      "history": [
+        {
+          "coefficients": 412,
+          "observations": 1998,
+          "cells": 222,
+          "failed": 122,
+          "maximum": 0.2415188417081258,
+          "rms": 0.055875748643648665
+        },
+        {
+          "coefficients": 632,
+          "observations": 4104,
+          "cells": 456,
+          "failed": 274,
+          "maximum": 0.2635349202153637,
+          "rms": 0.04836259794844424
+        },
+        {
+          "coefficients": 1098,
+          "observations": 8874,
+          "cells": 986,
+          "failed": 396,
+          "maximum": 0.1289983855824896,
+          "rms": 0.019630639937098255
+        },
+        {
+          "coefficients": 1710,
+          "observations": 15624,
+          "cells": 1736,
+          "failed": 528,
+          "maximum": 0.1748347599627047,
+          "rms": 0.023194574940749613
+        }
+      ],
+      "gl": 0
+    },
+    {
+      "options": {
+        "angle": 0.3,
+        "slats": 1,
+        "radius": "0.044",
+        "secondBlind": true,
+        "secondRadius": "0.033",
+        "secondAngle": -0.4,
+        "layout": "alternate",
+        "floor": "blue"
+      },
+      "ms": 8477.5,
+      "field": "bb468ffda79a0621863eb94ce7d1c06c298fc553bac87f10bfd809cc4fb1ecae",
+      "pixels": "f63f3dd4eff42d81ca6714127810b89b51bcd72f0c5c5eb73de3b862a5d6a691",
+      "counts": [
+        47250161,
+        40827324,
+        29908342,
+        15307314,
+        5128892,
+        2025122,
+        14,
+        2414505,
+        0,
+        951921,
+        31961844,
+        1117782,
+        1912302,
+        2268945,
+        19358487,
+        1269,
+        223290,
+        0,
+        13188730,
+        9936733
+      ],
+      "gpuApertures": 2414505,
+      "history": [
+        {
+          "coefficients": 436,
+          "observations": 2232,
+          "cells": 248,
+          "failed": 153,
+          "maximum": 0.24150658912406311,
+          "rms": 0.05421314034325597
+        },
+        {
+          "coefficients": 682,
+          "observations": 4725,
+          "cells": 525,
+          "failed": 329,
+          "maximum": 0.256912850578311,
+          "rms": 0.0472485032493104
+        },
+        {
+          "coefficients": 1238,
+          "observations": 10692,
+          "cells": 1188,
+          "failed": 468,
+          "maximum": 0.12611874358497874,
+          "rms": 0.019170464529247595
+        },
+        {
+          "coefficients": 2017,
+          "observations": 19404,
+          "cells": 2156,
+          "failed": 611,
+          "maximum": 0.14653367362736422,
+          "rms": 0.023042208628058204
+        }
+      ],
+      "gl": 0
+    },
+    {
+      "options": {
+        "angle": 0.3,
+        "slats": 1,
+        "radius": "0.044"
+      },
+      "ms": 5769,
+      "field": "6f038c9fda2a20281a043fc55abb358c3d49c1c64ecf4518cee7c73314ca9b04",
+      "pixels": "c3603ae24d0bb37336e3124efa56df9abe8f151e79cdbebee4b62c0e8548e41a",
+      "counts": [
+        31822656,
+        30771566,
+        22634069,
+        4381935,
+        2661818,
+        1428922,
+        3,
+        1329669,
+        0,
+        748071,
+        27152469,
+        930186,
+        1430532,
+        1331271,
+        6595479,
+        1205,
+        213474,
+        0,
+        8583393,
+        6786937
+      ],
+      "gpuApertures": 1329669,
+      "history": [
+        {
+          "coefficients": 412,
+          "observations": 1998,
+          "cells": 222,
+          "failed": 122,
+          "maximum": 0.2415188417081258,
+          "rms": 0.055875748643648665
+        },
+        {
+          "coefficients": 632,
+          "observations": 4104,
+          "cells": 456,
+          "failed": 274,
+          "maximum": 0.2635349202153637,
+          "rms": 0.04836259794844424
+        },
+        {
+          "coefficients": 1098,
+          "observations": 8874,
+          "cells": 986,
+          "failed": 396,
+          "maximum": 0.1289983855824896,
+          "rms": 0.019630639937098255
+        },
+        {
+          "coefficients": 1710,
+          "observations": 15624,
+          "cells": 1736,
+          "failed": 528,
+          "maximum": 0.1748347599627047,
+          "rms": 0.023194574940749613
+        }
+      ],
+      "gl": 0
+    }
+  ],
+  "afterCopiedTransformFix": [
+    {
+      "field": "6f038c9fda2a20281a043fc55abb358c3d49c1c64ecf4518cee7c73314ca9b04",
+      "pixels": "c3603ae24d0bb37336e3124efa56df9abe8f151e79cdbebee4b62c0e8548e41a",
+      "counts": [
+        31822656,
+        30771566,
+        22634069,
+        4381935,
+        2661818,
+        1428922,
+        3,
+        1329669,
+        0,
+        748071,
+        27152469,
+        930186,
+        1430532,
+        1331271,
+        6595479,
+        1205,
+        213474,
+        0,
+        8583393,
+        6786937
+      ],
+      "gpuApertures": 1329669,
+      "gl": 0
+    },
+    {
+      "field": "bb468ffda79a0621863eb94ce7d1c06c298fc553bac87f10bfd809cc4fb1ecae",
+      "pixels": "f63f3dd4eff42d81ca6714127810b89b51bcd72f0c5c5eb73de3b862a5d6a691",
+      "counts": [
+        47250161,
+        40827324,
+        29908342,
+        15307314,
+        5128892,
+        2025122,
+        14,
+        2414505,
+        0,
+        951921,
+        31961844,
+        1117782,
+        1912302,
+        2268945,
+        19358487,
+        1269,
+        223290,
+        0,
+        13188730,
+        9936733
+      ],
+      "gpuApertures": 2414505,
+      "gl": 0
+    },
+    {
+      "field": "6f038c9fda2a20281a043fc55abb358c3d49c1c64ecf4518cee7c73314ca9b04",
+      "pixels": "c3603ae24d0bb37336e3124efa56df9abe8f151e79cdbebee4b62c0e8548e41a",
+      "counts": [
+        31822656,
+        30771566,
+        22634069,
+        4381935,
+        2661818,
+        1428922,
+        3,
+        1329669,
+        0,
+        748071,
+        27152469,
+        930186,
+        1430532,
+        1331271,
+        6595479,
+        1205,
+        213474,
+        0,
+        8583393,
+        6786937
+      ],
+      "gpuApertures": 1329669,
+      "gl": 0
+    }
+  ]
 }

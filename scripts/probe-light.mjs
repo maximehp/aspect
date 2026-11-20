@@ -1,7 +1,7 @@
 // Independent CPU reference over a chosen area on a planar receiver. The
 // integration includes both planar sheets and the actual filleted slat solids.
 import { buildRoom } from '../src/room.js';
-import { hitRoundedBox } from '../src/rounded-box.js';
+import { hitRoundedBox, roundedBoxExtent } from '../src/rounded-box.js';
 
 const [id = 'bench-seat-bottom', u = '0', v = '0', side = 'front', degrees = '24', count = '524288'] = process.argv.slice(2);
 const iu = Number(u), iv = Number(v), paths = Number(count);
@@ -38,6 +38,10 @@ const faces = room.rectangles.map(rect => {
     dualU: scale(cross(rect.axisV,normal),1/jacobian), dualV: scale(cross(normal,rect.axisU),1/jacobian) };
 });
 
+const bounds = room.roundedBoxes.map(box => {
+  const extent = roundedBoxExtent(box);
+  return {min: box.center.map((x,i)=>x-extent[i]), max: box.center.map((x,i)=>x+extent[i])};
+});
 // Quickly reject closed solids before evaluating the analytic fillet.
 function intersectsBounds({min,max}, origin, direction, maximum) {
   let start = 0, end = maximum;
@@ -72,7 +76,7 @@ function trace(origin, direction, skip, shadow = false) {
   let curvedFace;
   for (let j=0; j<room.roundedBoxes.length; j++) {
     const box = room.roundedBoxes[j], i = faces.length+j;
-    if (i===skip || !intersectsBounds(box.bounds,origin,direction,distance)) continue;
+    if (i===skip || !intersectsBounds(bounds[j],origin,direction,distance)) continue;
     const result = hitRoundedBox(box,origin,direction,1e-10,distance);
     if (!result) continue;
     if (shadow) return true;
