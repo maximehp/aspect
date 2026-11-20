@@ -145,66 +145,6 @@ function refineSegment(evaluate, begin, end, whole, tolerance) {
   return integrate(begin, end, whole, tolerance, 22);
 }
 
-// Apply the room's own geometric transfer coefficients to a supplied radiance
-// field. A source can be a diffuse surface field or a transmitting boundary.
-// The diffuse specialization may evaluate one value per source node. For L(x,w)
-// the relevant w is the direction from that source point towards each receiver.
-export function transferRadiance(solution, { atPosition, along }, { media, incoming, tolerance } = {}) {
-  const points = solution.geometry.receivers,
-    result = new Float64Array(points.length * 3);
-  const cache = atPosition ? points.map((point) => atPosition(point)) : null;
-  if (!cache && typeof along !== 'function')
-    throw TypeError('Supply a spatial or directional radiance field.');
-  for (const part of solution.rows) {
-    for (let row = 0; row + 1 < part.starts.length; row++) {
-      const i = part.first + part.stride * row;
-      for (let k = part.starts[row]; k < part.starts[row + 1]; k++) {
-        const j = part.col[k],
-          weight = Math.PI * part.weights[k];
-        if (!weight) continue;
-        let rgb = cache?.[j];
-        if (!rgb) {
-          const delta = points[i].p.map((x, d) => x - points[j].p[d]),
-            r = Math.hypot(...delta);
-          if (!r) continue;
-          rgb = along(
-            points[j],
-            delta.map((x) => x / r),
-          );
-        }
-        if (media?.length) rgb = transportBetween(media, points[j].p, points[i].p, rgb, incoming, tolerance);
-        for (const c of channels) result[3 * i + c] += weight * rgb[c];
-      }
-    }
-  }
-  return result;
-}
-
-// Continuous field on the authored chart in its natural [0,1] coordinates.
-// May be observed directly or supplied to another transport operation.
-export function evaluateChart(chart, u, v, values) {
-  function coordinate(knots, t) {
-    let lo = 0,
-      hi = knots.length - 1;
-    while (hi - lo > 1) {
-      const mid = (hi + lo) >> 1;
-      if (t < knots[mid]) hi = mid;
-      else lo = mid;
-    }
-    return [lo, Math.min(1, Math.max(0, (t - knots[lo]) / (knots[hi] - knots[lo])))];
-  }
-  const [i, x] = coordinate(chart.knots[0], u),
-    [j, y] = coordinate(chart.knots[1], v);
-  const stride = chart.cols + 1,
-    k = j * stride + i;
-  const read = (offset, c) => (chart.ids[k + offset] < 0 ? 0 : values[3 * chart.ids[k + offset] + c]);
-  return channels.map(
-    (c) =>
-      (1 - y) * ((1 - x) * read(0, c) + x * read(1, c)) +
-      y * ((1 - x) * read(stride, c) + x * read(stride + 1, c)),
-  );
-}
-
 // Geometric support of a medium is independent of its material. This uses the
 // same exact rounded solids as the room. Positive thickness separates a true
 // crossing from a tangent. Either endpoint may already be inside.

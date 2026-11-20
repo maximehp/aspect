@@ -2,30 +2,6 @@ import { rectangleAperture } from './rectangle-aperture.js';
 // The entire clear source rectangle lies above the receiver horizon. The
 // projected solid angle is half the receiver-normal component of the contour
 // integral of the unit directions. Each great-circle edge contributes once.
-const preamble = `#version 300 es
-precision highp float;
-layout(location=0) in vec3 relativeCenter;
-layout(location=1) in vec3 axisU;
-layout(location=2) in vec3 axisV;
-layout(location=3) in vec3 normal;
-out float measure;
-float edge(vec3 a, vec3 b) {
-  vec3 axis = cross(a,b);
-  float sine = length(axis);
-  return sine == 0. ? 0. : dot(normal,axis) * atan(sine,dot(a,b)) / sine;
-}
-`;
-const vertex =
-  preamble +
-  `void main() {
-  vec3 a=normalize(relativeCenter-axisU-axisV), b=normalize(relativeCenter+axisU-axisV);
-  vec3 c=normalize(relativeCenter+axisU+axisV), d=normalize(relativeCenter-axisU+axisV);
-  measure=abs(edge(a,b)+edge(b,c)+edge(c,d)+edge(d,a))*(0.5/3.141592653589793);
-  gl_Position=vec4(0,0,0,1); gl_PointSize=1.;
-}`;
-
-// Coordinates are shared across the whole batch. Jobs reference two authored
-// geometry records and never upload four endpoint vectors per interaction.
 const indexedVertex = `#version 300 es
 precision highp float;
 precision highp int;
@@ -53,15 +29,14 @@ void main() {
 }`;
 
 export class AngularMeasure {
-  constructor(gl, { indexed = false, apertureVertex = null, components = 1, attributeSize = 3 } = {}) {
+  constructor(gl) {
     this.gl = gl;
-    this.indexed = indexed;
-    this.channels = indexed ? 4 : components;
-    this.stride = indexed ? 2 : 4 * attributeSize;
+    this.channels = 4;
+    this.stride = 2;
     this.stats = { polygons: 0, batches: 0 };
     this.program = gl.createProgram();
     for (const [type, source] of [
-      [gl.VERTEX_SHADER, apertureVertex || (indexed ? indexedVertex : vertex)],
+      [gl.VERTEX_SHADER, indexedVertex],
       [
         gl.FRAGMENT_SHADER,
         '#version 300 es\nprecision highp float; out vec4 color; void main(){color=vec4(0);}',
@@ -83,18 +58,12 @@ export class AngularMeasure {
     this.vao = gl.createVertexArray();
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.input);
-    if (indexed) {
-      gl.enableVertexAttribArray(0);
-      gl.vertexAttribIPointer(0, 2, gl.INT, 8, 0);
-      this.tables = [gl.createTexture(), gl.createTexture()];
-      gl.useProgram(this.program);
-      for (const [i, name] of ['charts', 'receivers'].entries())
-        gl.uniform1i(gl.getUniformLocation(this.program, name), 4 + i);
-    } else
-      for (let i = 0; i < 4; i++) {
-        gl.enableVertexAttribArray(i);
-        gl.vertexAttribPointer(i, attributeSize, gl.FLOAT, false, 4 * this.stride, 4 * attributeSize * i);
-      }
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribIPointer(0, 2, gl.INT, 8, 0);
+    this.tables = [gl.createTexture(), gl.createTexture()];
+    gl.useProgram(this.program);
+    for (const [i, name] of ['charts', 'receivers'].entries())
+      gl.uniform1i(gl.getUniformLocation(this.program, name), 4 + i);
     gl.bindVertexArray(null);
   }
   setGeometry(geometry) {
@@ -131,17 +100,7 @@ export class AngularMeasure {
   reserve(count) {
     if (count && (!this.values || this.values.length < this.channels * count)) {
       this.values = new Float32Array(this.channels * count);
-      this.packed = this.indexed ? new Int32Array(count * 2) : new Float32Array(count * this.stride);
-    }
-  }
-  put(index, tile, receiver) {
-    const a = this.packed,
-      k = index * 12;
-    for (let j = 0; j < 3; j++) {
-      a[k + j] = tile.c[j] - receiver.p[j];
-      a[k + 3 + j] = tile.ax[j] * tile.width;
-      a[k + 6 + j] = tile.v[j] * tile.height;
-      a[k + 9 + j] = receiver.n[j];
+      this.packed = new Int32Array(count * 2);
     }
   }
   integrate(count) {

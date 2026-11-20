@@ -13,7 +13,10 @@ if (!token.trim() || !['front', 'back'].includes(side) || !Number.isFinite(angle
 }
 // The optional final JSON argument accepts the same authored room edits as play.
 const edits = process.argv[8] ? JSON.parse(process.argv[8]) : {};
-const room = buildRoom({ ...edits, angle: radians });
+const measurement = process.argv[9] ? JSON.parse(process.argv[9]) : null;
+const room = measurement?.sceneFile
+  ? JSON.parse(await (await import('node:fs/promises')).readFile(measurement.sceneFile, 'utf8'))
+  : buildRoom({ ...edits, angle: radians });
 const target = room.rectangles.findIndex(r => r.id === id);
 if (target < 0) throw new Error('Unknown planar receiver: ' + id);
 // Keep the original observation areas comparable when the renderer changes.
@@ -87,7 +90,6 @@ function random() {
   state ^= state << 13; state ^= state >>> 17; state ^= state << 5;
   return ((state >>> 0) + 0.5)/4294967296;
 }
-const measurement = process.argv[9] ? JSON.parse(process.argv[9]) : null;
 if (measurement?.via) {
   const { referencePath } = await import('./reference-path.js');
   console.log(JSON.stringify(referencePath({room,faces,target,side,path:measurement,paths,trace,random,dot,scale,advance})));
@@ -102,18 +104,15 @@ if (measurement && (!Array.isArray(region) || region.length !== 4 ||
 }
 // One value per complete path in each bin gives the sampling error of the
 // individual bounce orders, including covariance within the final tail.
-let exchange;
-if (measurement?.sourceFieldFile) {
-  const {readFile} = await import('node:fs/promises');
-  const {sourceExchangeProbe} = await import('./source-exchange.js');
-  const snapshot = JSON.parse(await readFile(measurement.sourceFieldFile, 'utf8'));
-  exchange = sourceExchangeProbe(snapshot, room, {id,side,region}, paths);
-}
-const binsByDepth = (exchange || measurement?.orders) && Array.from({ length: 4 }, () => ({
+const binsByDepth = measurement?.orders && Array.from({ length: 4 }, () => ({
   sum: [0, 0, 0], squares: [0, 0, 0], path: [0, 0, 0],
 }));
+const shapes = [...room.rectangles, ...room.roundedBoxes];
+const observed = measurement?.firstSurface && Array.from({length:shapes.length+1}, () =>
+  ({ hits:0, energy:[0,0,0], squares:[0,0,0] }));
 const first = [0,0,0], later = [0,0,0], sumSquares = [0,0,0];
 for (let sample=0; sample<paths; sample++) {
+  let firstId = shapes.length;
   let i = target, f = faces[i], sign = side === 'front' ? 1 : -1;
   const u = region ? 2 * (region[0] + random() * (region[1] - region[0])) - 1 : 2*(iu+random())/grid.nu-1;
   const v = region ? 2 * (region[2] + random() * (region[3] - region[2])) - 1 : 2*(iv+random())/grid.nv-1;
@@ -121,7 +120,6 @@ for (let sample=0; sample<paths; sample++) {
   let position = advance(advance(f.center,f.axisU,u),f.axisV,v);
   const weight = [1,1,1], energy = [0,0,0];
   for (let depth=0; ; depth++) {
-    if (exchange && depth === 1) exchange.firstHit(i, position, f, sign, weight);
     if (depth > 0) {
       const d = room.lightPosition.map((x,k) => x-position[k]), r2 = dot(d,d);
       const cosine = sign*dot(d,f.normal)/Math.sqrt(r2);
@@ -145,12 +143,17 @@ for (let sample=0; sample<paths; sample++) {
       f.normal,sign*Math.sqrt(1-r2));
     const [next, distance, nextFace] = trace(position,direction,i);
     if (next < 0) break;
+    if (depth === 0) firstId = next;
     position = advance(position,direction,distance);
     i = next;
     f = nextFace;
     sign = dot(f.normal,direction) < 0 ? 1 : -1;
   }
-  if (exchange) exchange.finishPath(binsByDepth,u,v);
+  if (observed) {
+    const bin=observed[firstId];
+    bin.hits++;
+    for(let c=0;c<3;c++){bin.energy[c]+=energy[c];bin.squares[c]+=energy[c]*energy[c];}
+  }
   if (binsByDepth) {
     for (const bin of binsByDepth) for (let c = 0; c < 3; c++) {
       bin.sum[c] += bin.path[c];
@@ -169,6 +172,13 @@ const orders = binsByDepth && binsByDepth.map(bin => {
     standardError: mean.map((v, c) => Math.sqrt(Math.max(0, bin.squares[c] / paths - v*v) / (paths-1))),
   };
 });
-console.log(JSON.stringify({ id, iu, iv, side, angle, paths, ...(process.argv[8] ? { edits } : {}), reference, standardError,
-  ...(region && { region }), ...(orders && { orders }), ...(exchange && {exchange:exchange.result()}),
+const firstSurface = observed && Object.fromEntries(observed.flatMap((bin,i) => {
+  if (!bin.hits) return [];
+  const fraction=bin.hits/paths, mean=bin.energy.map(x=>x/paths);
+  return [[shapes[i]?.id ?? '(escape)', { fraction, massSE:Math.sqrt(fraction*(1-fraction)/(paths-1)),
+    mean, standardError:mean.map((x,k)=>Math.sqrt(Math.max(0,bin.squares[k]/paths-x*x)/(paths-1))) }]];
+}));
+console.log(JSON.stringify({ id, iu, iv, side, ...(measurement?.sceneFile ? {sceneFile:measurement.sceneFile} : {angle}), paths,
+  ...(firstSurface && {firstSurface}), ...(process.argv[8] ? { edits } : {}), reference, standardError,
+  ...(region && { region }), ...(orders && { orders }),
   firstReflected: scale(first,1/paths), laterReflected: scale(later,1/paths) }, null, 2));

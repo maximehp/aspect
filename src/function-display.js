@@ -1,5 +1,4 @@
 import { roundedBoxGLSL } from './rounded-box.js';
-import { shapeRecord } from './fillet-transport.js';
 export const fragment =
   `#version 300 es
 precision highp float;precision highp int;
@@ -11,9 +10,18 @@ flat in int objectId;flat in int visible;out vec4 color;
   roundedBoxGLSL +
   `
 vec4 item(int k){return texelFetch(objects,ivec2(k,objectId),0);}
-float gridCoordinate(float t,int start,int count){
- int a=0,b=count;while(b>a+1){int m=(a+b)/2;if(t>=texelFetch(field,ivec2(m,start),0).a)a=m;else b=m;}
- float lo=texelFetch(field,ivec2(a,start),0).a,hi=texelFetch(field,ivec2(b,start),0).a;return float(a)+clamp((t-lo)/(hi-lo),0.,1.);
+vec4 entry(int i){int width=textureSize(field,0).x;return texelFetch(field,ivec2(i%width,i/width),0);}
+vec3 surfaceField(int index, vec2 uv){
+ if(index<0)return vec3(0.);
+ for(;;){
+   vec4 node=entry(index);
+   if(node.x<0.)break;
+   index=int((node.x==0.?uv.x:uv.y)<node.y?node.z:node.w);
+ }
+ vec4 box=entry(index+1);ivec4 indices=ivec4(entry(index+2));
+ vec2 f=clamp((uv-box.xz)/(box.yw-box.xz),0.,1.);
+ return mix(mix(entry(indices.x).rgb,entry(indices.y).rgb,f.x),
+            mix(entry(indices.z).rgb,entry(indices.w).rgb,f.x),f.y);
 }
 void main(){
  vec3 ray=firstRay+floor(gl_FragCoord.x)*stepX+floor(gl_FragCoord.y)*stepY;
@@ -35,9 +43,7 @@ void main(){
   }else{slot=18+int(normal.x<0.)+2*int(normal.y<0.)+4*int(normal.z<0.);
    uv=vec2(asin(min(1.,abs(normal.z))),atan(abs(normal.y),abs(normal.x)))*.63661977237;}
  }
- vec4 grid=item(5+slot);vec2 offset=c.w>0.?clamp(uv,0.,1.)*grid.yz:vec2(gridCoordinate(uv.x,int(grid.x),int(grid.y)),gridCoordinate(uv.y,int(grid.x)+1,int(grid.z)));ivec2 pos=ivec2(floor(offset));vec2 f=fract(offset);ivec2 next=min(pos+1,ivec2(grid.yz));pos.y+=int(grid.x);next.y+=int(grid.x);
- vec3 bounced=mix(mix(texelFetch(field,pos,0).rgb,texelFetch(field,ivec2(next.x,pos.y),0).rgb,f.x),
-                    mix(texelFetch(field,ivec2(pos.x,next.y),0).rgb,texelFetch(field,next,0).rgb,f.x),f.y);
+ vec3 bounced=surfaceField(int(item(5+slot).x),uv);
  vec3 d=lightPos-p;float r2=dot(d,d);vec3 direct=lamp*(float(visible)*max(0.,dot(n,d))/(r2*sqrt(r2)));
  vec3 x=item(4).rgb*intensity*((mode==1?vec3(0):bounced)+(mode==2?vec3(0):direct));x=max(vec3(0),x)/(1.+max(vec3(0),x));
  vec3 rgb=mix(12.92*x,1.055*pow(x,vec3(1./2.4))-.055,greaterThan(x,vec3(.0031308)));
@@ -45,33 +51,36 @@ void main(){
  float q=(float(32*(m&1)+16*(y&1)+8*((m>>1)&1)+4*((y>>1)&1)+2*((m>>2)&1)+((y>>2)&1))+.5)/64.;
  color=vec4(floor(255.*rgb+q)/255.,1.);
 }`;
-export function displayField(solution) {
-  const {
-    geometry: { charts, shapes },
-    incident,
-  } = solution;
-  const width = Math.max(...charts.map((c) => Math.max(c.cols, c.rows) + 1)),
-    height = charts.reduce((n, c) => n + c.rows + 1, 0);
-  const tex = new Float32Array(width * height * 4),
-    objects = new Float32Array(31 * 4 * shapes.length);
+export function displayField({
+  illumination: {
+    geometry: { charts, shapes, vertices, packet },
+    indirect: incident,
+  },
+}) {
+  const objects = new Float32Array(31 * 4 * shapes.length);
   for (const [i, s] of shapes.entries()) {
-    const base = i * 124,
-      r = shapeRecord(s);
+    const record = packet.shapes.subarray(19 * i, 19 * i + 19),
+      base = 124 * i;
     objects.set([...s.center, s.radius || 0], base);
-    for (let d = 0; d < 3; d++) objects.set([...r.slice(3 + 3 * d, 6 + 3 * d), r[12 + d]], base + 4 + 4 * d);
+    for (let d = 0; d < 3; d++)
+      objects.set([...record.slice(3 + 3 * d, 6 + 3 * d), record[12 + d]], base + 4 + 4 * d);
     objects.set(s.color, base + 16);
   }
-  let row = 0;
-  for (const c of charts) {
-    objects.set([row, c.cols, c.rows, 0], 124 * c.object + 20 + 4 * c.slot);
-    for (let j = 0; j <= c.rows; j++)
-      for (let i = 0; i <= c.cols; i++) {
-        const n = c.ids[j * (c.cols + 1) + i];
-        if (n >= 0) tex.set(incident.subarray(3 * n, 3 * n + 3), 4 * ((row + j) * width + i));
-      }
-    for (let d = 0; d < 2; d++)
-      for (let i = 0; i < c.knots[d].length; i++) tex[4 * ((row + d) * width + i) + 3] = c.knots[d][i];
-    row += c.rows + 1;
+  const table = [];
+  for (let i = 0; i < vertices.length; i++)
+    table.push(incident[3 * i], incident[3 * i + 1], incident[3 * i + 2], 0);
+  function store(node) {
+    const index = table.length / 4;
+    if (node.children) {
+      table.push(node.axis, node.cut, 0, 0);
+      for (let j = 0; j < 2; j++) table[4 * index + 2 + j] = store(node.children[j]);
+    } else table.push(-1, 0, 0, 0, ...node.bounds, ...node.ids);
+    return index;
   }
+  for (const g of charts) objects[124 * g.object + 20 + 4 * g.slot] = g.empty ? -1 : store(g.domain);
+  const width = Math.min(1024, Math.max(1, table.length / 4)),
+    height = Math.max(1, Math.ceil(table.length / (4 * width)));
+  const tex = new Float32Array(4 * width * height);
+  tex.set(table);
   return { objects, tex, width, height };
 }

@@ -130,8 +130,8 @@ function render(time) {
     if (changed) {
       const t = renderer.timings;
       element('phases').textContent = [
-        ['Surface basis', t.basis], ['Lamp visibility', t.visibility], ['Lamp input', t.lamp],
-        ['Longest CPU sweep', t.workerMs], ['Operator assembly', t.assemblyMs],
+        ['Geometry and field setup', t.basis],
+        ['Source integration workers', t.workerMs], ['Operator assembly', t.assemblyMs],
         ['Equilibrium', t.solve], ['Appearance setup', t.appearance], ['Visible fields and draw list', renderer.viewMs || 0],
       ].map(([label, ms]) => label + ' ' + ms.toFixed(1) + ' ms').join(' · ');
     }

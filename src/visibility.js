@@ -12,17 +12,6 @@ const cross = (a, b) => [
   a[2] * b[0] - a[0] * b[2],
   a[0] * b[1] - a[1] * b[0],
 ];
-const sameVec = (a, b) => a && b && a.every((v, i) => v === b[i]);
-
-function sameGeometry(a, b) {
-  return a && sameVec(a.center, b.center) &&
-    sameVec(a.axisU, b.axisU) && sameVec(a.axisV, b.axisV);
-}
-
-// Orient a plane normal into the shadow. A lamp in the sheet's plane
-// produces no positive-solid-angle shadow. IEEE doubles and the relative
-// tolerance here suit room-scale, well-conditioned geometry. Grazing or
-// nearly coincident inputs within rounding error have no exact guarantee.
 function orientedPlane(normal, origin, toward) {
   const length = Math.hypot(...normal);
   if (!length) return null;
@@ -119,11 +108,6 @@ function projectedFootprint(receiver, planes) {
   return uv;
 }
 
-function sameFootprint(a, b) {
-  if (!a || !b) return !a && !b;
-  return a === b || (a.length === b.length && a.every((p, i) => sameVec(p, b[i])));
-}
-
 function footprintEdges(polygon) {
   return polygon.map(([x, y], i) => {
     const [nx, ny] = polygon[(i + 1) % polygon.length];
@@ -148,25 +132,6 @@ export function boundsOf(uv) {
     polygonBounds.set(uv, box);
   }
   return box;
-}
-// Only the intersection contributes to an occluded-area integral. A single
-// convex footprint never needs the fan of pieces around its outside.
-export function coveredReceiver(footprint, lit) {
-  if (footprint === square) return lit;
-  if (lit.length === 1 && lit[0].uv === square) return [{ uv: footprint, lit: true }];
-  const edges = footprintEdges(footprint), mask = boundsOf(footprint), covered = [];
-  for (const cell of lit) {
-    let uv = cell.uv;
-    const b = boundsOf(uv);
-    if (mask[0] >= b[1] || mask[1] <= b[0] || mask[2] >= b[3] || mask[3] <= b[2]) continue;
-    for (const [a, b, c, tolerance] of edges) {
-      const [inside] = split(uv, a, b, c, tolerance, false);
-      if (inside !== uv && !hasArea(inside)) { uv = null; break; }
-      uv = inside;
-    }
-    if (uv) covered.push(uv === cell.uv ? cell : { uv, lit: true });
-  }
-  return covered;
 }
 function partitionReceiver(footprints, initial) {
   let lit = initial ? initial.filter(c => c.lit).map(c => c.uv) : [square];
@@ -205,63 +170,4 @@ function partitionReceiver(footprints, initial) {
   return [...lit.map(uv => ({ uv, lit: true })), ...dark.map(uv => ({ uv, lit: false }))];
 }
 
-// Sheets are immutable once submitted. Stable ids allow scene editors to
-// replace a sheet object without discarding unrelated visibility work.
-// Retained pair data consists only of nonempty footprints. Changing one
-// blocker tests its footprint on each receiver plus all blockers on the
-// changed receiver. Full-scene builds still test quadratically many pairs.
-export class VisibilityCompiler {
-  constructor() {
-    this.records = new Map();
-    this.lamp = null;
-  }
-
-  update(rectangles, lightPosition) {
-    const lightMoved = !sameVec(this.lamp, lightPosition);
-    const changedBlockers = [], nextRecords = new Map();
-    const changedReceivers = new Set();
-    for (const rect of rectangles) {
-      if (nextRecords.has(rect.id)) throw new Error('Duplicate rectangle id: ' + rect.id);
-      const old = this.records.get(rect.id);
-      const geometryChanged = !old || !sameGeometry(old.rect, rect);
-      const blockerChanged = lightMoved || geometryChanged;
-      if (geometryChanged || lightMoved) changedReceivers.add(rect.id);
-      if (blockerChanged) changedBlockers.push(rect.id);
-      nextRecords.set(rect.id, {
-        rect, volume: blockerChanged ? shadowVolume(rect, lightPosition) : old.volume,
-        footprints: old?.footprints ?? new Map(), cells: old?.cells,
-      });
-    }
-    for (const id of this.records.keys()) if (!nextRecords.has(id)) changedBlockers.push(id);
-
-    const surfaces = [], stats = { receiversRebuilt: 0, pairsTested: 0, cellCount: 0 };
-    for (const [id, record] of nextRecords) {
-      const full = changedReceivers.has(id);
-      let rebuild = full;
-      if (full) record.footprints = new Map();
-      const candidates = full ? nextRecords.keys() : changedBlockers;
-      for (const other of candidates) {
-        if (other === id) continue;
-        const volume = nextRecords.get(other)?.volume;
-        if (volume) stats.pairsTested++;
-        const footprint = projectedFootprint(record.rect, volume);
-        if (sameFootprint(record.footprints.get(other), footprint)) continue;
-        rebuild = true;
-        if (footprint) record.footprints.set(other, footprint);
-        else record.footprints.delete(other);
-      }
-      if (rebuild) {
-        record.cells = partitionReceiver(record.footprints);
-        stats.receiversRebuilt++;
-      }
-      surfaces.push({ rect: record.rect, cells: record.cells });
-      stats.cellCount += record.cells.length;
-    }
-    this.lamp = [...lightPosition];
-    this.records = nextRecords;
-    return { surfaces, stats };
-  }
-}
-
-// CPU projections used by camera visibility and diffuse transfer.
 export { square, shadowVolume, projectedFootprint, partitionReceiver, split };

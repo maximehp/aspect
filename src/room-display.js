@@ -1,13 +1,14 @@
+import { sceneGeometry } from './cpu-geometry.js';
 import { AngularMeasure } from './angular-measure.js';
 import { Scanlines } from './fillet-transport.js';
-import { FunctionLighting } from './function-lighting.js';
+import { DiffuseTransport } from './diffuse-field.js';
 import { vertex } from './run-display.js';
 import { fragment, displayField } from './function-display.js';
 const filletModule = await WebAssembly.compileStreaming(
   fetch(new URL('./fillet-kernel.wasm', import.meta.url)),
 );
 export class LiveRenderer {
-  constructor(canvas, options) {
+  constructor(canvas) {
     this.gl = canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false });
     const gl = this.gl;
     if (!gl) throw Error('WebGL 2 required');
@@ -63,8 +64,8 @@ export class LiveRenderer {
       gl.texParameteri(gl.TEXTURE_2D, p, gl.NEAREST);
     for (const p of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T])
       gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE);
-    this.angular = new AngularMeasure(gl, { indexed: true });
-    this.math = new FunctionLighting(this.angular, options);
+    this.angular = new AngularMeasure(gl);
+    this.math = new DiffuseTransport(this.angular);
     this.pixel = new Uint8Array(4);
   }
   outputSize(size) {
@@ -78,6 +79,7 @@ export class LiveRenderer {
     );
   }
   prepareScene(scene, camera, size) {
+    const pose = sceneGeometry(scene);
     const calculate = async () => {
       // A new pose can spend tens of milliseconds on CPU geometry before the
       // first worker wait. Let the browser commit the preceding draw first.
@@ -96,10 +98,11 @@ export class LiveRenderer {
           this.scanWorker.onmessage = ({ data }) => resolve(data.error ? null : { ...data, key });
           this.scanWorker.onerror = () => resolve(null);
           this.cancelScan = () => resolve(null);
-          this.scanWorker.postMessage({ scene, camera, size: dimensions });
+          this.scanWorker.postMessage({ scene: pose, camera, size: dimensions });
         });
       }
-      const result = await this.math.update(scene);
+      const result = await this.math.update(pose);
+      result.pose = pose;
       result.preparedScan = scan ? await scan : null;
       this.cancelScan = null;
       return result;
@@ -112,7 +115,7 @@ export class LiveRenderer {
     return result;
   }
   applyScene(scene, result, t) {
-    this.scene = scene;
+    this.scene = result.pose;
     this.eye = null;
     this.viewMs = 0;
     const appearanceStart = performance.now();
@@ -171,7 +174,7 @@ export class LiveRenderer {
           0,
           gl.RGBA32F,
           31,
-          this.scene.rectangles.length + this.scene.roundedBoxes.length,
+          this.scene.shapes.length,
           0,
           gl.RGBA,
           gl.FLOAT,

@@ -1,121 +1,124 @@
-// Browser-side audit of two additive light paths through the playable operator.
-// Muting a material isolates the first reflected source while retaining every
-// occluder. All later handoffs use the operator from the original colored pose.
+// Observe the same lamp visibility and reflected field used by the playable room.
+import { fieldValue, leaves } from '../src/field-domain.js';
+import { chartPoint, writeChart } from '../src/surface-functions.js';
+import { conicImports } from '../src/silhouette.js';
+import { dot, sub } from '../src/cpu-geometry.js';
+
+// The mean of a bilinear function on an axis-aligned subrectangle equals its
+// value at the center. Integrate only the intersection of each leaf and region.
+function reflectedMean(chart, values, bounds) {
+  const [a, b, l, h] = bounds,
+    rgb = [0, 0, 0];
+  for (const leaf of leaves(chart.domain)) {
+    const q = leaf.bounds,
+      u = Math.max(a, q[0]),
+      v = Math.max(l, q[2]);
+    const w = Math.min(b, q[1]) - u,
+      t = Math.min(h, q[3]) - v;
+    if (w <= 0 || t <= 0) continue;
+    const at = fieldValue(chart, u + w / 2, v + t / 2, values);
+    for (let c = 0; c < 3; c++) rgb[c] += (at[c] * chart.shape.color[c] * w * t) / ((b - a) * (h - l));
+  }
+  return rgb;
+}
+
+async function shadowSections(field, chart, cuts) {
+  const packet = field.lamp,
+    n = packet.shapes.length / 19;
+  let wasm;
+  const imports = { math: Math, geometry: conicImports(() => ({ packet, memory: wasm.memory })) };
+  wasm = (
+    await WebAssembly.instantiateStreaming(
+      fetch(new URL('../src/function-transport.wasm', import.meta.url)),
+      imports,
+    )
+  ).instance.exports;
+  let end = Number(wasm.__heap_base);
+  const alloc = (size) => {
+    const p = end;
+    end += 8 * Math.ceil(size / 8);
+    return p;
+  };
+  const ws = alloc(wasm.transportBytes(n)),
+    shapes = alloc(packet.shapes.byteLength),
+    light = alloc(24),
+    surface = alloc(200),
+    ids = alloc(4 * n),
+    interval = alloc(16 * (n + 1)),
+    stats = alloc(160);
+  if (end > wasm.memory.buffer.byteLength)
+    wasm.memory.grow(Math.ceil((end - wasm.memory.buffer.byteLength) / 65536));
+  const memory = wasm.memory.buffer;
+  new Float64Array(memory, shapes, packet.shapes.length).set(packet.shapes);
+  new Float64Array(memory, light, 3).set(packet.lamp);
+  writeChart(memory, surface, { ...chart, bounds: [0, 1, 0, 1] });
+  wasm.prepareTransport(ws, shapes, n, light);
+  const count = wasm.lampBlockers(ws, shapes, n, surface, ids);
+  return cuts.map((v) => {
+    const [p, normal] = chartPoint(chart, 0.5, v);
+    const k =
+      dot(normal, sub(packet.lamp, p)) > 0
+        ? wasm.lampIntervals(
+            ws,
+            shapes,
+            surface,
+            light,
+            ids,
+            count,
+            (2 * v - 1) * chart.height,
+            interval,
+            stats,
+          )
+        : 0;
+    const edges = new Float64Array(memory, interval, 2 * k);
+    return {
+      v,
+      litU: Array.from({ length: k }, (_, i) => [
+        0.5 + (0.5 * edges[2 * i]) / chart.width,
+        0.5 + (0.5 * edges[2 * i + 1]) / chart.width,
+      ]),
+    };
+  });
+}
 
 export async function traceRoom(renderer, scene) {
-  const solution = await renderer.prepareScene(scene);
-  const { modal, geometry } = solution,
-    { basis } = modal;
-  const { shapes, receivers } = geometry;
-  const objectId = (name) => shapes.findIndex((s) => s.id === name);
-  const indices = (object) => new Set(receivers.flatMap((p, i) => (p.object === object ? [i] : [])));
-  const wall = objectId('north-wall'),
-    floor = objectId('floor'),
-    ceiling = objectId('ceiling');
-  function outgoing(field, object) {
-    const v = new Float64Array(field.length),
-      rho = shapes[object].color;
-    for (const i of indices(object)) for (let c = 0; c < 3; c++) v[3 * i + c] = rho[c] * field[3 * i + c];
-    return v;
-  }
-  // Return pi times outgoing radiance, consistent with the independent room probe.
-  function witness(field, object, side) {
-    const chart = geometry.maps[object][side];
-    const samples = [
-      [0.29, 0.4],
-      [0.5, 0.5],
-      [0.69, 0.57],
-    ];
-    const rgb = samples.map(([u, v]) =>
-      basis.at(chart, u, v, field).map((x, c) => x * shapes[object].color[c]),
-    );
-    return { samples, rgb };
-  }
-  function expanded(source) {
-    const out = new Float64Array(source.length);
-    for (const p of solution.rows)
-      for (let r = 0; r + 1 < p.starts.length; r++) {
-        const i = 3 * (p.first + r * p.stride);
-        for (let k = p.starts[r]; k < p.starts[r + 1]; k++) {
-          const j = 3 * p.col[k],
-            w = p.weights[k];
-          for (let c = 0; c < 3; c++) out[i + c] += w * source[j + c];
-        }
-      }
-    return out;
-  }
-  const branches = {};
-  for (const branch of ['slat emission', 'lit wall around slat']) {
-    const choose = (o) => (branch === 'slat emission' ? !!o.axes : o.id === 'north-wall');
-    const isolate = (o) => (choose(o) ? o : { ...o, color: [0, 0, 0] });
-    const masked = await renderer.prepareScene({
-      ...scene,
-      rectangles: scene.rectangles.map(isolate),
-      roundedBoxes: scene.roundedBoxes.map(isolate),
-    });
-    let field = basis.encode(masked.firstBounce),
-      ref = masked.firstBounce;
-    const records = [];
-    let src = branch === 'slat emission' ? wall : floor;
-    records.push({
-      arrivedAt: shapes[src].id,
-      activeModes: [...indices(src)].filter((i) => modal.active[i]).length,
-      ...witness(field, src, src === floor ? 1 : 0),
-    });
-    for (const dest of branch === 'slat emission' ? [floor, ceiling] : [ceiling]) {
-      field = modal.transfer(outgoing(field, src));
-      ref = expanded(outgoing(ref, src));
-      const at = witness(field, dest, dest === floor ? 1 : 0),
-        match = witness(basis.encode(ref), dest, dest === floor ? 1 : 0);
-      records.push({
-        from: shapes[src].id,
-        to: shapes[dest].id,
-        ...modal.inspectLinks(indices(dest), indices(src)),
-        ...at,
-        expandedRGB: match.rgb,
-      });
-      src = dest;
+  const solution = await renderer.prepareScene(scene),
+    { direct, illumination, operator } = solution;
+  const g = illumination.geometry;
+  const id = (name) => g.shapes.findIndex((s) => s.id === name);
+  const wall = id('north-wall'),
+    floor = id('floor'),
+    ceiling = id('ceiling');
+  const region = [0.5, 0.75, 0.4, 0.6];
+  const descriptor = (field) => ({ lamp: null, geometry: g, indirect: field });
+  const slatLight = new Float64Array(illumination.indirect.length);
+  for (let i = 0; i < g.shapes.length; i++)
+    if (g.shapes[i].axes) {
+      const from = operator.reflect(direct, i);
+      from.indirect.forEach((v, j) => (slatLight[j] += v));
     }
-    branches[branch] = records;
+  const viaSlat = descriptor(slatLight);
+  const chart = g.maps[wall][0];
+  function handoff(field) {
+    const toFloor = operator.reflect(field, wall),
+      toCeiling = operator.reflect(toFloor, floor);
+    return {
+      floor: reflectedMean(g.maps[floor][1], toFloor.indirect, region),
+      ceiling: reflectedMean(g.maps[ceiling][0], toCeiling.indirect, region),
+    };
   }
-  const before = JSON.stringify([solution.counts, modal.counts]),
-    chart = geometry.maps[floor][1];
-  let maximumDifference = 0;
-  for (let i = 0; i < 1024; i++) {
-    const u = ((i % 32) + 0.5) / 32,
-      v = (Math.floor(i / 32) + 0.5) / 32,
-      rgb = basis.at(chart, u, v, modal.coefficients);
-    const [ix, iy] = [u, v].map((t, d) => {
-      const stops = chart.knots[d];
-      let l = 0;
-      while (l + 2 < stops.length && t > stops[l + 1]) l++;
-      return [l, (t - stops[l]) / (stops[l + 1] - stops[l])];
-    });
-    for (let c = 0; c < 3; c++) {
-      let expected = 0;
-      for (let a = 0; a < 2; a++)
-        for (let b = 0; b < 2; b++)
-          expected +=
-            (a ? ix[1] : 1 - ix[1]) *
-            (b ? iy[1] : 1 - iy[1]) *
-            solution.incident[3 * chart.ids[(iy[0] + b) * (chart.cols + 1) + ix[0] + a] + c];
-      maximumDifference = Math.max(maximumDifference, Math.abs(expected - rgb[c]));
-    }
-  }
+  const contact = (name, side, area) => reflectedMean(g.maps[id(name)][side], illumination.indirect, area);
   return {
-    branches,
-    floorQueries: 1024,
-    queryCountersUnchanged: before === JSON.stringify([solution.counts, modal.counts]),
-    maximumDifference,
-    counts: modal.counts,
-    spatial: solution.counts,
-    geometry: {
-      filletSurfaces: geometry.charts.filter((g) => shapes[g.object].axes).length,
-      cylinder: geometry.charts.filter((g) => g.type === 1).length,
-      sphere: geometry.charts.filter((g) => g.type === 2).length,
-    },
-    modalResidual: modal.modalResidual,
-    physicalResidual: solution.residual,
-    discreteSolutionBound: solution.equilibriumError,
+    region,
+    wallSections: await shadowSections(illumination, chart, [0.2, 0.35, 0.45, 0.5, 0.55, 0.65, 0.8]),
+    wallFromSlats: reflectedMean(chart, slatLight, region),
+    fromLampThroughWall: handoff(direct),
+    fromSlatsThroughWall: handoff(viaSlat),
+    bench: contact('bench-seat-bottom', 0, [0, 0.5, 0, 1]),
+    behindArtwork: contact('north-wall', 0, [0.5, (1 + 1.11 / 3.4) / 2, 0.5, (1 + 1.07 / 1.85) / 2]),
+    settledResidual: solution.residual,
+    closure: operator.closure,
+    maxMass: solution.maxMass,
+    refinement: solution.history.at(-1),
   };
 }

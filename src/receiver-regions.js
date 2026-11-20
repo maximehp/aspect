@@ -10,7 +10,7 @@ export class ReceiverRegions {
       geometry: conicImports(() => ({ packet: this.packet, memory: this.wasm.memory })),
     }).exports;
     const { shapes, tiles, domains, lamp } = packet,
-      nt = tiles.byteLength / 168,
+      nt = tiles.byteLength / 200,
       ng = domains.byteLength / 104,
       ns = shapes.length / 19;
     let offset = Number(this.wasm.__heap_base);

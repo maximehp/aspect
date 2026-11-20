@@ -10,7 +10,7 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
     }).exports;
     const { shapes, tiles, points, lamp } = packet,
       n = points.byteLength / 56,
-      k = tiles.byteLength / 168;
+      k = tiles.byteLength / 200;
     const rows = Math.ceil((n - first) / stride);
     let cursor = Number(engine.__heap_base);
     function space(len) {
@@ -39,8 +39,10 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
     new Uint8Array(mem, dest, points.byteLength).set(new Uint8Array(points));
     new Float64Array(mem, light, 3).set(lamp);
     new Uint8Array(mem, counts, 160).fill(0);
-    if (packet.lampEvents) new Float64Array(mem, eventField, packet.lampEvents.length).set(packet.lampEvents);
-    if (packet.planeField) new Float64Array(mem, planeField, packet.planeField.length).set(packet.planeField);
+    if (packet.lampEvents)
+      new Float64Array(mem, eventField, packet.lampEvents.length).set(packet.lampEvents);
+    if (packet.planeField)
+      new Float64Array(mem, planeField, packet.planeField.length).set(packet.planeField);
     if (packet.regions) {
       new Uint8Array(mem, regions, packet.regions.length).set(packet.regions);
       new Float64Array(mem, moments, packet.moments.length).set(packet.moments);
@@ -54,7 +56,8 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       ids = new Int32Array(mem, tileIds, k);
     const { nodes, colors, lampRGB } = packet,
       chartIds = new Int32Array(tiles),
-      direct = new Float64Array(rows * 3);
+      direct = new Float64Array(rows * 3),
+      lampWeights = new Float64Array(rows * (shapes.length / 19));
     const starts = new Uint32Array(rows + 1),
       indices = [],
       weights = [],
@@ -93,7 +96,7 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
         const gpu = ids[ix] < 0,
           t = gpu ? ~ids[ix] : ids[ix],
           b = 5 * ix,
-          object = chartIds[42 * t + 37];
+          object = chartIds[50 * t + 37];
         if (!values[b] && !values[b + 1] && !values[b + 2] && !values[b + 3] && !values[b + 4] && !gpu)
           continue;
         if (gpu && values[b + 4] < 0) {
@@ -106,6 +109,7 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
         }
         const jac = packet.jacobians[t];
         for (let j = 0; j < 4; j++) local[nodes[4 * t + j]] += jac * values[b + j];
+        lampWeights[row * (shapes.length / 19) + object] += jac * values[b + 4];
         for (let c = 0; c < 3; c++)
           direct[3 * row + c] += jac * values[b + 4] * colors[3 * object + c] * lampRGB[c];
         if (gpu) {
@@ -126,6 +130,7 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       stride,
       starts,
       direct,
+      lamp: lampWeights,
       col: Uint32Array.from(indices),
       weights: Float64Array.from(weights),
       jobs: Int32Array.from(angular),

@@ -5,6 +5,7 @@ import base64
 import io
 import json
 import math
+import sys
 import statistics
 import time
 import urllib.parse
@@ -84,13 +85,13 @@ class BrowserTab:
         return result["result"].get("value")
 
 
-SETUP = """(async (mode) => {
-  const { LiveRenderer } = await import(['function','expanded','pointwise'].includes(mode)?'/src/room-display.js':'/src/comparison-display.js');
+SETUP = """(async () => {
+  const { LiveRenderer } = await import('/src/room-display.js');
   window.pose = (await import('/src/motion-benchmark.js')).motionPose;
   const canvas = document.createElement('canvas');
   document.body.replaceChildren(canvas);
   canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block';
-  window.room = new LiveRenderer(canvas, { contacts: mode, regions: mode!=='pointwise', expanded: mode==='expanded'||mode==='pointwise' });
+  window.room = new LiveRenderer(canvas);
 })"""
 
 REPLAY = """(async (extra, slats, ticks, digest) => {
@@ -115,8 +116,10 @@ REPLAY = """(async (extra, slats, ticks, digest) => {
     gl.disable(gl.SCISSOR_TEST);
     room.synchronize();
     times.push([performance.timeOrigin + start, performance.timeOrigin + performance.now(),room.frameStats.scanMs||0,
-      room.countedBytes?.() ?? (room.stats.bytes+room.stats.workerBytes+room.frameStats.bytes+(room.view.contactBackend?.stats.peakBytes||0)+(room.math.curved?.wasm.memory.buffer.byteLength||0)),
-      solution.counts||[],solution.newJobs||0,solution.timings.workerMs||0,solution.timings.assemblyMs||0,solution.timings.solve||0,prepared-start,submitted-prepared,performance.now()-submitted,solution.timings.modalBuild||0,solution.timings.modalApply||0,solution.modal?.counts||{},solution.timings.operatorMs||0,solution.rectangleRules||[],solution.roundedVisibility||[],solution.curvedFacing||[]]);
+      room.countedBytes(), solution.counts, solution.newJobs, solution.timings.workerMs,
+      solution.timings.assemblyMs, solution.timings.solve, prepared-start, submitted-prepared,
+      performance.now()-submitted, solution.history.at(-1), solution.operator.closure,
+      solution.maxMass, solution.timings.operatorMs]);
     if(digest){
       const pixels=new Uint8Array(3840*2160*4);
       gl.readPixels(0,0,3840,2160,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
@@ -140,7 +143,6 @@ def percentiles(samples):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["function", "expanded", "pointwise", "cpu", "gpu", "resident"])
     parser.add_argument("extra", type=int, choices=[0, 4, 8])
     parser.add_argument(
         "--port", type=int, default=9222, help="Chrome remote debugging port"
@@ -162,7 +164,7 @@ def main():
     try:
         with closing(
             websocket.create_connection(
-                tab["webSocketDebuggerUrl"], suppress_origin=True, timeout=90
+                tab["webSocketDebuggerUrl"], suppress_origin=True, timeout=600
             )
         ) as ws:
             browser = BrowserTab(ws)
@@ -177,7 +179,7 @@ def main():
                 if time.monotonic() >= deadline:
                     raise RuntimeError("The room benchmark page did not load")
                 time.sleep(0.05)
-            browser.evaluate(SETUP + "(" + json.dumps(args.mode) + ")")
+            browser.evaluate(SETUP + "()")
             browser.call(
                 "Page.startScreencast",
                 format="png",
@@ -185,7 +187,11 @@ def main():
                 maxHeight=256,
                 everyNthFrame=1,
             )
-            rows = browser.evaluate(REPLAY + "(" + ",".join(map(json.dumps,[args.extra,args.slats,ticks,args.digest_frames])) + ")")
+            rows = []
+            for tick in ticks:
+                row, = browser.evaluate(REPLAY + "(" + ",".join(map(json.dumps, [args.extra, args.slats, [tick], args.digest_frames])) + ")")
+                rows.append(row)
+                print(json.dumps({"tick": tick, "gpuMs": row[1]-row[0], "field": row[12]}), file=sys.stderr, flush=True)
             browser.call("Page.stopScreencast")
             latencies, completed, tails, missing = [], [], [], []
             for pose, (start, done, *_) in zip(ticks[1:], rows[1:]):
@@ -200,7 +206,7 @@ def main():
             print(
                 json.dumps(
                     {
-                        "mode": args.mode,
+                        "renderer": "diffuse-field",
                         "extra": args.extra,
                         "slats": args.slats,
                         "matched": len(latencies),
@@ -213,18 +219,16 @@ def main():
                         "cameraMs": percentiles([r[2] for r in rows[1:]]),
                         "peakCountedMiB": max(r[3] for r in rows)/1048576,
                         "meanWorkCounts": [statistics.mean(v) for v in zip(*(r[4] for r in rows[1:]))],
-                        "meanRectangleRules": [statistics.mean(v) for v in zip(*(r[16] for r in rows[1:]))],
-                        "meanRoundedVisibility": [statistics.mean(v) for v in zip(*(r[17] for r in rows[1:]))],
-                        "meanCurvedFacing": [statistics.mean(v) for v in zip(*(r[18] for r in rows[1:]))],
                         "overFrameBudget": {str(b): sum(t > b for t in completed) for b in (1, 1000/60)},
                         "meanGpuApertures": statistics.mean(r[5] for r in rows[1:]),
+                        "worstSpatialResidual": max(r[12]["maximum"] for r in rows[1:]),
+                        "framesExceedingSpatialTolerance": sum(r[12]["failed"] > 0 for r in rows[1:]),
+                        "worstEquilibriumClosure": max(r[13] for r in rows[1:]),
+                        "maximumUnitFieldGain": max(r[14] for r in rows[1:]),
                         "workerMs": percentiles([r[6] for r in rows[1:]]),
                         "assemblyMs": percentiles([r[7] for r in rows[1:]]),
                         "solveMs": percentiles([r[8] for r in rows[1:]]),
                         "operatorConstructionMs": percentiles([r[15] for r in rows[1:]]),
-                        "modalBuildMs": percentiles([r[12] for r in rows[1:]]),
-                        "modalEquilibriumMs": percentiles([r[13] for r in rows[1:]]),
-                        "meanModalWork": {k: statistics.mean(r[14][k] for r in rows[1:]) for k in rows[1][14]},
                         "preparationMs": percentiles([r[9] for r in rows[1:]]),
                         "applyAndDrawMs": percentiles([r[10] for r in rows[1:]]),
                         "markAndFinishMs": percentiles([r[11] for r in rows[1:]]),

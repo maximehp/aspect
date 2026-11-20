@@ -1,4 +1,4 @@
-import { shadowVolume, projectedFootprint, partitionReceiver } from './visibility.js';
+import { shadowVolume } from './visibility.js';
 export const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 export const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 export const cross = (a, b) => [
@@ -10,27 +10,7 @@ export const unit = (a) => {
   const l = Math.sqrt(dot(a, a));
   return a.map((x) => x / l);
 };
-export const point = (r, u, v) => r.center.map((x, k) => x + r.axisU[k] * u + r.axisV[k] * v);
 const scale = (v, a) => v.map((x) => x * a);
-// Tangent coordinates for six signed-normal radiance charts. The physical
-// emission sites, normals, areas and visibility come from the filleted surface.
-export function boxCharts(b) {
-  const result = [];
-  for (let i = 0; i < 3; i++)
-    for (const sign of [1, -1]) {
-      const a = (i + 1) % 3,
-        c = (i + 2) % 3;
-      result.push({
-        id: b.id + '/' + i + '/' + sign,
-        center: b.center.map((x, k) => x + sign * b.axes[i][k] * b.halfSize[i]),
-        axisU: scale(b.axes[a], sign * b.halfSize[a]),
-        axisV: scale(b.axes[c], b.halfSize[c]),
-        color: b.color,
-        owner: b,
-      });
-    }
-  return result;
-}
 // The support of a rounded box is the maximum over the eight spherical
 // corners. Support planes bound the perspective silhouette in angular space.
 function roundedProjection(shape, eye) {
@@ -49,46 +29,6 @@ function roundedProjection(shape, eye) {
   return { rel, core, distance, z, x, y };
 }
 
-// Four of the full silhouette's uniformly spaced tangent directions are ±x
-// and ±y in this frame. Bounds on transverse position and positive depth
-// enclose all four slopes. Rejecting a receiver outside this wider cone
-// avoids constructing the remaining support planes at that integration site.
-export function shadowBounds(shape, eye) {
-  const basis = roundedProjection(shape, eye);
-  if (!basis) return null;
-  const { rel, core, distance, x, y, z } = basis;
-  const extent = (axis) =>
-    shape.radius + core.reduce((a, h, i) => a + h * Math.abs(dot(axis, shape.axes[i])), 0);
-  const near = distance - shape.radius,
-    far = dot(z, rel) + extent(z);
-  const planes = [z];
-  for (const axis of [x, y]) {
-    const c = dot(rel, axis),
-      r = extent(axis),
-      lo = c - r,
-      hi = c + r;
-    const left = lo / (lo < 0 ? near : far),
-      right = hi / (hi > 0 ? near : far);
-    planes.push(
-      axis.map((v, k) => v - left * z[k]),
-      axis.map((v, k) => right * z[k] - v),
-    );
-  }
-  const tolerance = planes.map((n) => 1e-9 * (1 + Math.hypot(...n)));
-  return { basis, planes, near, eye, tolerance };
-}
-export function canShadow(rect, bounds) {
-  if (!bounds) return false;
-  const delta = sub(rect.center, bounds.eye);
-  for (let i = 0; i < bounds.planes.length; i++) {
-    const n = bounds.planes[i],
-      a = dot(n, delta),
-      b = Math.abs(dot(n, rect.axisU)) + Math.abs(dot(n, rect.axisV)),
-      h = i ? 0 : bounds.near;
-    if (a + b < h - (bounds.tolerance[i] + 1e-9 * (Math.abs(a) + b + h))) return false;
-  }
-  return true;
-}
 // The angular stencil and a solid's corner offsets are independent of the
 // eye. Only their perspective tangents change when another receiver uses it.
 export const shadowAzimuthCount = 24;
@@ -96,16 +36,9 @@ export const shadowAzimuths = Array.from({ length: shadowAzimuthCount }, (_, i) 
   const a = (2 * Math.PI * i) / shadowAzimuthCount;
   return [Math.cos(a), Math.sin(a)];
 });
-const cornerOffsets = new WeakMap();
-function coreOffsets(shape, core) {
-  let offsets = cornerOffsets.get(shape);
-  if (!offsets) {
-    offsets = Array.from({ length: 8 }, (_, i) =>
-      core.map((_, k) => shape.axes.reduce((s, ax, j) => s + ((i >> j) & 1 ? 1 : -1) * ax[k] * core[j], 0)),
-    );
-    cornerOffsets.set(shape, offsets);
-  }
-  return offsets;
+function coreOffsets(shape,core){
+  return Array.from({length:8},(_,i)=>core.map((_,k)=>
+    shape.axes.reduce((s,ax,j)=>s+((i>>j)&1?1:-1)*ax[k]*core[j],0)));
 }
 export function volume(shape, eye, projection) {
   if (!shape.axes) return shadowVolume(shape, eye);
@@ -164,30 +97,36 @@ export function volume(shape, eye, projection) {
       }
   return planes;
 }
-export function regions(rect, blockers, initial, previous) {
-  if (initial && !initial.some((c) => c.lit)) return initial;
-  const footprints = [];
-  const pairs = previous?.pairs;
-  for (const [shape, planes] of blockers) {
-    if (!planes || shape === rect || shape === rect.owner) continue;
-    let poly = pairs?.get(planes);
-    if (poly === undefined) {
-      poly = projectedFootprint(rect, planes);
-      pairs?.set(planes, poly);
-    }
-    if (poly) footprints.push(poly);
-  }
-  if (initial && !footprints.length) return initial;
-  // The original operand order matters at coincident boundaries. A receiver
-  // reuses its partition only when the ordered nonempty footprints agree.
-  if (
-    previous?.cells &&
-    previous.initial === initial &&
-    previous.footprints.length === footprints.length &&
-    footprints.every((poly, i) => poly === previous.footprints[i])
-  )
-    return previous.cells;
-  const cells = partitionReceiver(footprints, initial);
-  if (previous) Object.assign(previous, { initial, footprints, cells });
-  return cells;
+
+function shapeRecord(s) {
+  if (s.axes)
+    return [
+      ...s.center,
+      ...s.axes.flat(),
+      ...s.halfSize,
+      s.radius,
+      ...s.center.map((_,i)=>s.axes.reduce((extent,axis,j)=>extent+Math.abs(axis[i])*(s.halfSize[j]-s.radius),s.radius)),
+    ];
+  const normal = unit(cross(s.axisU, s.axisV));
+  const u = cross(s.axisV, normal),
+    v = cross(normal, s.axisU);
+  return [
+    ...s.center,
+    ...scale(u, 1 / dot(u, s.axisU)),
+    ...scale(v, 1 / dot(v, s.axisV)),
+    ...normal,
+    0,
+    0,
+    0,
+    0,
+    ...s.axisU.map((v, i) => Math.abs(v) + Math.abs(s.axisV[i])),
+  ];
+}
+
+// Capture one pose at submission. Visibility, source integration and display
+// all read the same ordered shape equations, including mutable author edits.
+export function sceneGeometry(scene) {
+  const {shapes,lightPosition,lampRGB}=structuredClone({
+    shapes:[...scene.rectangles,...scene.roundedBoxes],lightPosition:scene.lightPosition,lampRGB:scene.lampRGB});
+  return {shapes,lightPosition,lampRGB,records:Float64Array.from(shapes.flatMap(shapeRecord))};
 }

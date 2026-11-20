@@ -1,4 +1,4 @@
-// Receiver collocation of the same continuous-source integral used on every bounce.
+// Integrate an authored source field for a point of receiver-area quadrature.
 #include "solid-hit.h"
 #define PI 3.14159265358979323846
 #define ROOT(x) __builtin_sqrt(x)
@@ -17,6 +17,7 @@ typedef struct {
   Vec c, ax, u, v, n;
   double width, height, r;
   int type, object, face, base, nu, nv;
+  double a0, a1, b0, b1; // angular integration limits in authored chart coordinates
 } Chart;
 typedef struct {
   Vec p, n;
@@ -620,7 +621,7 @@ static Integral strip(Pair *w, double t) {
          L = length(cross3(dl, c->ax));
   if (D < 1e-14)
     return out;
-  double v = c->type ? t / (PI / 2) : .5 + .5 * t / c->height, jac = c->type ? c->r : 1,
+  double v = c->type ? (t-c->b0)/(c->b1-c->b0) : .5 + .5 * t / c->height, jac = c->type ? c->r : 1,
          scale = jac * sourceCos / PI;
   int count = openings(dark, nVis, a, b, open);
   w->stats->strips++;
@@ -718,7 +719,7 @@ static Integral sampleArc(Pair *w, const Meridian *m, double x, double cs, Vec n
   double z = dp(d, d), c = dp(n, d), s = -dp(w->y.n, d);
   if (c <= 0 || s <= 0 || z < 1e-22 || (!visible && arcState(w, 0, p, 0) < 0))
     return out;
-  double weight = c * s / (PI * z * z) * w->c->r * w->c->r * cs, u = x / (PI / 2), v = m->v;
+  double weight = c * s / (PI * z * z) * w->c->r * w->c->r * cs, u = (x-w->c->a0)/(w->c->a1-w->c->a0), v = m->v;
   out.w[0] = weight * (1 - u) * (1 - v);
   out.w[1] = weight * u * (1 - v);
   out.w[2] = weight * (1 - u) * v;
@@ -793,7 +794,7 @@ static Integral arcIntegral(Pair *w, double t) {
   Vec eye = minus(w->y.p, c->c), lamp = minus(w->lamp, c->c);
   Vec arc = plus(scale3(c->u, cosine(t)), scale3(c->v, sine(t)));
   Meridian mer = {.circle = arc,
-                  .v = t / (PI / 2),
+                  .v = (t-c->b0)/(c->b1-c->b0),
                   .eye = {dp(eye, arc), dp(eye, c->ax)},
                   .lamp = {dp(lamp, arc), dp(lamp, c->ax)},
                   .receiver = {c->r * dp(w->y.n, arc), c->r * dp(w->y.n, c->ax)},
@@ -801,7 +802,7 @@ static Integral arcIntegral(Pair *w, double t) {
                   .eps = 1e-11 * (1 + length(eye) + length(lamp) + c->r)};
   Leaf heap[128];
   int n = 1;
-  heap[0] = (Leaf){0, PI / 2, arcPanel(w, &mer, 0, PI / 2)};
+  heap[0] = (Leaf){c->a0,c->a1,arcPanel(w,&mer,c->a0,c->a1)};
   Integral value = heap[0].p.value;
   double error = heap[0].p.error;
   while (error > w->tolerance * .25) {
@@ -1326,6 +1327,7 @@ int lampIntervals(TransportWorkspace *ws, const Shape *shapes, const Chart *char
             .count = {0, count},
             .blockers = {0, ids},
             .stats = stats,
+            .reuse = ws->reuse,
             .tangents = ws->tangents,
             .source = chart->object};
   Vec normal, p = cp(chart, 0, transverse, &normal);
@@ -1459,7 +1461,7 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
         continue;
       }
     }
-    double a = c->type ? 0 : -c->height, b = c->type ? PI / 2 : c->height;
+    double a = c->type ? c->b0 : -c->height, b = c->type ? c->b1 : c->height;
     // Certified clear planar tiles use the GPU's projected angular measure
     // as the constant coefficient of their partition of unity.
     if (!c->type && !w.count[0] && dp(d, y.n) - ext > 1e-8 &&
@@ -1497,6 +1499,11 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
       nc = cylinderEvents(&w, cuts, capacity);
     if (nc == capacity)
       stats->limited++;
+    if (c->type == 1) {
+      int kept=0;
+      for(int j=0;j<nc;j++)if(cuts[j]>a && cuts[j]<b)cuts[kept++]=cuts[j];
+      nc=kept;
+    }
     cuts[nc++] = b;
     Integral value = {0};
     for (int j = 0; j < nc; j++) {
@@ -1516,7 +1523,7 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
         H = angle(hi - w.warpCenter, w.warpDepth);
       }
       value = sum(value, refine(&w, L, H, panel(&w, L, H),
-                                tolerance * (hi - a) / (c->type ? PI / 2 : 2 * c->height), 22));
+                                tolerance * (hi - a) / (c->type ? c->b1-c->b0 : 2 * c->height), 22));
       a = hi;
     }
     for (int j = 0; j < 5; j++)
