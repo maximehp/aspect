@@ -1,113 +1,4 @@
-// Geometry is evaluated in double precision on the CPU. The output stream
-// describes horizontal pixel runs, each with one known surface and lamp state.
-typedef struct {
-  double x, y, z;
-} Vec;
-typedef struct {
-  Vec c, ax[3], h;
-  double r;
-  Vec extent;
-} Shape;
-typedef struct {
-  Vec n;
-  double b;
-} Plane;
-typedef struct {
-  int first, n;
-} Range;
-typedef struct {
-  int x, end, y, id, lit;
-} Run;
-static Vec plus(Vec a, Vec b) { return (Vec){a.x + b.x, a.y + b.y, a.z + b.z}; }
-static Vec minus(Vec a, Vec b) { return (Vec){a.x - b.x, a.y - b.y, a.z - b.z}; }
-static Vec scale3(Vec a, double x) { return (Vec){a.x * x, a.y * x, a.z * x}; }
-static double dp(Vec a, Vec b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
-static double low(double x, double y) { return x < y ? x : y; }
-static double high(double x, double y) { return x > y ? x : y; }
-static Vec local(const Shape *s, Vec v) {
-  return (Vec){dp(v, s->ax[0]), dp(v, s->ax[1]), dp(v, s->ax[2])};
-}
-static double absd(double x) { return __builtin_fabs(x); }
-#define FAR 1.e25
-static double hit(const Shape *s, Vec o, Vec d, double limit) {
-  Vec rel = minus(o, s->c);
-  if (!s->r) {
-    double den = dp(d, s->ax[2]);
-    if (!den)
-      return FAR;
-    double t = -dp(rel, s->ax[2]) / den;
-    if (t <= 1.e-8 || t >= limit)
-      return FAR;
-    Vec p = plus(rel, scale3(d, t));
-    if (absd(dp(p, s->ax[0])) > 1 || absd(dp(p, s->ax[1])) > 1)
-      return FAR;
-    return t;
-  }
-  Vec p = local(s, rel), v = local(s, d);
-  double O[] = {p.x, p.y, p.z}, D[] = {v.x, v.y, v.z}, H[] = {s->h.x, s->h.y, s->h.z}, from = -FAR,
-         to = FAR;
-  for (int k = 0; k < 3; k++) {
-    if (!D[k]) {
-      if (absd(O[k]) > H[k])
-        return FAR;
-      continue;
-    }
-    double a = (-H[k] - O[k]) / D[k], b = (H[k] - O[k]) / D[k];
-    from = high(from, low(a, b));
-    to = low(to, high(a, b));
-  }
-  if (to <= 1.e-8 || from >= limit || from > to)
-    return FAR;
-  double end = low(to, limit), r = s->r, events[8];
-  int n = 0;
-  double dist = 0;
-  for (int k = 0; k < 3; k++) {
-    H[k] -= r;
-    double q = high(0, absd(O[k] + from * D[k]) - H[k]);
-    dist += q * q;
-  }
-  if (from > 1.e-8 && dist <= r * r * (1 + 1e-12))
-    return from;
-  from = high(from, 1.e-8);
-  for (int k = 0; k < 3; k++)
-    if (D[k])
-      for (int side = -1; side <= 1; side += 2) {
-        double t = (side * H[k] - O[k]) / D[k];
-        if (t > from && t < end) {
-          int j = n++;
-          while (j && events[j - 1] > t) {
-            events[j] = events[j - 1];
-            j--;
-          }
-          events[j] = t;
-        }
-      }
-  events[n++] = end;
-  for (int i = 0; i < n; i++) {
-    double until = events[i], m = .5 * (from + until), A = 0, B = 0, C = -r * r;
-    for (int k = 0; k < 3; k++) {
-      double p = O[k] + m * D[k];
-      if (absd(p) <= H[k])
-        continue;
-      double q = O[k] + from * D[k] - (p > 0 ? H[k] : -H[k]);
-      A += D[k] * D[k];
-      B += q * D[k];
-      C += q * q;
-    }
-    double disc = B * B - A * C;
-    if (A > 0 && disc >= 0) {
-      double root = __builtin_sqrt(disc), q = -B - (B >= 0 ? root : -root), a = q / A,
-             b = q ? C / q : a;
-      double t = from + low(a, b);
-      if (t < from - 1e-12 || t <= 1e-8)
-        t = from + high(a, b);
-      if (t >= from - 1e-12 && t > 1e-8 && t <= until + 1e-12 && t < limit)
-        return t;
-    }
-    from = until;
-  }
-  return FAR;
-}
+#include "solid-hit.h"
 static Vec surfNormal(const Shape *s, Vec p) {
   if (!s->r)
     return s->ax[2];
@@ -171,7 +62,7 @@ static void emit(View *v, int x, int end, int y, int id, int lit) {
 }
 static int lampHit(View *v, int k, Vec p) {
   v->stats[3]++;
-  return hit(v->s + k, v->light, minus(p, v->light), 1 - 1e-9) < 1;
+  return segmentHit(v->s + k, v->light,p, 1 - 1e-9) < 1;
 }
 static int shadowAt(View *v, int id, Vec p, const int *ids, int n) {
   for (int i = 0; i < n; i++)
@@ -427,6 +318,7 @@ int renderRuns(const Shape *s, int n, const Plane *cam, const Range *cr, const P
                const Range *lr, const int *order, const int *groups, const Vec *frame,
                const int *blockers, const Range *blocks, const double *nearDepth, int w, int h,
                Run *out, int cap, int *stats) {
+  predicateBase=s;predicateCount=n;
   View v = {s,        cam, lamp,  cr,       lr,       order,    groups,   n,
             w,        h,   cap,   0,        frame[0], frame[1], frame[2], frame[3],
             frame[4], out, stats, blockers, blocks,   nearDepth};

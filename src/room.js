@@ -82,30 +82,24 @@ function furniture(alternate) {
 const furnishings = { studio: furniture(false), alternate: furniture(true) };
 
 function blind(id, x) {
-  let previousAngle, previousRadius, previousCount;
-  let slats;
   return function tilt(angle, radius, count) {
-    if (angle !== previousAngle || radius !== previousRadius || count !== previousCount) {
-      const c = Math.cos(angle), s = Math.sin(angle);
-      const axes = [[c,-s,0],[s,c,0],[0,0,1]];
-      slats = Array.from({ length: count }, (_, i) =>
-        roundedBox(id + '-' + i, [x, 2.02 + (i - (count-1)/2) * 0.24, -1.25],
-          axes, count===1 ? [0.17,0.045,1.75] : [0.113,0.012,2], radius, oak));
-      previousAngle = angle; previousRadius = radius; previousCount = count;
-    }
-    return slats;
+    const c=Math.cos(angle),s=Math.sin(angle),axes=[[c,-s,0],[s,c,0],[0,0,1]];
+    return Array.from({length:count},(_,i)=>roundedBox(id+'-'+i,
+      [x,(202+24*i-12*(count-1))+'/100','-1.25'],axes,
+      count===1?['0.17','0.045','1.75']:['0.113','0.012','2'],radius,oak));
   };
+
 }
 
-const windowBlind = blind('window-slat', -3.4);
-const interiorBlind = blind('interior-slat', -3.03);
+const windowBlind = blind('window-slat', '-3.4');
+const interiorBlind = blind('interior-slat', '-3.03');
 
 export function buildRoom({
   angle = 24 * Math.PI / 180,
   secondBlind = false,
   secondAngle = -17 * Math.PI / 180,
   slats = 9,
-  radius = slats===1 ? .028 : .008,
+  radius = slats===1 ? "0.028" : "0.008",
   secondRadius = radius,
   layout = 'studio',
   floor = 'limestone',

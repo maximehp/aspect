@@ -1,0 +1,52 @@
+# Transport in Aspect
+
+The camera observes a field. Authors supply geometry, material response, media, emitters and an observer. The moving room uses one point emitter, opaque Lambertian surfaces and vacuum. Those properties remove outgoing direction from the material response and remove the volume integral entirely. The optical phenomena list is the long-term coverage target. Its observer effects need a measurement or perception model, and its unexplained entries need a known mechanism before they can become physical acceptance tests. [Coverage inventory](https://en.wikipedia.org/wiki/Optical_phenomenon) · [Open acceptance](OPEN_WORK.md)
+
+## The current pose
+
+For an outward-facing source point $x$, receiver $y$, $d=y-x$, and binary visibility $V$, transfer of outgoing radiance to irradiance is
+
+$$T[L](y)=\int_S V(x,y)L(x,\hat d)\,[n_x\cdot d]_+[-n_y\cdot d]_+\,|d|^{-4}\,dA_x.$$
+
+The room solves $H=E+T[\rho H/\pi]$ in linear RGB. It stores the indirect term $B=H-E$. The first right-hand side is the directly illuminated source integrated over its actual lit portion. Subsequent terms apply the same geometric operator to $\rho B/\pi$. This separation keeps the point lamp’s sharp shadow in the first reflection. The final shader evaluates the direct term at the visible point and interpolates the same indirect field used during reflection. Its established exposure is proportional to $\pi$ times outgoing radiance.
+
+Each new pose rebuilds the geometric operator and starts the equilibrium solve from its current right-hand side. Device allocations and compiled functions survive between poses. The rotating slats, player, bench and artwork use the same geometry rules. Camera visibility runs concurrently on a separate CPU worker. The GPU integrates clear near-field planar apertures using the four great-circle edges of their projected contour, reads one scalar back per aperture, and draws the scene with horizontal lines. [Room](src/room-display.js) · [GPU measure](src/angular-measure.js)
+
+## Eliminating a receiving coordinate from the integration
+
+Consider a planar part of the wall, $x=c+s$, $s=A u+B v$, with $u,v\in[-1,1]$. Keep the floor position $y$ free. Write $D=y-c$, $q=|D|^{-2}$, $h=-n_y\cdot D$, $j=n_y\cdot s$, and $a=q D\cdot s$. With the whole pair facing and mutually visible, the diffuse geometric kernel including $1/\pi$ is
+
+$$G(s,y)=\frac{(n_x\cdot D)q^2}{\pi}\,(h+j)(1-2a+q|s|^2)^{-2}.$$
+
+Its quadratic expansion in $s$ contains six source modes, $1,u,v,u^2,uv,v^2$. The bracket through quadratic order is $h+j+4ha+4ja+h(12a^2-2q|s|^2)$. Each coefficient is a function of floor position and normal. Integrating the lamp-lit wall against these six modes gives six numbers independent of the floor. They include its curved shadow edges. For later bounces the moments of a bilinear source field follow directly from its four coefficients. For example, a corner basis with signs $(i,j)$ has normalized moments $(1,i/3,j/3,1/3,ij/9,1/3)$ before its area Jacobian. The floor calculation contracts the current source moments with the six coefficient functions. Sampling another floor position in this domain requires no new lamp or wall-area integral.
+
+Selection applies to an entire receiver domain. Projected bounds test both facing factors and separate blockers from the convex hull joining the source and receiver. For a separating rectangular blocker, the crossings of its plane lie inside the convex hull of the sixteen corner crossings. This can prove a whole shadow or a whole opening. For the expansion, bound $z=-2a+q|s|^2$ over both domains. If $|z|\le b<1$, the tail of $(1+z)^{-2}$ after the quadratic term in $z$ is bounded by $b^3(4-3b)/(1-b)^2$. The implementation also bounds the cubic and quartic terms discarded when expanding in $s$, the facing factors, area and maximum direct lamp irradiance. The accepted per-interaction absolute budget is $5\times10^{-5}$ for the normalized source modes or direct lamp term. This assumes exact arithmetic in the bound. The numerical source moments have their own integration error. [Receiver-domain proofs and moments](src/plane-transfer.h)
+
+If the facing sign varies, a blocker cannot be separated, or the distance makes that bound too large, the engine uses the clipped integral at individual receiver positions. Curved receivers also use it unless they belong to a planar face at the point in question. The room represents the resulting indirect field with continuous bilinear functions on surface charts. It still assembles a sparse collocation system and projects regional expressions back into this finite field. A narrow indirect stripe between its knots can be lost. Whole-wall symbolic closure through arbitrarily many bounces remains open.
+
+## A point lamp on a cylindrical fillet
+
+At fixed angle $\theta$, write the cylinder generator as $p(x)=p_0+x e$, $|e|=1$. The normal is independent of $x$. On a visible, lit and facing interval, the source cosine numerator for each of the lamp and receiver is constant. The receiving cosine numerator is $c+m x$. Let $l,y_e$ be the projected axial coordinates of lamp and receiver, and $L,Y$ their respective **squared** distances from the generator line. Apart from a constant factor including radius, the integrand is
+
+$$ (c+m x)Q_l(x)^{-3/2}Q_y(x)^{-2},\qquad Q_l=(x-l)^2+L,\quad Q_y=(x-y_e)^2+Y. $$
+
+A local analytic primitive avoids sampling along $x$. About interval midpoint $x_0$, use $z=(x-x_0)/h$, with $h$ its half-length, $U=Q_l/Q_l(x_0)$ and $W=Q_y/Q_y(x_0)$. Set $g=U^{-3/2}W^{-2}$. Its Taylor coefficients follow from $g(0)=1$ and $(UW)g'=(-\tfrac32 U'W-2UW')g$. With $g_{-1}=0$, a primitive is
+
+$$F(x)=\frac{h}{Q_l(x_0)^{3/2}Q_y(x_0)^2}\sum_{k\ge0}
+\frac{(c+m x_0)g_k+mh g_{k-1}}{k+1}z^{k+1}.$$
+
+Evaluate $F(b)-F(a)$ at visible endpoints, sum over openings and integrate over $\theta$. The implementation splits a long generator until both complex pole distances exceed $3h$ and bounds the remaining series using Cauchy’s estimate on $|z|=2$. For bilinear outgoing light on a generator, only the moments of $1,x,x^2$ over $Q_y^2$ remain. Their endpoint formulas use rational functions and an angle difference. Spherical octants retain their curved meridians and area Jacobian. Their remaining integrals and the outer strip integral use deterministic embedded estimates. The per-pair absolute budget is $2\times10^{-4}$ and the outer relative target is 0.002. Refinement exhaustion is counted. These targets apply locally and do not certify every pixel or all visibility topology. [Length primitive and integration](src/function-transport.c)
+
+## Arithmetic and geometry
+
+Text such as `"0.1"` and `"1/10"` describes the same rational length. Numeric inputs retain the binary value actually passed. Slat radii, centers and half-extents preserve their authored definitions. Rotation axes calculated with sine and cosine carry the precision of the pose computation.
+
+For a fillet sphere, write $Q$ for the light position relative to its center and $d$ for the travel vector. The tangent equation is $(Q\cdot d)^2-(Q\cdot Q-r^2)(d\cdot d)=0$. For a cylindrical edge, first project both vectors perpendicular to its axis. The axial extent, the sphere octant or cylinder quadrant, and the finite light segment select the physically relevant roots. Substituting a position on a wall gives an implicit conic across that wall. Along a generator its root is identified by $Ax^2+2Bx+C=0$ and a branch. Its decimal expansion is unnecessary for a side test. Within a pose, a lamp-lit interval union belongs to the source. Identical generator queries can use it on multiple receivers. Unions with the receiving visibility are intersected before integration.
+
+The kernel uses floating point for ordinary decisions. Near a suspected tangent it can reconstruct the lamp conic from rational authored quantities and exact binary inputs. The camera’s uncertain curved intersections compare candidate rational endpoints with quadratic roots by sign and squaring. Several geometric clipping and depth comparisons still use absolute epsilons. The renderer does not provide a universal certified predicate, a guaranteed downstream physical error or a per-pixel rounding certificate. For its discrete positive equilibrium it reports the residual and, when the infinity-norm contraction bound $q<1$ holds, an error bound of residual divided by $1-q$. [Authored inputs](src/authored-scalar.js) · [Silhouette](src/silhouette.js) · [Filtered ray intersections](src/exact-hit.js)
+
+## Direction, media and the observer
+
+A general source may supply $L(x,\omega)$. The optional operations can apply the room's compiled geometric weights to a position-only source or evaluate a smooth directional source toward each receiver. A perfectly smooth interface instead maps a direction into reflected and transmitted branches using the authored normal, Snell’s law and unpolarized Fresnel energy fractions. For a future wave surface, a refracted map $f$ from incident surface area onto the pool floor gives irradiance density by summing transmitted incident flux divided by $|\det Df|$ over all preimages, in consistent area coordinates. Finite illumination and observer footprints matter at a fold.
+
+A medium supplies density, absorption, scattering and a normalized directional phase response. Along a characteristic, a segment acts on incoming radiance as $L_{out}=T L_{in}+J$. For constant material and phase-weighted incident radiance $S$, $T=\exp(-\sigma_t d)$ and $J=(1-T)(\sigma_s/\sigma_t)S$ per channel. A supplied column-density integral also permits this reduction. The operations intersect authored rounded regions, combine overlapping coefficients, and compose segment responses in travel order. A varying field uses deterministic refinement. The resulting radiance can illuminate a diffuse receiver or enter another segment. A closed 3D solver for an arbitrary scattering cloud, wax body or ideal specular caustic remains open. The playable room never imports the optional optics module. An audit found no dedicated playable water or dust pass. The separate fur study still has a fiber-direction response and coverage model whose equivalence and cost have not been established. [Optical operations](src/optical-operations.js) · [Equation of transfer](https://www.pbr-book.org/4ed/Light_Transport_II_Volume_Rendering/The_Equation_of_Transfer) · [Dielectric interface](https://pbr-book.org/4ed/Reflection_Models/Specular_Reflection_and_Transmission)

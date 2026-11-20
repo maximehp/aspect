@@ -1,12 +1,21 @@
+import {scalarValue} from './authored-scalar.js';
 // A box with a circular fillet on every edge and a spherical octant at each
 // corner. halfSize is measured to its exterior, in an orthonormal local frame.
 export function roundedBox(id, center, axes, halfSize, radius, color) {
+  const definition={};
+  function coordinates(values, key){
+    if(values.every(x=>typeof x==='number'))return values;
+    definition[key]=values;return values.map(scalarValue);
+  }
+  center=coordinates(center,'center');halfSize=coordinates(halfSize,'halfSize');
+  if(axes.some(a=>a.some(x=>typeof x!=='number'))){definition.axes=axes;axes=axes.map(a=>a.map(scalarValue));}
+  if(typeof radius!=='number'){definition.radius=radius;radius=scalarValue(radius);}
   if (!(radius > 0 && radius <= Math.min(...halfSize))) {
     throw new RangeError('Fillet radius must fit within every box half-extent.');
   }
   const core = halfSize.map(h => h - radius);
   const extent = center.map((_, k) => radius + core.reduce((sum, h, i) => sum + h * Math.abs(axes[i][k]), 0));
-  return { id, center, axes, halfSize, radius, color,
+  return { id, center, axes, halfSize, radius, color, ...(Object.keys(definition).length?{definition}:{}),
     bounds: { min: center.map((x,k) => x-extent[k]), max: center.map((x,k) => x+extent[k]) } };
 }
 

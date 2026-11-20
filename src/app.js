@@ -28,8 +28,8 @@ function requestScene(time = performance.now()) {
   const t=time/1000, play=element('animate').checked;
   const next = buildRoom({
     slats:Number(element('slats').value),
-    radius:Number(element('radius').value)/1000,
-    secondRadius:Number(element('radius2').value)/1000,
+    radius:element('radius').value+'e-3',
+    secondRadius:element('radius2').value+'e-3',
     angle: (Number(element('angle').value)+(play?20*Math.sin(t*1.7):0))*radians,
     secondBlind: element('second').checked,
     secondAngle: (Number(element('angle2').value)+(play?24*Math.sin(t*1.1+.8):0))*radians,

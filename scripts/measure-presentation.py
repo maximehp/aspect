@@ -42,6 +42,7 @@ class BrowserTab:
         self.socket = socket
         self.sequence = 0
         self.swaps = {}
+        self.optional_requests = []
 
     def send(self, method, params):
         self.sequence += 1
@@ -58,6 +59,10 @@ class BrowserTab:
                 if "error" in message:
                     raise RuntimeError(message["error"])
                 return message["result"]
+            if message.get("method") == "Network.requestWillBeSent":
+                url = message["params"]["request"]["url"]
+                if "/optical-operations.js" in url:
+                    self.optional_requests.append(url)
             if message.get("method") == "Page.screencastFrame":
                 frame = message["params"]
                 self.send("Page.screencastFrameAck", {"sessionId": frame["sessionId"]})
@@ -80,22 +85,25 @@ class BrowserTab:
 
 
 SETUP = """(async (mode) => {
-  const { LiveRenderer } = await import('/src/room-display.js');
+  const { LiveRenderer } = await import(['function','pointwise'].includes(mode)?'/src/room-display.js':'/src/comparison-display.js');
   window.pose = (await import('/src/motion-benchmark.js')).motionPose;
   const canvas = document.createElement('canvas');
   document.body.replaceChildren(canvas);
   canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block';
-  window.room = new LiveRenderer(canvas, { contacts: mode });
+  window.room = new LiveRenderer(canvas, { contacts: mode, regions: mode!=='pointwise' });
 })"""
 
-REPLAY = """(async (extra, slats) => {
+REPLAY = """(async (extra, slats, ticks, digest) => {
   const times = [], gl = room.gl;
-  for (let tick = 0; tick <= 120; tick++) {
+  for (const tick of ticks) {
     await new Promise(requestAnimationFrame);
     const start = performance.now();
     const {scene, camera} = pose(tick / 60, extra, slats);
-    room.applyScene(scene, await room.prepareScene(scene,camera,[3840,2160]), start);
+    const solution=await room.prepareScene(scene,camera,[3840,2160]);
+    const prepared=performance.now();
+    room.applyScene(scene,solution,start);
     room.draw(camera, 1, [3840, 2160]);
+    const submitted=performance.now();
     // Stamp this actual framebuffer, so compositor capture can identify its pose.
     gl.enable(gl.SCISSOR_TEST);
     for (let y = 0; y < 2; y++) for (let k = 0; k < 8; k++) {
@@ -106,7 +114,15 @@ REPLAY = """(async (extra, slats) => {
     }
     gl.disable(gl.SCISSOR_TEST);
     room.synchronize();
-    times.push([performance.timeOrigin + start, performance.timeOrigin + performance.now()]);
+    times.push([performance.timeOrigin + start, performance.timeOrigin + performance.now(),room.frameStats.scanMs||0,
+      room.countedBytes?.() ?? (room.stats.bytes+room.stats.workerBytes+room.frameStats.bytes+(room.view.contactBackend?.stats.peakBytes||0)+(room.math.curved?.wasm.memory.buffer.byteLength||0)),
+      solution.counts||[],solution.newJobs||0,solution.timings.workerMs||0,solution.timings.assemblyMs||0,solution.timings.solve||0,prepared-start,submitted-prepared,performance.now()-submitted]);
+    if(digest){
+      const pixels=new Uint8Array(3840*2160*4);
+      gl.readPixels(0,0,3840,2160,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+      const hash=await crypto.subtle.digest('SHA-256',pixels);
+      times.at(-1).push(Array.from(new Uint8Array(hash),v=>v.toString(16).padStart(2,'0')).join(''));
+    }
   }
   for (let i = 0; i < 4; i++) await new Promise(requestAnimationFrame);
   return times;
@@ -124,14 +140,19 @@ def percentiles(samples):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["cpu", "gpu", "resident"])
+    parser.add_argument("mode", choices=["function", "pointwise", "cpu", "gpu", "resident"])
     parser.add_argument("extra", type=int, choices=[0, 4, 8])
     parser.add_argument(
         "--port", type=int, default=9222, help="Chrome remote debugging port"
     )
     parser.add_argument("--room", default="http://127.0.0.1:8736")
     parser.add_argument("--slats", type=int, choices=[0, 1, 2], default=0, help="Single slats in motion, or 0 for both full blinds")
+    parser.add_argument("--poses", type=int, default=120, choices=range(1,121), metavar="1..120",
+                        help="Evenly spaced moving poses from the same two-second replay")
+    parser.add_argument("--exclude-optional-optics", action="store_true", help="Block optional optical operation modules")
+    parser.add_argument("--digest-frames", action="store_true", help="Hash every 4K framebuffer in a separate image comparison run")
     args = parser.parse_args()
+    ticks = [round(120*i/args.poses) for i in range(args.poses+1)]
     api = f"http://127.0.0.1:{args.port}/json/"
     page = urllib.parse.quote(args.room.rstrip("/") + "/motion.html", safe=":/")
     with urllib.request.urlopen(
@@ -147,6 +168,8 @@ def main():
             browser = BrowserTab(ws)
             browser.call("Network.enable")
             browser.call("Network.setCacheDisabled", cacheDisabled=True)
+            if args.exclude_optional_optics:
+                browser.call("Network.setBlockedURLs", urls=["*/optical-operations.js*"])
             browser.call("Page.enable")
             browser.call("Page.bringToFront")
             deadline = time.monotonic() + 15
@@ -162,10 +185,10 @@ def main():
                 maxHeight=256,
                 everyNthFrame=1,
             )
-            rows = browser.evaluate(REPLAY + "(" + str(args.extra) + "," + str(args.slats) + ")")
+            rows = browser.evaluate(REPLAY + "(" + ",".join(map(json.dumps,[args.extra,args.slats,ticks,args.digest_frames])) + ")")
             browser.call("Page.stopScreencast")
             latencies, tails, missing = [], [], []
-            for pose, (start, done) in enumerate(rows[1:], 1):
+            for pose, (start, done, *_) in zip(ticks[1:], rows[1:]):
                 stamps = [t for t in browser.swaps.get(pose, []) if t >= start]
                 if stamps:
                     swap = min(stamps)
@@ -180,8 +203,21 @@ def main():
                         "extra": args.extra,
                         "slats": args.slats,
                         "matched": len(latencies),
+                        "optionalOpticsRequests": browser.optional_requests,
+                        **({"frameDigests": [r[-1] for r in rows]} if args.digest_frames else {}),
                         "missing": missing,
                         "startToSwapMs": percentiles(latencies),
+                        "finishedMs": percentiles([r[1]-r[0] for r in rows[1:]]),
+                        "cameraMs": percentiles([r[2] for r in rows[1:]]),
+                        "peakCountedMiB": max(r[3] for r in rows)/1048576,
+                        "meanWorkCounts": [statistics.mean(v) for v in zip(*(r[4] for r in rows[1:]))],
+                        "meanGpuApertures": statistics.mean(r[5] for r in rows[1:]),
+                        "workerMs": percentiles([r[6] for r in rows[1:]]),
+                        "assemblyMs": percentiles([r[7] for r in rows[1:]]),
+                        "solveMs": percentiles([r[8] for r in rows[1:]]),
+                        "preparationMs": percentiles([r[9] for r in rows[1:]]),
+                        "applyAndDrawMs": percentiles([r[10] for r in rows[1:]]),
+                        "markAndFinishMs": percentiles([r[11] for r in rows[1:]]),
                         "syncToSwapMs": percentiles(tails),
                         "beforeSync": sum(t < -1 for t in tails),
                     }

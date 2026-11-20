@@ -31,6 +31,7 @@ run.addEventListener('click', async () => {
   bodies.disabled = true;
   integrator.disabled = true;
   let renderer, backend;
+  const workCounts=new Float64Array(20);
   const report = (label, value, target = results) => {
     const group = document.createElement('div'),
       name = document.createElement('dt'),
@@ -44,8 +45,10 @@ run.addEventListener('click', async () => {
     progress.textContent = 'Preparing the first pose…';
     await nextFrame();
     const started = performance.now();
-    renderer = new LiveRenderer(document.querySelector('#room'), { contacts: integrator.value });
-    backend = renderer.view.contactBackend;
+    const production=['function','pointwise'].includes(integrator.value);
+    const Engine=production?LiveRenderer:(await import('./comparison-display.js')).LiveRenderer;
+    renderer = new Engine(document.querySelector('#room'), { contacts: integrator.value, regions: integrator.value!=='pointwise' });
+    backend = production?renderer.angular:renderer.view.contactBackend;
     const totals = new Map();
     function record(label, elapsed) {
       totals.set(label, (totals.get(label) || 0) + elapsed);
@@ -63,19 +66,20 @@ run.addEventListener('click', async () => {
       renderer.synchronize();
       const finished = performance.now();
       if (profile) {
+        solution.counts?.forEach((v,i)=>workCounts[i]+=v);
         grouped += renderer.frameStats.grouped;
         covered += renderer.frameStats.covered;
         runs += renderer.frameStats.runs;
         lampTests += renderer.frameStats.lampTests;
         arena = Math.max(
           arena,
-          renderer.frameStats.bytes +
-            renderer.math.curved.wasm.memory.buffer.byteLength +
+          renderer.countedBytes?.() ?? renderer.frameStats.bytes +
+            (renderer.math.curved?.wasm.memory.buffer.byteLength||0) +
             renderer.stats.workerBytes +
             renderer.stats.bytes,
         );
         const t = solution.timings,
-          charts = renderer.view.chartMs;
+          charts = renderer.view.chartMs||0;
         record('Scene, basis and view setup', authored - start + t.basis + ready - solved);
         record('Exchange and overlapping geometry', solved - authored - t.basis - t.solve);
         record('Equilibrium and directional light', t.solve);
@@ -84,7 +88,7 @@ run.addEventListener('click', async () => {
         record('Draw submission and upload', submitted - ready - renderer.viewMs);
         record('Wait for finished 4K pixels', finished - submitted);
         record('Concurrent CPU scanline visibility', renderer.frameStats.scanMs || 0);
-        record('Within exchange · longest angular worker', t.workerMs);
+        record('Longest transport worker (overlapping)', t.workerMs);
         record('Within exchange · sparse operator assembly', t.assemblyMs);
         record('Within exchange · lamp visibility', t.visibility);
         record('Within exchange · lamp input', t.lamp);
@@ -105,6 +109,8 @@ run.addEventListener('click', async () => {
     }
     const elapsed = performance.now() - startWarm;
     times.sort((a, b) => a - b);
+    if(production)for(const [i,label] of ['Generator slices','Lit endpoints','Analytic length integrals','Spherical evaluations','Rounded boundary feature evaluations','Adaptive splits','Unresolved error estimates','Clear angular apertures in updated interactions','Reserved','Regional moment evaluations','Regionally excluded interactions','Domains crossing a facing boundary','Domains outside the expansion tolerance','Domains with unresolved blockers','Point or curved interactions','Integrated source moment fields','Lamp moment slices','Exact conic refinements','Reused current-pose lamp slices','Evaluated current-pose lamp slices'].entries())
+      if(label!=='Reserved')report(label+' per moving frame',Math.round(workCounts[i]/ticks).toLocaleString());
     report('Moving window geometry', windowControl.selectedOptions[0].textContent);
     report('Covered pixels classified in runs', ((100 * grouped) / covered).toFixed(2) + '%');
     report('Exact lamp segment tests for frame visibility', Math.round(lampTests / ticks).toLocaleString());
@@ -127,8 +133,8 @@ run.addEventListener('click', async () => {
     if (backend) {
       const s = backend.stats;
       report(
-        'Submitted GPU sector integrals per moving frame',
-        Math.round((16 * (s.polygons - initialStats.polygons)) / ticks).toLocaleString(),
+        production?'Submitted GPU contour integrals per moving frame':'Submitted GPU sector integrals per moving frame',
+        Math.round(((production?1:16) * (s.polygons - initialStats.polygons)) / ticks).toLocaleString(),
       );
       if (backend.beginChart) {
         report(
@@ -140,7 +146,7 @@ run.addEventListener('click', async () => {
           'Stationary polygons integrated on GPU, including first pose',
           s.staticPolygons.toLocaleString(),
         );
-      } else {
+      } else if(!production) {
         report('Packing per frame', ms((s.packMs - initialStats.packMs) / ticks));
         report(
           'GPU submission through readback',
