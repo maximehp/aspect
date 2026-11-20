@@ -21,7 +21,7 @@ export class FunctionLighting {
   async update(scene) {
     const start = performance.now(),
       geometry = compileSurfaces(scene),
-      { receivers, tiles, packet } = geometry;
+      { receivers, packet } = geometry;
     const n = receivers.length;
     const count = Math.min(n, 6, Math.max(1, (navigator.hardwareConcurrency || 2) - 1));
     while (this.pool.length < count)
@@ -62,25 +62,44 @@ export class FunctionLighting {
         packet.nodes.byteLength +
         packet.points.byteLength,
       newJobs = 0;
-    const jobCount = parts.reduce((sum, p) => sum + p.jobs.length / 3, 0);
+    const jobCount = parts.reduce((sum, p) => sum + p.jobs.length, 0);
     angular.reserve(jobCount);
+    angular.setGeometry(geometry);
     for (const part of parts) {
       part.counts.forEach((x, i) => (flags[i] += x));
       links += part.col.length;
-      for (const array of [part.starts, part.col, part.weights, part.jobs, part.direct])
+      for (const array of [part.starts, part.col, part.weights, part.jobs, part.jobStarts, part.direct])
         bytes += array.byteLength;
-      for (let j = 0; j < part.jobs.length; j += 3) {
-        const i = part.first + part.stride * part.jobs[j],
-          t = part.jobs[j + 1];
-        angular.put(newJobs++, tiles[t], receivers[i]);
+      for (let row = 0; row + 1 < part.jobStarts.length; row++) {
+        const receiver = part.first + row * part.stride;
+        for (let j = part.jobStarts[row]; j < part.jobStarts[row + 1]; j++) {
+          angular.packed[2 * newJobs] = part.jobs[j];
+          angular.packed[2 * newJobs + 1] = receiver;
+          newJobs++;
+        }
       }
     }
     angular.integrate(newJobs);
-    let job = 0;
+    let job = 0,
+      weighted = 0;
+    const rules = Array(8).fill(0);
+    const positions = new Uint32Array(n);
+    bytes += positions.byteLength;
     for (const part of parts)
-      for (let j = 0; j < part.jobs.length; j += 3) {
-        const weight = angular.values[job++];
-        part.weights[part.jobs[j + 2]] += weight;
+      for (let row = 0; row + 1 < part.jobStarts.length; row++) {
+        for (let k = part.starts[row]; k < part.starts[row + 1]; k++) positions[part.col[k]] = k;
+        for (let j = part.jobStarts[row]; j < part.jobStarts[row + 1]; j++, job++) {
+          let tile = part.jobs[j],
+            size = tile < 0 ? 1 : 4;
+          if (tile < 0) tile = ~tile;
+          else {
+            weighted++;
+            rules[tile & 7]++;
+            tile >>= 3;
+          }
+          for (let k = 0; k < size; k++)
+            part.weights[positions[packet.nodes[4 * tile + k]]] += angular.values[4 * job + k];
+        }
       }
     const assembled = performance.now(),
       direct = new Float64Array(3 * n),
@@ -105,9 +124,13 @@ export class FunctionLighting {
     const equilibriumError = contraction < 1 ? residual / (1 - contraction) : Infinity;
     const finished = performance.now();
     bytes += solveBytes + 2 * direct.byteLength;
+    const reuse = parts.reduce((s, p) => s.map((x, i) => x + p.lampReuse[i]), Array(7).fill(0));
     return {
       geometry,
-      lampReuse: parts.reduce((s, p) => s.map((x, i) => x + p.lampReuse[i]), [0, 0, 0, 0]),
+      weighted,
+      rectangleRules: rules,
+      lampReuse: reuse.slice(0, 4),
+      roundedVisibility: reuse.slice(4),
       rows: parts,
       modal,
       incident: H,

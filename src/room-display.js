@@ -63,7 +63,7 @@ export class LiveRenderer {
       gl.texParameteri(gl.TEXTURE_2D, p, gl.NEAREST);
     for (const p of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T])
       gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE);
-    this.angular = new AngularMeasure(gl);
+    this.angular = new AngularMeasure(gl, { indexed: true });
     this.math = new FunctionLighting(this.angular, options);
     this.pixel = new Uint8Array(4);
   }
@@ -229,7 +229,8 @@ export class LiveRenderer {
       (a.packed?.byteLength || 0) +
       (a.values?.byteLength || 0) +
       (a.outputBytes || 0) +
-      (a.inputBytes || 0)
+      (a.inputBytes || 0) +
+      (a.tableBytes || 0)
     );
   }
   synchronize() {

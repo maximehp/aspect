@@ -116,7 +116,7 @@ REPLAY = """(async (extra, slats, ticks, digest) => {
     room.synchronize();
     times.push([performance.timeOrigin + start, performance.timeOrigin + performance.now(),room.frameStats.scanMs||0,
       room.countedBytes?.() ?? (room.stats.bytes+room.stats.workerBytes+room.frameStats.bytes+(room.view.contactBackend?.stats.peakBytes||0)+(room.math.curved?.wasm.memory.buffer.byteLength||0)),
-      solution.counts||[],solution.newJobs||0,solution.timings.workerMs||0,solution.timings.assemblyMs||0,solution.timings.solve||0,prepared-start,submitted-prepared,performance.now()-submitted,solution.timings.modalBuild||0,solution.timings.modalApply||0,solution.modal?.counts||{},solution.timings.operatorMs||0]);
+      solution.counts||[],solution.newJobs||0,solution.timings.workerMs||0,solution.timings.assemblyMs||0,solution.timings.solve||0,prepared-start,submitted-prepared,performance.now()-submitted,solution.timings.modalBuild||0,solution.timings.modalApply||0,solution.modal?.counts||{},solution.timings.operatorMs||0,solution.rectangleRules||[],solution.roundedVisibility||[]]);
     if(digest){
       const pixels=new Uint8Array(3840*2160*4);
       gl.readPixels(0,0,3840,2160,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
@@ -213,6 +213,9 @@ def main():
                         "cameraMs": percentiles([r[2] for r in rows[1:]]),
                         "peakCountedMiB": max(r[3] for r in rows)/1048576,
                         "meanWorkCounts": [statistics.mean(v) for v in zip(*(r[4] for r in rows[1:]))],
+                        "meanRectangleRules": [statistics.mean(v) for v in zip(*(r[16] for r in rows[1:]))],
+                        "meanRoundedVisibility": [statistics.mean(v) for v in zip(*(r[17] for r in rows[1:]))],
+                        "overFrameBudget": {str(b): sum(t > b for t in completed) for b in (1, 1000/60)},
                         "meanGpuApertures": statistics.mean(r[5] for r in rows[1:]),
                         "workerMs": percentiles([r[6] for r in rows[1:]]),
                         "assemblyMs": percentiles([r[7] for r in rows[1:]]),

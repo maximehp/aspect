@@ -23,9 +23,15 @@ typedef struct {
   int object, pad;
 } Receiver;
 typedef struct {
+  int axis;
+  double x, y, along;
+} CylinderEdge;
+typedef struct {
   Plane p[12];
   int n, obj;
   unsigned tangentMask;
+  int generators;
+  CylinderEdge edges[6];
 } Cone;
 typedef struct {
   double lo, hi;
@@ -71,6 +77,7 @@ static void addPlane(Cone *c, Vec n, Vec p, Vec inside) {
   n = scale3(n, 1 / size);
   c->p[c->n++] = (Plane){n, dp(n, p)};
 }
+#include "cylinder-outline.h"
 static Cone shadow(const Shape *s, int id, Vec eye) {
   Cone out = {.obj = id};
   Vec d = minus(s->c, eye);
@@ -92,6 +99,7 @@ static Cone shadow(const Shape *s, int id, Vec eye) {
   // A tangent contact has n dot (eye - center) = radius. Bound that
   // quantity on each feature's orthant of unit normals for this entire eye.
   Vec O = local(s, minus(eye, s->c));
+  out.generators = outlines(out.edges, s, O);
   unsigned bit = 1;
   for (int feature = -1; feature < 3; feature++)
     for (int signs = 0; signs < 8; signs++) {
@@ -229,7 +237,7 @@ static int featureRoots(double A, double B, double C, double sizeA, double sizeB
 static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, double *hi,
                        Counts *stats, int object, const Cone *cone, int descriptor, Pair *pair,
                        int eyeId) {
-  const double a = *lo, b = *hi;
+  double a = *lo, b = *hi;
   const int endpoint = descriptor & 4, axial = (descriptor & 3) - 1;
   Vec O = local(s, minus(eye, s->c)), D = local(s, minus(p, eye)), U = local(s, ax),
       fan = cross3(D, U);
@@ -237,8 +245,32 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
   if (absd(dp(O, fan)) >
       absd(fan.x) * h[0] + absd(fan.y) * h[1] + absd(fan.z) * h[2] + r * size + 1e-10)
     return 0;
-  int left = blocked(s, eye, plus(p, scale3(ax, a))),
-      right = blocked(s, eye, plus(p, scale3(ax, b)));
+  int left = -1, right = -1, clip = -1;
+  if (!endpoint && pair->reuse) {
+    clip = tangentInterval(cone, O, D, U, h, &a, &b, &left, &right);
+    if (clip == 0) {
+      pair->reuse[4]++;
+      return 0;
+    }
+    if (clip > 0) {
+      if (left < 0)
+        left = blocked(s, eye, plus(p, scale3(ax, a)));
+      if (right < 0)
+        right = blocked(s, eye, plus(p, scale3(ax, b)));
+      if (left && right) {
+        *lo = a;
+        *hi = b;
+        pair->reuse[5]++;
+        return 1;
+      }
+    } else {
+      left = right = -1;
+    }
+  }
+  if (left < 0)
+    left = blocked(s, eye, plus(p, scale3(ax, a)));
+  if (right < 0)
+    right = blocked(s, eye, plus(p, scale3(ax, b)));
   if (left && right)
     return 1;
   double start = left ? a : FAR, end = right ? b : -FAR;
@@ -257,8 +289,13 @@ static int trimRounded(const Shape *s, Vec eye, Vec p, Vec ax, double *lo, doubl
             end = high(end, x);
           }
         }
+  // When the limiting cylinder plane belongs to a corner extension,
+  // only the true spherical arcs can provide the missing interval end.
+  int ruled = clip > 0;
+  if (ruled)
+    pair->reuse[6]++;
   unsigned bit = 1;
-  for (int feature = -1; feature < 3; feature++)
+  for (int feature = -1; feature < (ruled ? 0 : 3); feature++)
     for (int bits = 0; bits < 8; bits++) {
       if (feature >= 0 && bits & (1 << feature))
         continue;
@@ -783,15 +820,19 @@ static int endpointPossible(const Chart *c, const Shape *s) {
   }
   return 1;
 }
-static int candidates(const Chart *c, const Shape *shapes, int skip, const Cone *all, int n,
-                      int *out, int *hidden) {
+static int chartBlockers(const Chart *c, const Shape *shapes, int skip, const Cone *all, int n,
+                         int *out, int *hidden, const int *objects, const unsigned *unresolved) {
   int count = 0;
-  for (int j = 0; j < n; j++) {
+  for (int index = 0; index < n; index++) {
+    int j = objects ? objects[index] : index;
     const Cone *k = all + j;
     if (j == c->object || j == skip || (!k->n && !shapes[j].r))
       continue;
     int full = k->n > 0;
-    for (int f = 0; f < k->n; f++) {
+    unsigned faces = unresolved ? unresolved[index] : (1u << k->n) - 1;
+    while (faces) {
+      int f = __builtin_ctz(faces);
+      faces &= faces - 1;
       const Plane *p = k->p + f;
       double d = dp(c->c, p->n) - p->b,
              extent = c->type == 2 ? c->r
@@ -812,6 +853,38 @@ static int candidates(const Chart *c, const Shape *shapes, int skip, const Cone 
     out[count++] = 8 * j + flags;
   clear:;
   }
+  return count;
+}
+static int candidates(const Chart *c, const Shape *s, int skip, const Cone *all, int n, int *out,
+                      int *hidden) {
+  return chartBlockers(c, s, skip, all, n, out, hidden, 0, 0);
+}
+// A generating chart belongs to one solid. Certify each cone half-space over
+// its whole support once, then test only its unresolved faces on each chart.
+static int sourceBlockers(const Shape *s, int obj, int skip, const Cone *eyes, int ns, int *objects,
+                          unsigned *faces) {
+  int count = 0;
+  Vec ext = s[obj].extent;
+  for (int j = 0; j < ns; j++)
+    if (j != obj && j != skip && (eyes[j].n || s[j].r)) {
+      unsigned mask = 0;
+      for (int k = 0; k < eyes[j].n; k++) {
+        const Plane p = eyes[j].p[k];
+        double d = dp(p.n, s[obj].c) - p.b,
+               e = absd(p.n.x) * ext.x + absd(p.n.y) * ext.y + absd(p.n.z) * ext.z,
+               eps = 1e-8 + 8e-15 * (absd(p.b) + absd(s[obj].c.x * p.n.x) + absd(s[obj].c.y * p.n.y) +
+                                     absd(s[obj].c.z * p.n.z) + e);
+        if (d + e < -eps)
+          goto next;
+        if (d - e <= eps)
+          mask |= 1u << k;
+      }
+      if (!mask && !s[j].r)
+        return -1;
+      objects[count] = j;
+      faces[count++] = mask;
+    next:;
+    }
   return count;
 }
 static void insert(double *cuts, int *n, double x, double a, double b) {
@@ -1032,18 +1105,19 @@ int compileLampEvents(const Shape *shapes, int ns, const Chart *tiles, int nt, c
 }
 
 #include "plane-transfer.h"
+#include "rectangle-rule.h"
 // The lamp cones and both interval caches belong to a single fresh pose.
 typedef struct {
   LampSlice slices[SLICE_SLOTS];
   Tangents tangents[TANGENT_SLOTS];
-  unsigned long long reuse[4];
+  unsigned long long reuse[7];
   Cone lamps[];
 } TransportWorkspace;
 
 unsigned transportBytes(int ns) { return sizeof(TransportWorkspace) + ns * sizeof(Cone); }
 
 void prepareTransport(TransportWorkspace *workspace, const Shape *s, int ns, const Vec *lamp) {
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < 7; i++)
     workspace->reuse[i] = 0;
   for (int j = 0; j < SLICE_SLOTS; j++)
     workspace->slices[j].source = 0;
@@ -1100,9 +1174,11 @@ int lampIntervals(TransportWorkspace *ws, const Shape *shapes, const Chart *char
 int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Chart *tiles, int nt,
                  const Receiver *receivers, int i, const Vec *lamp, double tolerance, float *output,
                  int *tileIds, Counts *stats, const unsigned char *modes, const Moments *moments,
-                 const int *lampIds, const double *planeField, const double *eventField) {
+                 const int *lampIds, const double *planeField, const double *eventField,
+                 int weightedGPU) {
   Cone eyes[ns];
-  int localEye[ns], localLamp[ns];
+  int localEye[ns], localLamp[ns], near[ns], last = -1, nearCount = 0;
+  unsigned faces[ns];
   Receiver y = receivers[i];
   int count = 0;
   for (int j = 0; j < ns; j++)
@@ -1156,7 +1232,13 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
               .blockers = {localEye, localLamp},
               .stats = stats,
               .tolerance = tolerance};
-    w.count[0] = candidates(c, s, y.object, eyes, ns, localEye, &hidden);
+    if (last != c->object) {
+      last = c->object;
+      nearCount = sourceBlockers(s, last, y.object, eyes, ns, near, faces);
+    }
+    if (nearCount < 0)
+      continue;
+    w.count[0] = chartBlockers(c, s, y.object, eyes, nearCount, localEye, &hidden, near, faces);
     if (hidden)
       continue;
     if (lampIds) {
@@ -1178,6 +1260,18 @@ int transportRow(TransportWorkspace *workspace, const Shape *s, int ns, const Ch
       gpu = 1;
       stats->gpu++;
       w.lift[0] = 1;
+    }
+    if (weightedGPU && w.lampDark && !c->type && !w.count[0] && dp(d, y.n) - ext > 1e-8 &&
+        absd(dp(c->ax, c->v)) < 1e-14) {
+      int rule = rectangleRule(c, d, y.n);
+      if (rule >= 0) {
+        tileIds[count++] = ~k;
+        for (int j = 0; j < 4; j++)
+          weights[j] = 0;
+        weights[4] = -1 - rule;
+        stats->gpu += !gpu;
+        continue;
+      }
     }
     int capacity = 32 + 32 * (w.count[0] + w.count[1]);
     double cuts[capacity + 1];

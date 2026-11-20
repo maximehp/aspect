@@ -1,3 +1,4 @@
+import { inverseTangentCoefficients } from './inverse-tangent.js';
 // Weak diffuse transfer between aligned parallel rectangles with clear mutual
 // visibility. Units are metres. Axes are coordinates in one common orthonormal
 // plane. Both radiance and receiver test functions may be bilinear.
@@ -9,15 +10,7 @@ const factorial = [1, 1, 2, 6];
 // absolute error after n terms is at most z*q^n, with q <= 1/2.
 function inverseTangentIntegral(tolerance) {
   const count = Math.max(1, 1 + Math.ceil(-Math.log2(tolerance)));
-  const coefficients = new Float64Array(count);
-  let area = 1,
-    oddHarmonic = 1;
-  coefficients[0] = 1;
-  for (let i = 1; i < count; i++) {
-    area *= (2 * i) / (2 * i + 1);
-    oddHarmonic += 1 / (2 * i + 1);
-    coefficients[i] = area * oddHarmonic;
-  }
+  const coefficients = inverseTangentCoefficients(count);
   return (z) => {
     const d = 1 + z * z,
       q = (z * z) / d;

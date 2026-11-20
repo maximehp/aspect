@@ -61,7 +61,7 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       angular = [],
       sourceCount = packet.sourceCount ?? n,
       local = new Float64Array(sourceCount),
-      positions = new Int32Array(sourceCount);
+      jobStarts = new Uint32Array(rows + 1);
     const needed = new Uint8Array(sourceCount);
     for (let row = 0; row < rows; row++) {
       const begin = performance.now();
@@ -83,11 +83,12 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
         packet.regions ? catalog : 0,
         packet.planeField ? planeField : 0,
         packet.lampEvents ? eventField : 0,
+        1,
       );
       kernelMs += performance.now() - begin;
       local.fill(0);
       needed.fill(0);
-      let pending = angular.length;
+
       for (let ix = 0; ix < count; ix++) {
         const gpu = ids[ix] < 0,
           t = gpu ? ~ids[ix] : ids[ix],
@@ -95,22 +96,29 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
           object = chartIds[42 * t + 37];
         if (!values[b] && !values[b + 1] && !values[b + 2] && !values[b + 3] && !values[b + 4] && !gpu)
           continue;
+        if (gpu && values[b + 4] < 0) {
+          angular.push(8 * t - 1 - values[b + 4]);
+          for (let j = 0; j < 4; j++) {
+            const node = nodes[4 * t + j];
+            needed[node] = 1;
+          }
+          continue;
+        }
         const jac = packet.jacobians[t];
         for (let j = 0; j < 4; j++) local[nodes[4 * t + j]] += jac * values[b + j];
         for (let c = 0; c < 3; c++)
           direct[3 * row + c] += jac * values[b + 4] * colors[3 * object + c] * lampRGB[c];
         if (gpu) {
-          angular.push(row, t, nodes[4 * t]);
+          angular.push(~t);
           needed[nodes[4 * t]] = 1;
         }
       }
       for (let j = 0; j < sourceCount; j++)
         if (local[j] || needed[j]) {
-          positions[j] = indices.length;
           indices.push(j);
           weights.push(local[j]);
         }
-      for (let z = pending + 2; z < angular.length; z += 3) angular[z] = positions[angular[z]];
+      jobStarts[row + 1] = angular.length;
       starts[row + 1] = indices.length;
     }
     const result = {
@@ -120,9 +128,10 @@ self.onmessage = async ({ data: { packet, first, stride, tolerance } }) => {
       direct,
       col: Uint32Array.from(indices),
       weights: Float64Array.from(weights),
-      jobs: Uint32Array.from(angular),
+      jobs: Int32Array.from(angular),
+      jobStarts,
       counts: Array.from(new BigInt64Array(mem, counts, 20), Number),
-      lampReuse: Array.from(new BigUint64Array(mem, engine.lampReuse(workspace), 4), Number),
+      lampReuse: Array.from(new BigUint64Array(mem, engine.lampReuse(workspace), 7), Number),
       bytes: mem.byteLength,
       ms: kernelMs,
     };

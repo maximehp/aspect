@@ -208,6 +208,7 @@ class NativePlane {
       emission ? this.catalog : this.dark,
       0,
       0,
+      0,
     );
     const b = this.was.memory.buffer,
       ids = new Int32Array(b, this.ids, count),
