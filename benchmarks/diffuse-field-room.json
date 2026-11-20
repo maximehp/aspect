@@ -2359,5 +2359,152 @@
       "gpuApertures": 1329669,
       "gl": 0
     }
-  ]
+  ],
+  "replayMeasurement": "Frozen cutover d4d789b. On this M1 Pro the existing 120 consecutive moving poses render at 3840 \u00d7 2160. GPU-complete is a synchronous readback; swap is the matching Chrome compositor marker. The complete interval ends at the later of these two times. Camera visibility overlaps preparation. Counted memory includes named engine payloads and one framebuffer, excludes uninstrumented JavaScript, driver and compositor allocations. Short independent QA jobs overlapped portions of the one- and two-slat runs. No matched-quality speedup is established.",
+  "counters": [
+    "generator strips",
+    "lit endpoints",
+    "length primitives",
+    "spherical evaluations",
+    "rounded boundary evaluations",
+    "adaptive splits",
+    "exhausted source estimates",
+    "GPU angular apertures",
+    "axial tangent reuse",
+    "regional moments",
+    "geometric exclusions",
+    "facing boundaries",
+    "expansion tolerance exclusions",
+    "blocked domains",
+    "individual interactions",
+    "source moment tiles",
+    "lamp moment strips",
+    "exact conic refinements",
+    "lamp interval cache hits",
+    "lamp interval cache misses"
+  ],
+  "replays": {
+    "1": {
+      "renderer": "diffuse-field",
+      "extra": 0,
+      "slats": 1,
+      "matched": 120,
+      "optionalOpticsRequests": [],
+      "missing": [],
+      "startToSwapMs": {
+        "median": 6762.66,
+        "p95": 8228.55
+      },
+      "throughBothMs": {
+        "median": 6762.66,
+        "p95": 8228.55
+      },
+      "finishedMs": {
+        "median": 6726.9,
+        "p95": 8188.2
+      },
+      "cameraMs": {
+        "median": 7.6,
+        "p95": 12
+      },
+      "peakCountedMiB": 264.96102237701416,
+      "meanWorkCounts": [
+        44233383.916666664,
+        40320974.75,
+        28732966.75,
+        11906368.425,
+        4962107.033333333,
+        1639966.2083333333,
+        10.008333333333333,
+        1927797.4583333333,
+        1209.875,
+        920537.175,
+        30065709.225,
+        981068.7,
+        1540025.625,
+        1595154.3,
+        16116328.875,
+        1178.4083333333333,
+        218119.3,
+        0.11666666666666667,
+        10740619.7,
+        9301156.608333332
+      ],
+      "overFrameBudget": {
+        "1": 120,
+        "16.666666666666668": 120
+      },
+      "meanGpuApertures": 1927797.4583333333,
+      "worstSpatialResidual": 0.1826416222369305,
+      "framesExceedingSpatialTolerance": 120,
+      "worstEquilibriumClosure": 2.1599092942900522e-05,
+      "maximumUnitFieldGain": 1.0018481131382442,
+      "workerMs": {
+        "median": 3166.9,
+        "p95": 4443.4
+      },
+      "assemblyMs": {
+        "median": 87.9,
+        "p95": 143
+      },
+      "solveMs": {
+        "median": 2942.0,
+        "p95": 3068.1
+      },
+      "operatorConstructionMs": {
+        "median": 3751.35,
+        "p95": 5080
+      },
+      "preparationMs": {
+        "median": 6703.9,
+        "p95": 8148.3
+      },
+      "applyAndDrawMs": {
+        "median": 2.1,
+        "p95": 4.6
+      },
+      "markAndFinishMs": {
+        "median": 21.4,
+        "p95": 29
+      },
+      "syncToSwapMs": {
+        "median": 32.06,
+        "p95": 44.16
+      },
+      "beforeSync": 0
+    }
+  },
+  "scanlineMotionCheck": {
+    "camera": "START_CAMERA, 3840 \u00d7 2160",
+    "samples": "Across 21 nearby fresh angles, take run endpoints, exterior neighbors and midpoints on every 47th scanline starting at row 19. Use the union of pixels in every pose. Compare against independent nearest intersection and lamp-segment visibility; count temporal changes of visible surface and illuminated state. Only this sampled sweep is verified.",
+    "poses": 21,
+    "firstAngleRadians": "0.299 + 0.0001*k",
+    "secondAngleRadians": "-0.401 + 0.00015*k",
+    "radiiMeters": [
+      0.044,
+      0.033
+    ],
+    "observations": [
+      {
+        "secondBlind": false,
+        "samples": 939,
+        "checks": 19719,
+        "idDisagreements": 0,
+        "shadowDisagreements": 0,
+        "physicalTransitions": 6,
+        "motionTransitionDisagreements": 0,
+        "examples": []
+      },
+      {
+        "secondBlind": true,
+        "samples": 942,
+        "checks": 19782,
+        "idDisagreements": 0,
+        "shadowDisagreements": 0,
+        "physicalTransitions": 5,
+        "motionTransitionDisagreements": 0,
+        "examples": []
+      }
+    ]
+  }
 }
